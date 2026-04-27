@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product — Plexi Digital Mall</title>
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/neomorphism.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <style>
+    .product-gallery {
+      position: sticky;
+      top: calc(var(--header-h) + var(--space-lg));
+    }
+    .product-main-img {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background: var(--bg);
+      box-shadow: var(--neo-shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 80px;
+      cursor: zoom-in;
+      margin-bottom: var(--space-md);
+    }
+    .product-main-img img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+    .product-main-img:hover img { transform: scale(1.04); }
+
+    .product-thumbs {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+    }
+    .product-thumb {
+      width: 72px; height: 72px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      background: var(--bg);
+      box-shadow: var(--neo-shadow-sm);
+      transition: var(--transition-spring);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .product-thumb:hover { border-color: var(--primary-light); transform: scale(1.05); }
+    .product-thumb.active { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-alpha); }
+    .product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    .product-price-tag {
+      font-family: var(--font-display);
+      font-size: 38px;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .variant-btn {
+      padding: 8px 18px;
+      border-radius: var(--radius-md);
+      border: 2px solid var(--border);
+      background: var(--bg);
+      box-shadow: var(--neo-shadow-sm);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: var(--transition-spring);
+    }
+    .variant-btn:hover { border-color: var(--primary-light); color: var(--primary); }
+    .variant-btn.active {
+      border-color: var(--primary);
+      background: var(--primary-alpha);
+      color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-alpha);
+    }
+
+    .qty-control {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .qty-btn {
+      width: 40px; height: 40px;
+      border-radius: var(--radius-md);
+      border: none;
+      background: var(--bg);
+      box-shadow: var(--neo-shadow-sm);
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      transition: var(--transition-spring);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qty-btn:hover { box-shadow: var(--neo-shadow); }
+    .qty-btn:active { box-shadow: var(--neo-shadow-inset); }
+    .qty-display {
+      width: 52px; height: 40px;
+      background: var(--bg);
+      box-shadow: var(--neo-shadow-inset);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px;
+    }
+
+    .feature-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: var(--bg);
+      box-shadow: var(--neo-shadow-sm);
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .related-products {
+      margin-top: var(--space-3xl);
+      padding-top: var(--space-xl);
+      border-top: 1px solid var(--border-light);
+    }
+
+    @media (max-width: 768px) {
+      .product-gallery { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="page-loader" class="page-loader">
+  <div class="loader-logo">Plexi<span>Mall</span></div>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="container navbar-inner">
+    <a href="../index.html" class="navbar-logo">
+      <img src="../assets/icons/logo.jpg" alt="Plexi">
+      Plexi<span>Mall</span>
+    </a>
+    <div class="navbar-nav" style="flex:1; justify-content:flex-end;">
+      <a href="../index.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        Home
+      </a>
+      <div style="position:relative;">
+        <button class="btn btn-ghost btn-icon" id="cart-btn" onclick="goToCart()" style="display:none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span id="cart-badge" class="badge badge-error" style="position:absolute;top:-6px;right:-6px;display:none;width:18px;height:18px;padding:0;align-items:center;justify-content:center;font-size:10px;">0</span>
+        </button>
+      </div>
+      <div id="nav-guest" style="display:flex;gap:4px;">
+        <a href="../login.html" class="btn btn-ghost btn-sm">Login</a>
+        <a href="../signup.html" class="btn btn-primary btn-sm">Sign Up</a>
+      </div>
+      <div id="nav-user" style="display:none;">
+        <div class="dropdown">
+          <button data-dropdown="prod-user-menu" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:var(--radius-md);">
+            <div class="avatar avatar-sm" data-user-avatar></div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="dropdown-menu" id="prod-user-menu">
+            <a href="#" id="nav-dashboard" class="dropdown-item">Dashboard</a>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item danger" onclick="Auth.logout()">Log Out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="container" style="padding-top:var(--space-xl);padding-bottom:var(--space-3xl);">
+
+  <!-- BREADCRUMB -->
+  <div class="breadcrumb" style="margin-bottom:var(--space-lg);">
+    <a href="../index.html">Home</a>
+    <span class="sep">›</span>
+    <a href="../index.html">Stores</a>
+    <span class="sep">›</span>
+    <a href="#" id="bc-store">Store</a>
+    <span class="sep">›</span>
+    <span class="current" id="bc-product">Product</span>
+  </div>
+
+  <!-- PRODUCT LAYOUT -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2xl);align-items:start;" id="product-layout">
+
+    <!-- LEFT: Gallery -->
+    <div class="product-gallery animate-fadeIn">
+      <div class="product-main-img" id="main-img-el">
+        <div class="skeleton" style="width:100%;height:100%;border-radius:var(--radius-xl);"></div>
+      </div>
+      <div class="product-thumbs" id="thumbs-el"></div>
+    </div>
+
+    <!-- RIGHT: Info -->
+    <div class="animate-fadeInUp delay-2">
+
+      <!-- Badge row -->
+      <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-md);" id="badge-row">
+        <div class="skeleton" style="width:80px;height:22px;border-radius:99px;"></div>
+        <div class="skeleton" style="width:100px;height:22px;border-radius:99px;"></div>
+      </div>
+
+      <!-- Title -->
+      <h1 id="product-title" style="margin-bottom:var(--space-sm);">
+        <div class="skeleton" style="height:40px;width:85%;"></div>
+      </h1>
+
+      <!-- Store link -->
+      <div id="store-link-row" style="margin-bottom:var(--space-md);">
+        <div class="skeleton" style="height:16px;width:50%;"></div>
+      </div>
+
+      <!-- Rating -->
+      <div id="rating-row" style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-lg);">
+        <div class="skeleton" style="width:100px;height:16px;"></div>
+      </div>
+
+      <!-- Price -->
+      <div style="display:flex;align-items:baseline;gap:var(--space-sm);margin-bottom:var(--space-lg);">
+        <div class="product-price-tag" id="product-price">
+          <div class="skeleton" style="width:120px;height:42px;"></div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div id="product-desc" style="color:var(--text-secondary);line-height:1.8;font-size:15px;margin-bottom:var(--space-xl);">
+        <div class="skeleton" style="height:14px;width:100%;margin-bottom:6px;"></div>
+        <div class="skeleton" style="height:14px;width:90%;margin-bottom:6px;"></div>
+        <div class="skeleton" style="height:14px;width:75%;"></div>
+      </div>
+
+      <!-- Variants -->
+      <div id="variants-section" style="display:none;margin-bottom:var(--space-lg);">
+        <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:var(--space-sm);">
+          Variant: <span id="selected-variant-label" style="color:var(--primary);text-transform:none;"></span>
+        </div>
+        <div id="variants-btns" style="display:flex;gap:var(--space-sm);flex-wrap:wrap;"></div>
+      </div>
+
+      <!-- Qty + Add to Cart -->
+      <div style="margin-bottom:var(--space-lg);">
+        <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:var(--space-sm);">Quantity</div>
+        <div class="qty-control" style="margin-bottom:var(--space-md);">
+          <button class="qty-btn" onclick="adjustQty(-1)">−</button>
+          <div class="qty-display" id="qty-display">1</div>
+          <button class="qty-btn" onclick="adjustQty(1)">+</button>
+          <span style="font-size:13px;color:var(--text-muted);" id="stock-label">— in stock</span>
+        </div>
+
+        <div style="display:flex;gap:var(--space-sm);" id="action-btns">
+          <button class="btn btn-primary btn-xl" id="add-cart-btn" onclick="addToCart()" style="flex:1;" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            Add to Cart
+          </button>
+          <button class="btn btn-outline btn-xl btn-icon" id="wishlist-btn" onclick="toggleWishlist()" title="Save to Wishlist">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Feature Pills -->
+      <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);margin-bottom:var(--space-lg);">
+        <div class="feature-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Nationwide Delivery
+        </div>
+        <div class="feature-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+          Secure Checkout
+        </div>
+        <div class="feature-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Buyer Protection
+        </div>
+      </div>
+
+      <!-- Store card mini -->
+      <div id="store-mini-card" style="display:none;">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:var(--space-sm);">Sold by</div>
+        <div class="neo-flat" style="padding:var(--space-md);border-radius:var(--radius-lg);display:flex;align-items:center;gap:var(--space-md);cursor:pointer;" id="store-mini-inner">
+          <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:var(--bg);box-shadow:var(--neo-shadow-sm);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--primary);overflow:hidden;" id="store-mini-logo"></div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:14px;" id="store-mini-name"></div>
+            <div style="font-size:12px;color:var(--text-muted);" id="store-mini-cat"></div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TABS: Description / Reviews -->
+  <div style="margin-top:var(--space-2xl);">
+    <div class="tabs" style="margin-bottom:var(--space-xl);">
+      <button class="tab-btn active" data-tab="tab-desc" onclick="switchTab('tab-desc',this)">Description</button>
+      <button class="tab-btn" data-tab="tab-reviews" onclick="switchTab('tab-reviews',this)">Reviews</button>
+      <button class="tab-btn" data-tab="tab-shipping" onclick="switchTab('tab-shipping',this)">Shipping</button>
+    </div>
+
+    <div id="tab-desc" class="tab-content active">
+      <div class="neo-card" style="max-width:720px;">
+        <p id="desc-full" style="color:var(--text-secondary);line-height:1.9;font-size:15px;">Loading…</p>
+        <div id="variants-detail" style="margin-top:var(--space-lg);"></div>
+      </div>
+    </div>
+
+    <div id="tab-reviews" class="tab-content">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-lg);">
+        <div>
+          <h3>Product Reviews</h3>
+          <div style="display:flex;align-items:center;gap:var(--space-sm);margin-top:6px;">
+            <div id="prod-avg-stars"></div>
+            <span id="prod-avg-rating" style="font-size:20px;font-weight:800;color:var(--primary);">—</span>
+            <span id="prod-review-count" style="color:var(--text-muted);font-size:13px;">(0 reviews)</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="prod-review-btn" onclick="openProductReviewModal()" style="display:none;">Write a Review</button>
+      </div>
+      <div id="prod-reviews-grid" class="grid-3">
+        <div style="grid-column:1/-1;text-align:center;padding:var(--space-xl);color:var(--text-muted);">Loading reviews…</div>
+      </div>
+    </div>
+
+    <div id="tab-shipping" class="tab-content">
+      <div class="neo-card" style="max-width:600px;">
+        <h4 style="margin-bottom:var(--space-md);">Shipping Information</h4>
+        <div style="display:grid;gap:var(--space-md);">
+          <div style="display:flex;align-items:flex-start;gap:var(--space-md);padding:var(--space-md);background:var(--bg);border-radius:var(--radius-lg);box-shadow:var(--neo-shadow-sm);">
+            <div style="width:40px;height:40px;border-radius:var(--radius-md);background:var(--primary-alpha);display:flex;align-items:center;justify-content:center;color:var(--primary);flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:700;margin-bottom:4px;">Standard Delivery</div>
+              <div style="font-size:13px;color:var(--text-secondary);">3–7 business days. Available nationwide across South Africa.</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:var(--space-md);padding:var(--space-md);background:var(--bg);border-radius:var(--radius-lg);box-shadow:var(--neo-shadow-sm);">
+            <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(39,174,96,0.1);display:flex;align-items:center;justify-content:center;color:var(--success);flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:700;margin-bottom:4px;">Returns Policy</div>
+              <div style="font-size:13px;color:var(--text-secondary);">30-day return window. Contact the store directly to initiate a return.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RELATED PRODUCTS -->
+  <div class="related-products">
+    <div class="section-header">
+      <h2 class="section-title">More from <span id="related-store-name">this store</span></h2>
+      <a href="#" id="view-store-link" style="font-size:13px;font-weight:600;color:var(--primary);">View All →</a>
+    </div>
+    <div id="related-grid" class="grid-auto">
+      <div style="grid-column:1/-1;text-align:center;padding:var(--space-xl);color:var(--text-muted);">Loading…</div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast-container"></div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/state.js"></script>
+<script src="../assets/js/dashboard.js"></script>
+<script>
+  const params    = new URLSearchParams(location.search);
+  const productId = params.get('id');
+  if (!productId) location.href = '../index.html';
+
+  let productData  = null;
+  let storeData    = null;
+  let quantity     = 1;
+  let selectedVariant = null;
+  let wishlistActive  = false;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    initNav();
+    UI.initDropdowns();
+    await loadProduct();
+    UI.hidePageLoader();
+  });
+
+  function initNav() {
+    const user = Auth.getUser();
+    if (user) {
+      document.getElementById('nav-guest').style.display = 'none';
+      document.getElementById('nav-user').style.display  = 'flex';
+      document.getElementById('cart-btn').style.display  = 'flex';
+      Auth.populateUserUI();
+      const map = { admin:'../dashboard/admin.html', seller:'../dashboard/seller.html', shopper:'../dashboard/shopper.html' };
+      const dash = document.getElementById('nav-dashboard');
+      if (dash) dash.href = map[user.role] || '#';
+      document.getElementById('prod-review-btn').style.display = 'flex';
+      Dashboard.loadCartCount();
+    }
+  }
+
+  async function loadProduct() {
+    try {
+      productData = await api.products.get(productId);
+      renderProduct();
+      await Promise.all([
+        loadStore(productData.store_id),
+        loadProductReviews(),
+        loadRelated()
+      ]);
+    } catch (err) {
+      UI.toast('Could not load product: ' + err.message, 'error');
+    }
+  }
+
+  function renderProduct() {
+    const p = productData;
+    document.title = `${p.name} — Plexi Digital Mall`;
+
+    // Breadcrumb
+    document.getElementById('bc-product').textContent = p.name;
+
+    // Badge row
+    document.getElementById('badge-row').innerHTML = `
+      <span class="badge badge-gray">${capitalize(p.category)}</span>
+      ${p.inventory > 0
+        ? `<span class="badge badge-success">● In Stock (${p.inventory})</span>`
+        : `<span class="badge badge-error">✗ Out of Stock</span>`}
+    `;
+
+    // Title
+    document.getElementById('product-title').textContent = p.name;
+
+    // Price
+    document.getElementById('product-price').textContent = UI.formatCurrency(p.price);
+
+    // Description
+    document.getElementById('product-desc').textContent = p.description || 'No description provided.';
+    document.getElementById('desc-full').textContent    = p.description || 'No description provided for this product.';
+
+    // Stock label
+    document.getElementById('stock-label').textContent =
+      p.inventory > 0 ? `${p.inventory} in stock` : 'Out of stock';
+
+    // Gallery
+    const images = p.images?.length ? p.images : [];
+    const mainEl = document.getElementById('main-img-el');
+    if (images.length) {
+      mainEl.innerHTML = `<img src="${images[0]}" alt="${p.name}" id="main-img-src">`;
+    } else {
+      mainEl.innerHTML = '🛍️';
+    }
+
+    // Thumbs
+    const thumbsEl = document.getElementById('thumbs-el');
+    if (images.length > 1) {
+      thumbsEl.innerHTML = images.map((src, i) => `
+        <div class="product-thumb ${i===0?'active':''}" onclick="setMainImage('${src}', this)">
+          <img src="${src}" alt="">
+        </div>
+      `).join('');
+    } else if (images.length === 1) {
+      thumbsEl.innerHTML = `
+        <div class="product-thumb active">
+          <img src="${images[0]}" alt="">
+        </div>`;
+    }
+
+    // Variants
+    const variants = Array.isArray(p.variants) ? p.variants : [];
+    if (variants.length) {
+      document.getElementById('variants-section').style.display = 'block';
+      const container = document.getElementById('variants-btns');
+      container.innerHTML = variants.map(v => `
+        <button class="variant-btn" onclick="selectVariant('${v}', this)">${v}</button>
+      `).join('');
+      // Show in description tab too
+      document.getElementById('variants-detail').innerHTML = `
+        <div style="font-weight:700;margin-bottom:var(--space-sm);">Available Variants</div>
+        <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">${variants.map(v=>`<span class="badge badge-gray">${v}</span>`).join('')}</div>`;
+    }
+
+    // Enable cart button if in stock
+    const addBtn = document.getElementById('add-cart-btn');
+    if (p.inventory > 0) {
+      addBtn.disabled = false;
+    } else {
+      addBtn.disabled = true;
+      addBtn.textContent = 'Out of Stock';
+    }
+  }
+
+  function setMainImage(src, thumb) {
+    const mainImg = document.getElementById('main-img-src');
+    if (mainImg) mainImg.src = src;
+    document.querySelectorAll('.product-thumb').forEach(t => t.classList.remove('active'));
+    thumb.classList.add('active');
+  }
+
+  function selectVariant(val, btn) {
+    selectedVariant = val;
+    document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('selected-variant-label').textContent = val;
+  }
+
+  function adjustQty(delta) {
+    const max = productData?.inventory || 99;
+    quantity = Math.min(Math.max(1, quantity + delta), max);
+    document.getElementById('qty-display').textContent = quantity;
+  }
+
+  async function loadStore(storeId) {
+    try {
+      storeData = await api.stores.get(storeId);
+      // Breadcrumb store link
+      const bcStore = document.getElementById('bc-store');
+      bcStore.textContent = storeData.name;
+      bcStore.href = `store.html?id=${storeId}`;
+
+      // Store link under title
+      document.getElementById('store-link-row').innerHTML = `
+        <a href="store.html?id=${storeId}" style="font-size:13px;color:var(--text-muted);display:inline-flex;align-items:center;gap:4px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          ${storeData.name}
+        </a>`;
+
+      // Mini store card
+      const miniCard = document.getElementById('store-mini-card');
+      miniCard.style.display = 'block';
+      document.getElementById('store-mini-logo').innerHTML = storeData.logo
+        ? `<img src="${storeData.logo}" style="width:100%;height:100%;object-fit:cover;">`
+        : storeData.name.charAt(0).toUpperCase();
+      document.getElementById('store-mini-name').textContent = storeData.name;
+      document.getElementById('store-mini-cat').textContent  = storeData.category;
+      document.getElementById('store-mini-inner').onclick = () => location.href = `store.html?id=${storeId}`;
+
+      // Related section
+      document.getElementById('related-store-name').textContent = storeData.name;
+      document.getElementById('view-store-link').href = `store.html?id=${storeId}`;
+    } catch (_) {}
+  }
+
+  async function loadProductReviews() {
+    try {
+      const data    = await api.reviews.list({ product_id: productId });
+      const reviews = Array.isArray(data) ? data : (data.reviews || []);
+
+      const avg = reviews.length ? (reviews.reduce((s,r)=>s+r.rating,0)/reviews.length) : 0;
+      document.getElementById('prod-avg-stars').innerHTML     = UI.stars(Math.round(avg));
+      document.getElementById('prod-avg-rating').textContent  = avg ? avg.toFixed(1) : '—';
+      document.getElementById('prod-review-count').textContent = `(${reviews.length} review${reviews.length!==1?'s':''})`;
+
+      // Rating row under title
+      document.getElementById('rating-row').innerHTML = reviews.length
+        ? `${UI.stars(Math.round(avg))}<span style="font-size:14px;color:var(--text-muted);">${avg.toFixed(1)} · ${reviews.length} reviews</span>`
+        : `<span style="font-size:13px;color:var(--text-muted);">No reviews yet</span>`;
+
+      const grid = document.getElementById('prod-reviews-grid');
+      if (!reviews.length) {
+        grid.innerHTML = UI.empty('No Reviews Yet', 'Be the first to review this product!');
+        return;
+      }
+      grid.innerHTML = reviews.map(r => `
+        <div class="card stagger-child" style="padding:var(--space-lg);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--space-sm);">
+            <div style="display:flex;align-items:center;gap:var(--space-sm);">
+              ${UI.avatar(r.user_id, 'sm')}
+              <div>
+                <div style="font-weight:600;font-size:13px;">User ${r.user_id?.slice(0,6)}…</div>
+                <div style="font-size:11px;color:var(--text-muted);">${UI.timeAgo(r.created_at)}</div>
+              </div>
+            </div>
+            ${UI.stars(r.rating)}
+          </div>
+          <p style="font-size:14px;color:var(--text-secondary);line-height:1.6;">${r.comment || 'No comment.'}</p>
+        </div>
+      `).join('');
+      UI.staggerReveal(grid);
+    } catch (_) {}
+  }
+
+  async function loadRelated() {
+    if (!productData?.store_id) return;
+    try {
+      const data  = await api.products.list(productData.store_id);
+      const prods = (Array.isArray(data) ? data : (data.products || []))
+        .filter(p => p.id !== productId)
+        .slice(0, 4);
+
+      const grid = document.getElementById('related-grid');
+      if (!prods.length) { grid.innerHTML = UI.empty('No Other Products', 'This store has no other products yet.'); return; }
+      grid.innerHTML = prods.map(p => `
+        <div class="product-card stagger-child" onclick="location.href='product.html?id=${p.id}'">
+          <div class="product-card-img">
+            ${p.images?.[0]
+              ? `<img src="${p.images[0]}" alt="${p.name}">`
+              : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:40px;background:var(--bg);">🛍️</div>`}
+          </div>
+          <div class="product-card-body">
+            <div class="product-card-name">${p.name}</div>
+            <div class="product-card-price">${UI.formatCurrency(p.price)}</div>
+          </div>
+          <div class="product-card-footer">
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();quickAddCart('${p.id}')">Add to Cart</button>
+          </div>
+        </div>
+      `).join('');
+      UI.staggerReveal(grid);
+    } catch (_) {}
+  }
+
+  async function addToCart() {
+    if (!Auth.isLoggedIn()) {
+      UI.toast('Please login to add to cart', 'warning');
+      setTimeout(() => location.href = '../login.html', 1000);
+      return;
+    }
+    const btn = document.getElementById('add-cart-btn');
+    UI.setLoading(btn, true, 'Adding…');
+    try {
+      await api.cart.add({
+        product_id: productId,
+        quantity,
+        variant: selectedVariant || undefined
+      });
+      UI.toast(`Added ${quantity} × ${productData.name} to cart! 🛒`, 'success');
+      Dashboard.loadCartCount();
+    } catch (err) {
+      UI.toast(err.message || 'Failed to add to cart', 'error');
+    } finally {
+      UI.setLoading(btn, false);
+      btn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        Add to Cart`;
+    }
+  }
+
+  async function quickAddCart(pid) {
+    if (!Auth.isLoggedIn()) { UI.toast('Please login first','warning'); return; }
+    try { await api.cart.add({ product_id: pid, quantity: 1 }); UI.toast('Added to cart!','success'); Dashboard.loadCartCount(); }
+    catch (err) { UI.toast(err.message,'error'); }
+  }
+
+  async function toggleWishlist() {
+    if (!Auth.isLoggedIn()) { UI.toast('Please login first','warning'); return; }
+    const btn = document.getElementById('wishlist-btn');
+    try {
+      if (wishlistActive) {
+        await api.wishlist.remove(productId);
+        wishlistActive = false;
+        btn.style.borderColor = '';
+        btn.style.color = '';
+        btn.querySelector('svg').setAttribute('fill','none');
+        UI.toast('Removed from wishlist','info');
+      } else {
+        await api.wishlist.add(productId);
+        wishlistActive = true;
+        btn.style.borderColor = 'var(--primary)';
+        btn.style.color = 'var(--primary)';
+        btn.querySelector('svg').setAttribute('fill','var(--primary)');
+        UI.toast('Saved to wishlist ❤️','success');
+      }
+    } catch (err) { UI.toast(err.message,'error'); }
+  }
+
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function openProductReviewModal() {
+    UI.createModal({
+      id: 'prod-review-modal',
+      title: 'Review this Product',
+      content: `
+        <form id="prod-review-form" onsubmit="submitProductReview(event)">
+          <div class="form-group">
+            <label class="form-label">Your Rating</label>
+            <div id="star-pick" style="display:flex;gap:var(--space-sm);">
+              ${[1,2,3,4,5].map(n=>`
+                <button type="button" onclick="setStarRating(${n})" style="background:none;border:none;cursor:pointer;font-size:30px;transition:transform 0.15s opacity 0.15s;">⭐</button>
+              `).join('')}
+            </div>
+            <input type="hidden" id="prod-rating-val" name="rating" value="5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Comment</label>
+            <textarea class="form-control" name="comment" rows="4" placeholder="What did you think of this product?"></textarea>
+          </div>
+        </form>`,
+      footer: `
+        <button class="btn btn-ghost" onclick="UI.closeModal('prod-review-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="document.getElementById('prod-review-form').requestSubmit()">Submit</button>`
+    });
+    setStarRating(5);
+  }
+
+  function setStarRating(val) {
+    document.getElementById('prod-rating-val').value = val;
+    document.querySelectorAll('#star-pick button').forEach((btn, i) => {
+      btn.style.opacity   = i < val ? '1' : '0.3';
+      btn.style.transform = i < val ? 'scale(1.1)' : 'scale(1)';
+    });
+  }
+
+  async function submitProductReview(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    try {
+      await api.reviews.create({ ...data, product_id: productId, rating: parseInt(data.rating) });
+      UI.toast('Review submitted! Thank you 🙏','success');
+      UI.closeModal('prod-review-modal');
+      loadProductReviews();
+    } catch (err) { UI.toast(err.message,'error'); }
+  }
+
+  function goToCart() {
+    const user = Auth.getUser();
+    const map  = { admin:'../dashboard/admin.html', seller:'../dashboard/seller.html', shopper:'../dashboard/shopper.html' };
+    if (user) location.href = map[user.role] || '../index.html';
+    else      location.href = '../login.html';
+  }
+
+  function capitalize(s) { return (s||'').charAt(0).toUpperCase() + (s||'').slice(1); }
+</script>
+
+<style>
+  @media (max-width: 768px) {
+    #product-layout { grid-template-columns: 1fr !important; }
+    .product-price-tag { font-size: 30px; }
+  }
+</style>
+</body>
+</html>

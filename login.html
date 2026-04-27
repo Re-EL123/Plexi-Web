@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Plexi Digital Mall</title>
+  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/neomorphism.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+  <style>
+    body { display:flex; min-height:100vh; align-items:stretch; }
+
+    .auth-layout {
+      display: flex;
+      width: 100%;
+    }
+
+    .auth-panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl);
+      min-height: 100vh;
+    }
+
+    .auth-visual {
+      width: 45%;
+      background: linear-gradient(145deg, var(--primary-dark) 0%, var(--primary) 50%, var(--secondary) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-3xl);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-visual::before {
+      content: '';
+      position: absolute;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      top: -200px; left: -150px;
+    }
+    .auth-visual::after {
+      content: '';
+      position: absolute;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      bottom: -100px; right: -80px;
+    }
+
+    .auth-visual-content { position: relative; z-index: 1; text-align: center; color: white; }
+    .auth-visual-logo {
+      width: 80px; height: 80px;
+      border-radius: var(--radius-xl);
+      margin: 0 auto var(--space-lg);
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+    .auth-visual-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .auth-visual h1 {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: var(--space-md);
+    }
+    .auth-visual p {
+      font-size: 16px;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.7;
+      max-width: 320px;
+    }
+
+    .auth-features {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+      margin-top: var(--space-xl);
+    }
+    .auth-feature {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: rgba(255,255,255,0.9);
+      font-size: 14px;
+    }
+    .auth-feature-icon {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .auth-card {
+      background: var(--bg);
+      box-shadow: var(--neo-shadow-lg);
+      border-radius: var(--radius-xl);
+      padding: var(--space-2xl);
+      width: 100%;
+      max-width: 440px;
+      animation: fadeInUp 0.5s ease;
+    }
+
+    .auth-header { text-align: center; margin-bottom: var(--space-xl); }
+    .auth-header h2 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: var(--space-xs);
+    }
+    .auth-header p { color: var(--text-secondary); font-size: 15px; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin: var(--space-lg) 0;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    @media (max-width: 768px) {
+      .auth-visual { display: none; }
+      .auth-panel { padding: var(--space-md); }
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-layout">
+    <!-- Visual Side -->
+    <div class="auth-visual animate-fadeIn">
+      <div class="auth-visual-content">
+        <div class="auth-visual-logo">
+          <img src="assets/icons/logo.jpg" alt="Plexi">
+        </div>
+        <h1>Plexi Digital Mall</h1>
+        <p>South Africa's premier virtual shopping destination. Discover thousands of stores in one place.</p>
+        <div class="auth-features">
+          <div class="auth-feature">
+            <div class="auth-feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            Hundreds of stores across every category
+          </div>
+          <div class="auth-feature">
+            <div class="auth-feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            Interactive virtual mall map
+          </div>
+          <div class="auth-feature">
+            <div class="auth-feature-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+            </div>
+            Sell or shop with ease
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Side -->
+    <div class="auth-panel">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="navbar-logo" style="justify-content:center;margin-bottom:var(--space-sm);">
+            <img src="assets/icons/logo.jpg" alt="Plexi" style="width:40px;height:40px;border-radius:10px;">
+            <span style="font-family:var(--font-display);font-weight:800;font-size:22px;color:var(--text-primary);">Plexi<span style="color:var(--primary)">Mall</span></span>
+          </div>
+          <h2>Welcome back</h2>
+          <p>Sign in to your account to continue</p>
+        </div>
+
+        <div id="error-alert" class="alert alert-error" style="display:none;margin-bottom:var(--space-md);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <span id="error-text">Something went wrong</span>
+        </div>
+
+        <form id="login-form" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <div class="input-group">
+              <span class="input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+              <input type="email" id="email" class="form-control" placeholder="name@example.com" required autocomplete="email">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-group has-right">
+              <span class="input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input type="password" id="password" class="form-control" placeholder="Your password" required autocomplete="current-password">
+              <span class="input-icon-right" onclick="togglePassword('password', this)">
+                <svg id="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;margin-bottom:var(--space-lg);">
+            <a href="#" style="font-size:13px;">Forgot password?</a>
+          </div>
+
+          <button type="submit" id="login-btn" class="btn btn-primary btn-block btn-lg">
+            Sign In
+          </button>
+        </form>
+
+        <div class="divider">or</div>
+
+        <div style="text-align:center;">
+          <p style="color:var(--text-secondary);font-size:14px;">
+            Don't have an account?
+            <a href="signup.html" style="font-weight:700;color:var(--primary);">Create Account</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (Auth.isLoggedIn()) Auth.redirect(Auth.getRole());
+
+    function togglePassword(fieldId, iconEl) {
+      const input = document.getElementById(fieldId);
+      const isHidden = input.type === 'password';
+      input.type = isHidden ? 'text' : 'password';
+      iconEl.innerHTML = isHidden
+        ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+        : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const errorAlert = document.getElementById('error-alert');
+      const errorText  = document.getElementById('error-text');
+      errorAlert.style.display = 'none';
+
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+        errorText.textContent = 'Please fill in all fields.';
+        errorAlert.style.display = 'flex';
+        return;
+      }
+
+      UI.setLoading(btn, true, 'Signing in…');
+      try {
+        const user = await Auth.login(email, password);
+        UI.toast(`Welcome back, ${user.email?.split('@')[0]}!`, 'success');
+        setTimeout(() => Auth.redirect(user.role), 800);
+      } catch (err) {
+        errorText.textContent = err.message || 'Login failed. Please try again.';
+        errorAlert.style.display = 'flex';
+        errorAlert.classList.add('animate-scaleIn');
+      } finally {
+        UI.setLoading(btn, false, 'Sign In');
+      }
+    }
+  </script>
+</body>
+</html>

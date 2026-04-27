@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — Plexi Digital Mall</title>
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/neomorphism.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <style>.dash-section{display:none;}.dash-section.active{display:block;animation:fadeInUp 0.4s ease;}</style>
+</head>
+<body>
+<div id="page-loader" class="page-loader"><div class="loader-logo">Admin<span>Panel</span></div><div class="loader-bar"><div class="loader-bar-fill"></div></div></div>
+<div class="app-shell">
+  <div id="sidebar-overlay" style="display:none;position:fixed;inset:0;background:var(--overlay);z-index:calc(var(--z-dropdown) - 1);backdrop-filter:blur(4px);"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="../assets/icons/logo.jpg" alt="Plexi" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">
+      <span class="sidebar-logo-text">Plexi<span>Mall</span></span>
+      <span class="badge badge-error" style="margin-left:auto;font-size:10px;">Admin</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Overview</div>
+        <a href="#" class="active" data-section="sec-overview"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
+        <a href="#" data-section="sec-analytics"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</a>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Management</div>
+        <a href="#" data-section="sec-users"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Users</a>
+        <a href="#" data-section="sec-stores"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Stores</a>
+        <a href="#" data-section="sec-orders"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>Orders</a>
+        <a href="#" data-section="sec-products"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Products</a>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Support</div>
+        <a href="#" data-section="sec-tickets"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Support Tickets<span class="nav-badge" id="open-tickets-count">0</span></a>
+        <a href="#" data-section="sec-map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Mall Map</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="sidebar-user-avatar" data-user-avatar></div><div class="sidebar-user-info"><div class="sidebar-user-name" data-user-name>Admin</div><div class="sidebar-user-role">Administrator</div></div></div>
+      <button class="btn btn-ghost btn-sm btn-block mt-sm" data-logout style="justify-content:flex-start;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log Out</button>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn btn-ghost btn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div style="flex:1;max-width:300px;"><div class="search-bar"><span class="search-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input type="text" placeholder="Search…"></div></div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:var(--space-sm);">
+        <div class="dropdown">
+          <button class="btn btn-ghost btn-icon" data-dropdown="notif-drop" style="position:relative;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;background:var(--primary);color:white;font-size:9px;font-weight:700;align-items:center;justify-content:center;"></span>
+          </button>
+          <div class="dropdown-menu" id="notif-drop" style="right:0;min-width:300px;max-height:360px;overflow-y:auto;">
+            <div style="padding:var(--space-sm) var(--space-md);border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;"><span style="font-weight:700;font-size:14px;">Notifications</span><button class="btn btn-ghost btn-sm" onclick="Dashboard.markAllRead()">Mark all read</button></div>
+            <div id="notif-panel"></div>
+          </div>
+        </div>
+        <a href="../index.html" class="btn btn-ghost btn-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>View Site</a>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <!-- OVERVIEW -->
+      <div id="sec-overview" class="dash-section active">
+        <div style="margin-bottom:var(--space-xl);"><h2>Welcome back, <span data-user-name style="color:var(--primary)">Admin</span> 👋</h2><p style="color:var(--text-secondary);">Platform overview for today.</p></div>
+        <div class="stats-grid" id="admin-stats">
+          <div class="stat-card primary stagger-child"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="stat-label">Total Users</div><div class="stat-value" id="stat-users">—</div></div>
+          <div class="stat-card secondary stagger-child"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="stat-label">Total Stores</div><div class="stat-value" id="stat-stores">—</div></div>
+          <div class="stat-card success stagger-child"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg></div><div class="stat-label">Total Orders</div><div class="stat-value" id="stat-orders">—</div></div>
+          <div class="stat-card info stagger-child"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-label">Revenue</div><div class="stat-value" id="stat-revenue">—</div></div>
+        </div>
+        <div class="grid-2 mt-lg">
+          <div class="card"><div class="card-header"><h4 style="font-family:var(--font-display);">Pending Approvals</h4><button class="btn btn-ghost btn-sm" onclick="gotoSection('sec-stores')">All Stores</button></div><div class="card-body" style="padding:0;"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Store</th><th>Category</th><th>Actions</th></tr></thead><tbody id="pending-stores-tbody"></tbody></table></div></div></div>
+          <div class="card"><div class="card-header"><h4 style="font-family:var(--font-display);">Recent Users</h4><button class="btn btn-ghost btn-sm" onclick="gotoSection('sec-users')">All Users</button></div><div class="card-body" style="padding:0;"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody id="recent-users-tbody"></tbody></table></div></div></div>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div id="sec-users" class="dash-section">
+        <div class="section-header mb-lg"><h2 class="section-title">User <span>Management</span></h2>
+          <div style="display:flex;gap:var(--space-sm);">
+            <div class="search-bar" style="width:220px;"><span class="search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input type="text" id="users-search" placeholder="Search users…" oninput="debounce(loadUsers,400)()"></div>
+            <select class="form-control" id="users-role" style="width:130px;" onchange="loadUsers(1)"><option value="">All Roles</option><option value="admin">Admin</option><option value="seller">Seller</option><option value="shopper">Shopper</option></select>
+          </div>
+        </div>
+        <div class="card"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="users-tbody"></tbody></table></div><div class="card-footer"><div id="users-pagination"></div></div></div>
+      </div>
+
+      <!-- STORES -->
+      <div id="sec-stores" class="dash-section">
+        <div class="section-header mb-lg"><h2 class="section-title">Store <span>Management</span></h2>
+          <div style="display:flex;gap:var(--space-sm);">
+            <div class="search-bar" style="width:220px;"><span class="search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input type="text" id="stores-search" placeholder="Search stores…" oninput="debounce(loadAdminStores,400)()"></div>
+            <select class="form-control" id="stores-status" style="width:140px;" onchange="loadAdminStores(1)"><option value="">All Statuses</option><option value="draft">Draft</option><option value="published">Published</option><option value="suspended">Suspended</option><option value="rejected">Rejected</option></select>
+          </div>
+        </div>
+        <div class="card"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Store</th><th>Category</th><th>Status</th><th>Featured</th><th>Created</th><th>Actions</th></tr></thead><tbody id="stores-tbody"></tbody></table></div><div class="card-footer"><div id="stores-pagination"></div></div></div>
+      </div>
+
+      <!-- ORDERS -->
+      <div id="sec-orders" class="dash-section">
+        <div class="section-header mb-lg"><h2 class="section-title">All <span>Orders</span></h2>
+          <select class="form-control" id="orders-status" style="width:160px;" onchange="loadAdminOrders(1)"><option value="">All Statuses</option><option value="pending">Pending</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select>
+        </div>
+        <div class="card"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Order ID</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="orders-tbody"></tbody></table></div><div class="card-footer"><div id="orders-pagination"></div></div></div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div id="sec-products" class="dash-section">
+        <div class="section-header mb-lg"><h2 class="section-title">All <span>Products</span></h2></div>
+        <div class="card"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody id="products-tbody"></tbody></table></div><div class="card-footer"><div id="products-pagination"></div></div></div>
+      </div>
+
+      <!-- TICKETS -->
+      <div id="sec-tickets" class="dash-section">
+        <div class="section-header mb-lg"><h2 class="section-title">Support <span>Tickets</span></h2>
+          <select class="form-control" id="ticket-status" style="width:160px;" onchange="loadTickets(1)"><option value="">All</option><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option><option value="closed">Closed</option></select>
+        </div>
+        <div class="card"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Subject</th><th>Category</th><th>Priority</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="tickets-tbody"></tbody></table></div><div class="card-footer"><div id="tickets-pagination"></div></div></div>
+      </div>
+
+      <!-- MAP -->
+      <div id="sec-map" class="dash-section">
+        <div class="section-header mb-lg"><h2 class="section-title">Mall <span>Map Manager</span></h2></div>
+        <div id="admin-map"></div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div id="sec-analytics" class="dash-section">
+        <div class="section-header mb-lg"><h2 class="section-title">Platform <span>Analytics</span></h2></div>
+        <div class="stats-grid" id="analytics-stats"></div>
+        <div class="grid-2 mt-lg">
+          <div class="card"><div class="card-header"><h4>Orders by Status</h4></div><div class="card-body" id="orders-chart" style="min-height:180px;"></div></div>
+          <div class="card"><div class="card-header"><h4>Users by Role</h4></div><div class="card-body" id="users-chart" style="min-height:180px;"></div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/state.js"></script>
+<script src="../assets/js/map.js"></script>
+<script src="../assets/js/dashboard.js"></script>
+<script>
+Auth.requireRole('admin');
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+function gotoSection(id){Dashboard.showSection(id);document.querySelectorAll('.sidebar-nav a').forEach(a=>a.classList.toggle('active',a.dataset.section===id));}
+
+document.addEventListener('DOMContentLoaded', async()=>{
+  Dashboard.init(); UI.hidePageLoader(); document.getElementById('sidebar-toggle').style.display='flex';
+  document.querySelectorAll('[data-section]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();gotoSection(a.dataset.section);if(a.dataset.section==='sec-map')MallMap.render();});});
+  await loadAdminStats(); loadPendingStores(); loadRecentUsers();
+  loadUsers(1); loadAdminStores(1); loadAdminOrders(1); loadAdminProducts(1); loadTickets(1);
+  MallMap.init(document.getElementById('admin-map'));
+  setTimeout(()=>UI.staggerReveal(document.querySelector('.stats-grid')),300);
+});
+
+async function loadAdminStats(){
+  try{
+    const d=await api.admin.stats();
+    document.getElementById('stat-users').textContent=d.users?.total||0;
+    document.getElementById('stat-stores').textContent=d.stores?.total||0;
+    document.getElementById('stat-orders').textContent=d.orders?.total||0;
+    document.getElementById('stat-revenue').textContent=UI.formatCurrency(d.revenue||0);
+    document.getElementById('open-tickets-count').textContent=d.tickets?.open||0;
+    // Analytics
+    const aEl=document.getElementById('analytics-stats');
+    if(aEl)aEl.innerHTML=`<div class="stat-card primary"><div class="stat-label">Total Users</div><div class="stat-value">${d.users?.total||0}</div></div><div class="stat-card secondary"><div class="stat-label">Sellers</div><div class="stat-value">${d.users?.sellers||0}</div></div><div class="stat-card success"><div class="stat-label">Published Stores</div><div class="stat-value">${d.stores?.published||0}</div></div><div class="stat-card info"><div class="stat-label">Open Tickets</div><div class="stat-value">${d.tickets?.open||0}</div></div>`;
+    const oEl=document.getElementById('orders-chart');
+    if(oEl&&d.orders){const ss=['pending','processing','shipped','delivered','cancelled'];const mx=Math.max(...ss.map(s=>d.orders[s]||0),1);oEl.innerHTML=ss.map(s=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="width:80px;font-size:12px;font-weight:600;text-transform:capitalize;color:var(--text-secondary);">${s}</div><div style="flex:1;background:var(--bg);border-radius:99px;height:10px;box-shadow:var(--neo-shadow-inset);overflow:hidden;"><div style="height:100%;width:${((d.orders[s]||0)/mx)*100}%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;"></div></div><div style="font-size:12px;font-weight:700;width:24px;">${d.orders[s]||0}</div></div>`).join('');}
+    const uEl=document.getElementById('users-chart');
+    if(uEl&&d.users){const roles=[{l:'Admins',v:d.users.admins||0,c:'var(--primary)'},{l:'Sellers',v:d.users.sellers||0,c:'var(--secondary)'},{l:'Shoppers',v:d.users.shoppers||0,c:'var(--success)'}];const tot=roles.reduce((s,r)=>s+r.v,0)||1;uEl.innerHTML=roles.map(r=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="width:8px;height:8px;border-radius:50%;background:${r.c};"></div><div style="flex:1;font-size:13px;color:var(--text-secondary);">${r.l}</div><strong>${r.v}</strong><div style="font-size:12px;color:var(--text-muted);">${Math.round(r.v/tot*100)}%</div></div>`).join('');}
+  }catch(e){console.error(e);}
+}
+
+async function loadPendingStores(){
+  try{const d=await api.admin.stores({status:'draft',limit:5});const s=Array.isArray(d)?d:(d.stores||[]);
+  Dashboard.renderTable(document.getElementById('pending-stores-tbody'),s.map(st=>`<tr><td><strong>${st.name}</strong></td><td>${st.category}</td><td class="table-actions"><button class="btn btn-success btn-sm" onclick="approveStore('${st.id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectStore('${st.id}')">Reject</button></td></tr>`),'No pending stores');}catch(e){}
+}
+
+async function loadRecentUsers(){
+  try{const d=await api.admin.users({limit:5});const u=Array.isArray(d)?d:(d.users||[]);
+  Dashboard.renderTable(document.getElementById('recent-users-tbody'),u.map(usr=>`<tr><td><div style="display:flex;align-items:center;gap:6px;"><div class="avatar avatar-sm">${usr.email.charAt(0).toUpperCase()}</div><span style="font-size:12px;">${usr.email}</span></div></td><td>${UI.badge(usr.role,usr.role==='admin'?'error':usr.role==='seller'?'secondary':'info')}</td><td>${usr.banned?UI.badge('Banned','error'):UI.badge('Active','success')}</td></tr>`),'No users');}catch(e){}
+}
+
+async function loadUsers(page=1){
+  const q=document.getElementById('users-search')?.value||'';const role=document.getElementById('users-role')?.value||'';
+  try{const d=await api.admin.users({page,limit:15,search:q,role});const u=Array.isArray(d)?d:(d.users||[]);const tot=d.total||u.length;
+  Dashboard.renderTable(document.getElementById('users-tbody'),u.map(usr=>`<tr><td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">${usr.email.charAt(0).toUpperCase()}</div><div><div style="font-weight:600;font-size:13px;">${usr.email}</div><div style="font-size:11px;color:var(--text-muted);">${usr.id?.slice(0,12)}…</div></div></div></td><td>${UI.badge(usr.role,usr.role==='admin'?'error':usr.role==='seller'?'secondary':'info')}</td><td>${usr.banned?UI.badge('Banned','error'):UI.badge('Active','success')}</td><td>${UI.formatDate(usr.created_at)}</td><td class="table-actions">${usr.banned?`<button class="btn btn-ghost btn-sm" onclick="unbanUser('${usr.id}')">Unban</button>`:`<button class="btn btn-danger btn-sm" onclick="banUser('${usr.id}')">Ban</button>`}</td></tr>`),'No users found');
+  Dashboard.renderPagination('users-pagination',page,Math.ceil(tot/15),`(p)=>loadUsers(p)`);}catch(e){UI.toast(e.message,'error');}
+}
+async function banUser(id){UI.confirmDialog({title:'Ban User',message:'This user will be blocked.',confirmText:'Ban',danger:true,onConfirm:async()=>{try{await api.admin.banUser(id,'Banned by admin');UI.toast('User banned','success');loadUsers(1);loadRecentUsers();}catch(e){UI.toast(e.message,'error');}}});}
+async function unbanUser(id){try{await api.admin.unbanUser(id);UI.toast('User unbanned','success');loadUsers(1);}catch(e){UI.toast(e.message,'error');}}
+
+async function loadAdminStores(page=1){
+  const q=document.getElementById('stores-search')?.value||'';const status=document.getElementById('stores-status')?.value||'';
+  try{const d=await api.admin.stores({page,limit:15,search:q,status});const s=Array.isArray(d)?d:(d.stores||[]);const tot=d.total||s.length;
+  Dashboard.renderTable(document.getElementById('stores-tbody'),s.map(st=>`<tr><td><strong>${st.name}</strong></td><td>${st.category}</td><td>${UI.statusBadge(st.status,CONFIG.STORE_STATUSES)}</td><td>${st.featured?'⭐':'—'}</td><td>${UI.formatDate(st.created_at)}</td><td class="table-actions"><a href="../store/store.html?id=${st.id}" class="btn btn-ghost btn-sm">View</a>${st.status==='draft'?`<button class="btn btn-success btn-sm" onclick="approveStore('${st.id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectStore('${st.id}')">Reject</button>`:''}${st.status==='published'?`<button class="btn btn-danger btn-sm" onclick="suspendStore('${st.id}')">Suspend</button>`:''}${st.status==='suspended'?`<button class="btn btn-success btn-sm" onclick="approveStore('${st.id}')">Restore</button>`:''}${`<button class="btn btn-ghost btn-sm" onclick="toggleFeature('${st.id}')" style="font-size:11px;">${st.featured?'Unfeature':'⭐ Feature'}</button>`}</td></tr>`),'No stores found');
+  Dashboard.renderPagination('stores-pagination',page,Math.ceil(tot/15),`(p)=>loadAdminStores(p)`);}catch(e){UI.toast(e.message,'error');}
+}
+async function approveStore(id){try{await api.admin.approveStore(id);UI.toast('Store approved!','success');loadAdminStores(1);loadPendingStores();loadAdminStats();}catch(e){UI.toast(e.message,'error');}}
+async function rejectStore(id){UI.confirmDialog({title:'Reject Store',message:'Reject this store application?',confirmText:'Reject',danger:true,onConfirm:async()=>{try{await api.admin.rejectStore(id,'Does not meet requirements');UI.toast('Store rejected','info');loadAdminStores(1);loadPendingStores();}catch(e){UI.toast(e.message,'error');}}});}
+async function suspendStore(id){UI.confirmDialog({title:'Suspend Store',message:'Suspend this store?',confirmText:'Suspend',danger:true,onConfirm:async()=>{try{await api.admin.suspendStore(id,'Policy violation');UI.toast('Store suspended','info');loadAdminStores(1);}catch(e){UI.toast(e.message,'error');}}});}
+async function toggleFeature(id){try{await api.admin.featureStore(id);UI.toast('Updated!','success');loadAdminStores(1);}catch(e){UI.toast(e.message,'error');}}
+
+async function loadAdminOrders(page=1){
+  const status=document.getElementById('orders-status')?.value||'';
+  try{const d=await api.orders.list({page,limit:15,status});const o=Array.isArray(d)?d:(d.orders||[]);const tot=d.total||o.length;
+  Dashboard.renderTable(document.getElementById('orders-tbody'),o.map(ord=>`<tr><td><code style="font-size:12px;">#${ord.id?.slice(0,8)}</code></td><td><strong>${UI.formatCurrency(ord.total)}</strong></td><td>${UI.statusBadge(ord.status,CONFIG.ORDER_STATUSES)}</td><td>${UI.formatDate(ord.created_at)}</td><td class="table-actions"><select class="form-control" style="font-size:12px;padding:4px 8px;height:auto;" onchange="updateOrderStatus('${ord.id}',this.value)">${['pending','processing','shipped','delivered','cancelled'].map(s=>`<option ${s===ord.status?'selected':''}>${s}</option>`).join('')}</select></td></tr>`),'No orders found');
+  Dashboard.renderPagination('orders-pagination',page,Math.ceil(tot/15),`(p)=>loadAdminOrders(p)`);}catch(e){}
+}
+async function updateOrderStatus(id,status){try{await api.orders.update(id,{status});UI.toast('Order updated','success');}catch(e){UI.toast(e.message,'error');}}
+
+async function loadAdminProducts(page=1){
+  try{const d=await api.products.all({page,limit:15});const p=Array.isArray(d)?d:(d.products||[]);const tot=d.total||p.length;
+  Dashboard.renderTable(document.getElementById('products-tbody'),p.map(pr=>`<tr><td><div style="display:flex;align-items:center;gap:8px;">${pr.images?.[0]?`<img src="${pr.images[0]}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;">`:'<div style="width:32px;height:32px;background:var(--bg);border-radius:6px;display:flex;align-items:center;justify-content:center;">📦</div>'}<strong style="font-size:13px;">${pr.name}</strong></div></td><td>${pr.category}</td><td>${UI.formatCurrency(pr.price)}</td><td style="color:${pr.inventory<5?'var(--error)':'inherit'};font-weight:${pr.inventory<5?700:400};">${pr.inventory}</td><td class="table-actions"><a href="../store/product.html?id=${pr.id}" class="btn btn-ghost btn-sm">View</a><button class="btn btn-danger btn-sm" onclick="deleteProduct('${pr.id}')">Delete</button></td></tr>`),'No products');
+  Dashboard.renderPagination('products-pagination',page,Math.ceil(tot/15),`(p)=>loadAdminProducts(p)`);}catch(e){}
+}
+async function deleteProduct(id){UI.confirmDialog({title:'Delete Product',message:'Cannot be undone.',confirmText:'Delete',danger:true,onConfirm:async()=>{try{await api.products.delete(id);UI.toast('Deleted','success');loadAdminProducts(1);}catch(e){UI.toast(e.message,'error');}}});}
+
+async function loadTickets(page=1){
+  const status=document.getElementById('ticket-status')?.value||'';
+  try{const d=await api.admin.tickets({page,limit:15,status});const t=Array.isArray(d)?d:(d.tickets||[]);const tot=d.total||t.length;
+  Dashboard.renderTable(document.getElementById('tickets-tbody'),t.map(tk=>`<tr><td><strong style="font-size:13px;">${tk.subject}</strong></td><td>${tk.category}</td><td>${UI.statusBadge(tk.priority,CONFIG.TICKET_PRIORITIES)}</td><td>${UI.statusBadge(tk.status,CONFIG.TICKET_STATUSES)}</td><td>${UI.formatDate(tk.created_at)}</td><td class="table-actions"><button class="btn btn-primary btn-sm" onclick="viewTicket('${tk.id}')">View</button><select class="form-control" style="font-size:12px;padding:4px 8px;height:auto;" onchange="updateTicketStatus('${tk.id}',this.value)"><option value="">Update…</option>${['open','in_progress','resolved','closed'].map(s=>`<option ${s===tk.status?'selected':''}>${s}</option>`).join('')}</select></td></tr>`),'No tickets');
+  Dashboard.renderPagination('tickets-pagination',page,Math.ceil(tot/15),`(p)=>loadTickets(p)`);}catch(e){}
+}
+async function updateTicketStatus(id,status){if(!status)return;try{await api.support.update(id,{status});UI.toast('Updated','success');loadTickets(1);}catch(e){UI.toast(e.message,'error');}}
+async function viewTicket(id){
+  try{
+    const [tk,msgs]=await Promise.all([api.support.get(id),api.support.messages(id)]);
+    const messages=Array.isArray(msgs)?msgs:(msgs.messages||[]);
+    UI.createModal({id:'ticket-modal',title:`Ticket: ${tk.subject}`,content:`
+      <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;margin-bottom:var(--space-md);">${UI.statusBadge(tk.priority,CONFIG.TICKET_PRIORITIES)}${UI.statusBadge(tk.status,CONFIG.TICKET_STATUSES)}<span class="badge badge-gray">${tk.category}</span></div>
+      <div style="background:var(--bg);box-shadow:var(--neo-shadow-inset);border-radius:var(--radius-md);padding:var(--space-md);max-height:220px;overflow-y:auto;margin-bottom:var(--space-md);">
+        ${messages.length?messages.map(m=>`<div style="margin-bottom:var(--space-sm);padding-bottom:var(--space-sm);border-bottom:1px solid var(--border-light);"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">${UI.timeAgo(m.created_at)}</div><div style="font-size:13px;">${m.message}</div></div>`).join(''):'<p style="color:var(--text-muted);text-align:center;font-size:13px;">No messages</p>'}
+      </div>
+      <textarea id="ticket-reply" class="form-control" placeholder="Write a reply…" rows="3"></textarea>
+    `,footer:`<button class="btn btn-ghost" onclick="UI.closeModal('ticket-modal')">Close</button><button class="btn btn-primary" onclick="replyTicket('${id}')">Send Reply</button>`});
+  }catch(e){UI.toast(e.message,'error');}
+}
+async function replyTicket(id){const msg=document.getElementById('ticket-reply')?.value?.trim();if(!msg)return;try{await api.support.message(id,msg);UI.toast('Reply sent','success');UI.closeModal('ticket-modal');}catch(e){UI.toast(e.message,'error');}}
+</script>
+</body>
+</html>
