@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Account — Plexi Digital Mall</title>
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/neomorphism.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <style>
+    .sidebar-overlay{display:none;position:fixed;inset:0;background:var(--overlay);z-index:99;}
+    .sidebar-overlay.show{display:block;}
+    .topbar-menu-btn{display:none;background:var(--bg);border:none;cursor:pointer;padding:8px;border-radius:var(--radius-md);box-shadow:var(--neo-shadow-sm);}
+    @media(max-width:1024px){.topbar-menu-btn{display:flex;align-items:center;}}
+  </style>
+</head>
+<body>
+
+<div id="page-loader" class="page-loader">
+  <div class="loader-logo">Plexi<span>Mall</span></div>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+</div>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="../assets/icons/logo.jpg" alt="Plexi" style="width:34px;height:34px;border-radius:8px;object-fit:cover;">
+      <span class="sidebar-logo-text">Plexi<span>Mall</span></span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Shopping</div>
+        <a href="#" class="active" data-section="section-overview">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Overview
+        </a>
+        <a href="#" data-section="section-orders">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>My Orders
+        </a>
+        <a href="#" data-section="section-cart">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Cart
+          <span class="nav-badge" id="cart-nav-badge" style="display:none;">0</span>
+        </a>
+        <a href="#" data-section="section-wishlist">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Wishlist
+        </a>
+        <a href="#" data-section="section-reviews">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>My Reviews
+        </a>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Account</div>
+        <a href="#" data-section="section-profile">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile
+        </a>
+        <a href="#" data-section="section-notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications
+          <span class="nav-badge" id="notif-badge" style="display:none;">0</span>
+        </a>
+        <a href="#" data-section="section-support">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Support
+        </a>
+        <a href="../index.html">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Continue Shopping
+        </a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar" data-user-avatar></div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" data-user-email></div>
+          <div class="sidebar-user-role">Shopper</div>
+        </div>
+        <button class="btn btn-ghost btn-icon-sm" data-logout title="Log Out">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="topbar-menu-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div style="flex:1;"><h4 id="topbar-title" style="font-size:16px;font-weight:700;">Overview</h4></div>
+      <a href="../index.html" class="btn btn-primary btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        Shop Now
+      </a>
+    </header>
+
+    <main class="page-content">
+
+      <!-- OVERVIEW -->
+      <section id="section-overview" class="dash-section" style="display:block;">
+        <div style="margin-bottom:var(--space-xl);">
+          <h2>Hey, <span data-user-name style="color:var(--primary);">Shopper</span> 👋</h2>
+          <p style="color:var(--text-secondary);">Here's your shopping activity at a glance.</p>
+        </div>
+        <div class="stats-grid" style="margin-bottom:var(--space-xl);">
+          <div class="stat-card primary stagger-child"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div><div class="stat-label">Total Orders</div><div class="stat-value" id="sh-stat-orders">—</div></div>
+          <div class="stat-card secondary stagger-child delay-1"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-label">Total Spent</div><div class="stat-value" id="sh-stat-spent">—</div></div>
+          <div class="stat-card info stagger-child delay-2"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div><div class="stat-label">Wishlist</div><div class="stat-value" id="sh-stat-wishlist">—</div></div>
+          <div class="stat-card success stagger-child delay-3"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div><div class="stat-label">In Cart</div><div class="stat-value" id="sh-stat-cart">—</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h4>Recent Orders</h4><button class="btn btn-ghost btn-sm" onclick="Dashboard.showSection('section-orders');loadOrders()">View All</button></div>
+          <div id="recent-orders"><div style="padding:var(--space-lg);text-align:center;color:var(--text-muted);">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- ORDERS -->
+      <section id="section-orders" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);">
+          <h2>My Orders</h2>
+          <select id="orders-status" class="form-control" style="width:auto;" onchange="loadOrders()">
+            <option value="">All</option><option value="pending">Pending</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Order</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="orders-tbody"><tr><td colspan="5" style="text-align:center;padding:var(--space-xl);">Loading…</td></tr></tbody>
+        </table></div></div>
+      </section>
+
+      <!-- CART -->
+      <section id="section-cart" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);">
+          <h2>My Cart</h2>
+          <button class="btn btn-danger btn-sm" onclick="clearCart()">Clear Cart</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:var(--space-xl);align-items:start;">
+          <div id="cart-items"></div>
+          <div class="neo-card" id="cart-summary" style="position:sticky;top:calc(var(--header-h) + var(--space-md));">
+            <h4 style="margin-bottom:var(--space-md);">Order Summary</h4>
+            <div id="cart-summary-lines"></div>
+            <div style="border-top:1px solid var(--border);margin:var(--space-md) 0;padding-top:var(--space-md);">
+              <div class="flex-between"><strong>Total</strong><strong id="cart-total" style="font-size:20px;color:var(--primary);">R0.00</strong></div>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="UI.toast('Checkout coming soon!','info')">Proceed to Checkout</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- WISHLIST -->
+      <section id="section-wishlist" class="dash-section" style="display:none;">
+        <h2 style="margin-bottom:var(--space-lg);">My Wishlist</h2>
+        <div id="wishlist-grid" class="grid-auto"></div>
+      </section>
+
+      <!-- REVIEWS -->
+      <section id="section-reviews" class="dash-section" style="display:none;">
+        <h2 style="margin-bottom:var(--space-lg);">My Reviews</h2>
+        <div id="reviews-list"></div>
+      </section>
+
+      <!-- PROFILE -->
+      <section id="section-profile" class="dash-section" style="display:none;">
+        <h2 style="margin-bottom:var(--space-lg);">My Profile</h2>
+        <div class="card" style="max-width:540px;">
+          <div class="card-body">
+            <div style="display:flex;align-items:center;gap:var(--space-lg);margin-bottom:var(--space-xl);">
+              <div class="avatar avatar-xl" data-user-avatar></div>
+              <div><h3 data-user-name></h3><p style="color:var(--text-muted);" data-user-email></p><span class="badge badge-info">Shopper</span></div>
+            </div>
+            <div class="form-group"><label class="form-label">Display Name</label><input type="text" id="profile-name" class="form-control" placeholder="Your name"></div>
+            <div class="form-group"><label class="form-label">Email Address</label><input type="email" id="profile-email" class="form-control" readonly style="opacity:0.7;cursor:not-allowed;"></div>
+            <button class="btn btn-primary" onclick="saveProfile()">Save Profile</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- NOTIFICATIONS -->
+      <section id="section-notifications" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);">
+          <h2>Notifications</h2>
+          <button class="btn btn-ghost btn-sm" onclick="Dashboard.markAllRead()">Mark All Read</button>
+        </div>
+        <div class="card"><div id="notif-full-panel" style="min-height:200px;"></div></div>
+      </section>
+
+      <!-- SUPPORT -->
+      <section id="section-support" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);"><h2>Support</h2><button class="btn btn-primary" onclick="openNewTicketModal()">New Ticket</button></div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Subject</th><th>Priority</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="tickets-tbody"><tr><td colspan="5" style="text-align:center;padding:var(--space-xl);">Loading…</td></tr></tbody>
+        </table></div></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/state.js"></script>
+<script src="../assets/js/dashboard.js"></script>
+<script>
+  Auth.requireRole('shopper');
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    Dashboard.init();
+    State.init();
+    Auth.populateUserUI();
+    const user = Auth.getUser();
+    if (user) {
+      document.getElementById('profile-email').value = user.email || '';
+      document.getElementById('profile-name').value  = user.metadata?.name || '';
+    }
+    await loadOverview();
+    UI.hidePageLoader();
+    UI.staggerReveal(document.body);
+  });
+
+  document.querySelectorAll('[data-section]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const sec = a.dataset.section;
+      Dashboard.showSection(sec);
+      document.getElementById('topbar-title').textContent = a.textContent.trim();
+      if (sec === 'section-orders')       loadOrders();
+      if (sec === 'section-cart')         loadCart();
+      if (sec === 'section-wishlist')     loadWishlist();
+      if (sec === 'section-reviews')      loadReviews();
+      if (sec === 'section-notifications')loadNotifFull();
+      if (sec === 'section-support')      loadTickets();
+    });
+  });
+
+  async function loadOverview() {
+    try {
+      const [od, wd, cd] = await Promise.allSettled([api.orders.list(), api.wishlist.list(), api.cart.get()]);
+      const orders  = od.status==='fulfilled' ? (Array.isArray(od.value)?od.value:od.value.orders||[]) : [];
+      const wish    = wd.status==='fulfilled' ? (Array.isArray(wd.value)?wd.value:wd.value.items||[])  : [];
+      const cart    = cd.status==='fulfilled' ? (Array.isArray(cd.value)?cd.value:cd.value.items||[])  : [];
+
+      document.getElementById('sh-stat-orders').textContent  = orders.length;
+      document.getElementById('sh-stat-spent').textContent   = UI.formatCurrency(orders.filter(o=>o.status==='delivered').reduce((s,o)=>s+parseFloat(o.total||0),0));
+      document.getElementById('sh-stat-wishlist').textContent = wish.length;
+      const cartCount = cart.reduce((s,i)=>s+(i.quantity||1),0);
+      document.getElementById('sh-stat-cart').textContent    = cartCount;
+      const cb = document.getElementById('cart-nav-badge');
+      if (cb) { cb.textContent = cartCount; cb.style.display = cartCount > 0 ? 'flex' : 'none'; }
+
+      const el = document.getElementById('recent-orders');
+      if (!orders.length) { el.innerHTML = '<div style="padding:var(--space-lg);text-align:center;color:var(--text-muted);">No orders yet. <a href="../index.html">Start shopping →</a></div>'; return; }
+      el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Order</th><th>Total</th><th>Status</th><th>Date</th></tr></thead><tbody>
+        ${orders.slice(0,5).map(o=>`<tr>
+          <td style="font-family:monospace;font-size:12px;">#${o.id.slice(0,8)}</td>
+          <td><strong>${UI.formatCurrency(o.total)}</strong></td>
+          <td>${UI.statusBadge(o.status,CONFIG.ORDER_STATUSES)}</td>
+          <td>${UI.formatDate(o.created_at)}</td>
+        </tr>`).join('')}
+      </tbody></table></div>`;
+    } catch (_) {}
+  }
+
+  async function loadOrders() {
+    const status = document.getElementById('orders-status')?.value || '';
+    const tbody  = document.getElementById('orders-tbody');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:var(--space-lg);">Loading…</td></tr>';
+    try {
+      const data   = await api.orders.list({ status });
+      const orders = Array.isArray(data) ? data : (data.orders || []);
+      tbody.innerHTML = orders.length ? orders.map(o=>`
+        <tr>
+          <td style="font-family:monospace;font-size:12px;">#${o.id.slice(0,8)}</td>
+          <td><strong>${UI.formatCurrency(o.total)}</strong></td>
+          <td>${UI.statusBadge(o.status,CONFIG.ORDER_STATUSES)}</td>
+          <td>${UI.formatDate(o.created_at)}</td>
+          <td class="table-actions">
+            <button class="btn btn-ghost btn-sm" onclick="viewOrderDetail('${o.id}')">Details</button>
+            ${o.status==='pending'?`<button class="btn btn-danger btn-sm" onclick="cancelOrder('${o.id}')">Cancel</button>`:''}
+          </td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" style="text-align:center;padding:var(--space-xl);">No orders found</td></tr>';
+    } catch (_) {}
+  }
+
+  async function loadCart() {
+    const el = document.getElementById('cart-items');
+    el.innerHTML = '<div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">Loading…</div>';
+    try {
+      const data  = await api.cart.get();
+      const items = Array.isArray(data) ? data : (data.items || []);
+      if (!items.length) {
+        el.innerHTML = UI.empty('Cart is Empty','Browse stores to add items!','🛒',`<a href="../index.html" class="btn btn-primary">Shop Now</a>`);
+        document.getElementById('cart-total').textContent = 'R0.00';
+        return;
+      }
+      const total = items.reduce((s,i)=>s+(parseFloat(i.product?.price||i.price||0)*i.quantity),0);
+      document.getElementById('cart-total').textContent = UI.formatCurrency(total);
+      el.innerHTML = items.map(item=>`
+        <div class="card" style="display:flex;align-items:center;gap:var(--space-md);padding:var(--space-md);margin-bottom:var(--space-sm);">
+          <div style="width:72px;height:72px;border-radius:var(--radius-md);background:var(--bg);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+            ${item.product?.images?.[0]?`<img src="${item.product.images[0]}" style="width:100%;height:100%;object-fit:cover;">`:'<span style="font-size:32px;">🛍️</span>'}
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:600;">${item.product?.name||'Product'}</div>
+            <div style="font-size:14px;color:var(--primary);font-weight:700;">${UI.formatCurrency(item.product?.price||item.price||0)}</div>
+            ${item.variant?`<div style="font-size:12px;color:var(--text-muted);">${item.variant}</div>`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:var(--space-sm);">
+            <button class="btn btn-ghost btn-icon-sm" onclick="updateCartQty('${item.id}',${item.quantity-1})">−</button>
+            <span style="font-weight:700;min-width:24px;text-align:center;">${item.quantity}</span>
+            <button class="btn btn-ghost btn-icon-sm" onclick="updateCartQty('${item.id}',${item.quantity+1})">+</button>
+          </div>
+          <div style="font-weight:800;font-size:16px;color:var(--primary);min-width:72px;text-align:right;">${UI.formatCurrency(parseFloat(item.product?.price||item.price||0)*item.quantity)}</div>
+          <button class="btn btn-ghost btn-icon-sm" style="color:var(--error);" onclick="removeFromCart('${item.id}')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>`).join('');
+    } catch(e){ el.innerHTML = UI.empty('Error', e.message); }
+  }
+
+  async function updateCartQty(id, qty) {
+    if (qty < 1) { await removeFromCart(id); return; }
+    try { await api.cart.update(id, qty); loadCart(); } catch(e){ UI.toast(e.message,'error'); }
+  }
+  async function removeFromCart(id) {
+    try { await api.cart.remove(id); UI.toast('Removed from cart','info'); loadCart(); } catch(e){ UI.toast(e.message,'error'); }
+  }
+  async function clearCart() {
+    UI.confirmDialog({ title:'Clear Cart', message:'Remove all items?', confirmText:'Clear', danger:true,
+      onConfirm: async()=>{ try{ await api.cart.clear(); loadCart(); } catch(e){ UI.toast(e.message,'error'); } }
+    });
+  }
+
+  async function loadWishlist() {
+    const grid = document.getElementById('wishlist-grid');
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:var(--space-xl);">Loading…</div>';
+    try {
+      const data  = await api.wishlist.list();
+      const items = Array.isArray(data) ? data : (data.items || []);
+      document.getElementById('sh-stat-wishlist').textContent = items.length;
+      if (!items.length) { grid.innerHTML = UI.empty('Wishlist is Empty','Save items you love!','❤️',`<a href="../index.html" class="btn btn-primary">Discover Stores</a>`); return; }
+      grid.innerHTML = items.map(item=>`
+        <div class="product-card">
+          <div class="product-card-img">
+            ${item.product?.images?.[0]?`<img src="${item.product.images[0]}" alt="">`:'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--bg);">🛍️</div>'}
+            <button class="product-card-wish active" onclick="removeWishlistItem('${item.product_id}')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--primary)" stroke="var(--primary)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </button>
+          </div>
+          <div class="product-card-body">
+            <div class="product-card-name">${item.product?.name||'Product'}</div>
+            <div class="product-card-price">${UI.formatCurrency(item.product?.price||0)}</div>
+          </div>
+          <div class="product-card-footer">
+            <button class="btn btn-primary btn-sm" onclick="addWishToCart('${item.product_id}')">Add to Cart</button>
+            <a href="../store/product.html?id=${item.product_id}" class="btn btn-ghost btn-sm">View</a>
+          </div>
+        </div>`).join('');
+    } catch(e){ grid.innerHTML = UI.empty('Error', e.message); }
+  }
+
+  async function removeWishlistItem(pid) {
+    try { await api.wishlist.remove(pid); UI.toast('Removed from wishlist','info'); loadWishlist(); } catch(e){ UI.toast(e.message,'error'); }
+  }
+  async function addWishToCart(pid) {
+    try { await api.cart.add({ product_id: pid, quantity: 1 }); UI.toast('Added to cart!','success'); } catch(e){ UI.toast(e.message,'error'); }
+  }
+
+  async function loadReviews() {
+    const user = Auth.getUser();
+    const el   = document.getElementById('reviews-list');
+    el.innerHTML = '<div style="text-align:center;padding:var(--space-xl);">Loading…</div>';
+    try {
+      const data    = await api.reviews.list({ user_id: user?.id });
+      const reviews = Array.isArray(data) ? data : (data.reviews || []);
+      if (!reviews.length) { el.innerHTML = UI.empty('No Reviews Yet','Rate products and stores after purchase.'); return; }
+      el.innerHTML = reviews.map(r=>`
+        <div class="card" style="margin-bottom:var(--space-sm);">
+          <div class="card-body" style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>${UI.stars(r.rating)}<p style="margin-top:var(--space-sm);color:var(--text-secondary);">${r.comment||'No comment'}</p><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${UI.timeAgo(r.created_at)}</div></div>
+            <button class="btn btn-danger btn-sm" onclick="deleteReview('${r.id}')">Delete</button>
+          </div>
+        </div>`).join('');
+    } catch(e){ el.innerHTML = UI.empty('Error', e.message); }
+  }
+
+  async function deleteReview(id) {
+    UI.confirmDialog({ title:'Delete Review', message:'Are you sure?', confirmText:'Delete', danger:true,
+      onConfirm: async()=>{ try{ await api.reviews.delete(id); loadReviews(); } catch(e){ UI.toast(e.message,'error'); } }
+    });
+  }
+
+  async function cancelOrder(id) {
+    UI.confirmDialog({ title:'Cancel Order', message:'Cancel this order?', confirmText:'Cancel Order', danger:true,
+      onConfirm: async()=>{ try{ await api.orders.cancel(id); UI.toast('Order cancelled','info'); loadOrders(); } catch(e){ UI.toast(e.message,'error'); } }
+    });
+  }
+
+  function viewOrderDetail(id) {
+    UI.createModal({ id:'order-detail', title:`Order #${id.slice(0,8)}`, content:'<div style="text-align:center;padding:var(--space-xl);">Loading…</div>' });
+    api.orders.get(id).then(o => {
+      const body = document.querySelector('#order-detail .modal-body');
+      if (body) body.innerHTML = `
+        <div style="display:grid;gap:var(--space-md);">
+          <div class="flex-between"><span>Status:</span>${UI.statusBadge(o.status,CONFIG.ORDER_STATUSES)}</div>
+          <div class="flex-between"><span>Total:</span><strong style="color:var(--primary);font-size:18px;">${UI.formatCurrency(o.total)}</strong></div>
+          <div class="flex-between"><span>Date:</span>${UI.formatDateTime(o.created_at)}</div>
+          <div><strong>Shipping Address</strong><div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">${JSON.stringify(o.shipping_address)}</div></div>
+        </div>`;
+    }).catch(_=>{});
+  }
+
+  async function loadNotifFull() {
+    try {
+      const data   = await api.notifications.list();
+      const notifs = Array.isArray(data) ? data : (data.notifications || []);
+      const panel  = document.getElementById('notif-full-panel');
+      if (!notifs.length) { panel.innerHTML = UI.empty('No Notifications','You\'re all caught up!'); return; }
+      panel.innerHTML = notifs.map(n=>`
+        <div style="display:flex;gap:var(--space-sm);padding:var(--space-md);border-bottom:1px solid var(--border-light);background:${n.read?'':'var(--primary-alpha)'};">
+          <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:6px;background:${n.read?'var(--gray-300)':'var(--primary)'}"></div>
+          <div><div style="font-weight:600;font-size:14px;">${n.title}</div><div style="font-size:13px;color:var(--text-secondary);">${n.message}</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${UI.timeAgo(n.created_at)}</div></div>
+        </div>`).join('');
+    } catch(_){}
+  }
+
+  async function loadTickets() {
+    const tbody = document.getElementById('tickets-tbody');
+    try {
+      const data    = await api.support.list();
+      const tickets = Array.isArray(data) ? data : (data.tickets || []);
+      tbody.innerHTML = tickets.length ? tickets.map(t=>`
+        <tr>
+          <td><strong>${t.subject}</strong></td>
+          <td>${UI.statusBadge(t.priority,CONFIG.TICKET_PRIORITIES)}</td>
+          <td>${UI.statusBadge(t.status,CONFIG.TICKET_STATUSES)}</td>
+          <td>${UI.formatDate(t.created_at)}</td>
+          <td><button class="btn btn-ghost btn-sm" onclick="viewTicketThread('${t.id}')">View</button></td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" style="text-align:center;padding:var(--space-xl);">No tickets</td></tr>';
+    } catch(_){}
+  }
+
+  function openNewTicketModal() {
+    UI.createModal({
+      id:'ticket-modal', title:'New Support Ticket',
+      content:`<form id="ticket-form" onsubmit="submitTicket(event)">
+        <div class="form-group"><label class="form-label">Subject</label><input type="text" class="form-control" name="subject" required></div>
+        <div class="form-group"><label class="form-label">Category</label>
+          <select class="form-control" name="category" required><option value="billing">Billing</option><option value="order">Order Issue</option><option value="technical">Technical</option><option value="other">Other</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Priority</label>
+          <select class="form-control" name="priority"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Message</label><textarea class="form-control" name="message" rows="3" required></textarea></div>
+      </form>`,
+      footer:`<button class="btn btn-ghost" onclick="UI.closeModal('ticket-modal')">Cancel</button>
+              <button class="btn btn-primary" onclick="document.getElementById('ticket-form').requestSubmit()">Submit</button>`
+    });
+  }
+
+  async function submitTicket(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    try { await api.support.create(data); UI.toast('Ticket submitted!','success'); UI.closeModal('ticket-modal'); loadTickets(); }
+    catch(e){ UI.toast(e.message,'error'); }
+  }
+
+  function viewTicketThread(id) {
+    UI.createModal({ id:'ticket-view', title:'Ticket Thread', content:'Loading…' });
+    Promise.all([api.support.get(id), api.support.messages(id)]).then(([t, msgs]) => {
+      const messages = Array.isArray(msgs) ? msgs : (msgs.messages || []);
+      const body = document.querySelector('#ticket-view .modal-body');
+      if (body) body.innerHTML = `
+        <div style="margin-bottom:var(--space-md);">${UI.statusBadge(t.status,CONFIG.TICKET_STATUSES)} <strong style="margin-left:8px;">${t.subject}</strong></div>
+        <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border-light);border-radius:var(--radius-md);padding:var(--space-sm);">
+          ${messages.map(m=>`<div style="margin-bottom:var(--space-sm);padding:var(--space-sm);background:var(--bg);border-radius:var(--radius-sm);"><div style="font-size:11px;color:var(--text-muted);">${UI.timeAgo(m.created_at)}</div><div>${m.message}</div></div>`).join('') || '<p style="color:var(--text-muted);text-align:center;">No messages yet</p>'}
+        </div>
+        <div style="display:flex;gap:var(--space-sm);margin-top:var(--space-md);">
+          <input type="text" id="reply-msg" class="form-control" placeholder="Type a reply…">
+          <button class="btn btn-primary" onclick="sendTicketReply('${id}')">Send</button>
+        </div>`;
+    }).catch(_=>{});
+  }
+
+  async function sendTicketReply(id) {
+    const input = document.getElementById('reply-msg');
+    if (!input?.value.trim()) return;
+    try { await api.support.message(id, input.value.trim()); UI.toast('Sent!','success'); viewTicketThread(id); }
+    catch(e){ UI.toast(e.message,'error'); }
+  }
+
+  async function saveProfile() {
+    const user = Auth.getUser();
+    if (!user) return;
+    const name = document.getElementById('profile-name')?.value || '';
+    try {
+      await api.users.update(user.id, { metadata: { ...user.metadata, name } });
+      UI.toast('Profile saved!','success');
+      Auth.saveSession(Auth.getToken(), { ...user, metadata: { ...user.metadata, name } });
+      Auth.populateUserUI();
+    } catch(e){ UI.toast(e.message,'error'); }
+  }
+</script>
+
+<style>
+  @media(max-width:768px){
+    #section-cart>div{grid-template-columns:1fr!important;}
+    #cart-summary{position:static!important;}
+  }
+</style>
+</body>
+</html>

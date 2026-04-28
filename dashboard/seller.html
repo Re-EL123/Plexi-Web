@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seller Dashboard — Plexi Digital Mall</title>
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/neomorphism.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
+  <style>
+    .sidebar-overlay{display:none;position:fixed;inset:0;background:var(--overlay);z-index:99;}
+    .sidebar-overlay.show{display:block;}
+    .topbar-menu-btn{display:none;background:var(--bg);border:none;cursor:pointer;padding:8px;border-radius:var(--radius-md);box-shadow:var(--neo-shadow-sm);}
+    @media(max-width:1024px){.topbar-menu-btn{display:flex;align-items:center;}}
+  </style>
+</head>
+<body>
+
+<div id="page-loader" class="page-loader">
+  <div class="loader-logo">Plexi<span>Mall</span></div>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+</div>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="../assets/icons/logo.jpg" alt="Plexi" style="width:34px;height:34px;border-radius:8px;object-fit:cover;">
+      <span class="sidebar-logo-text">Plexi<span>Mall</span></span>
+    </div>
+
+    <div style="padding:var(--space-sm) var(--space-md);border-bottom:1px solid var(--border-light);">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Active Store</div>
+      <select id="store-select" class="form-control" style="font-size:13px;" onchange="switchStore(this.value)">
+        <option value="">— Select Store —</option>
+      </select>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">My Store</div>
+        <a href="#" class="active" data-section="section-overview">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Overview
+        </a>
+        <a href="#" data-section="section-products">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Products
+        </a>
+        <a href="#" data-section="section-orders">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Orders
+        </a>
+        <a href="#" data-section="section-reviews">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Reviews
+        </a>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Setup</div>
+        <a href="#" data-section="section-store-settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Store Settings
+        </a>
+        <a href="#" data-section="section-map-placement">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Mall Placement
+        </a>
+        <a href="#" data-section="section-members">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Team Members
+        </a>
+        <a href="#" data-section="section-subscription">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Subscription
+        </a>
+        <a href="#" data-section="section-support">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Support
+          <span class="nav-badge" id="notif-badge" style="display:none;">0</span>
+        </a>
+        <a href="../index.html">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>View Mall
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar" data-user-avatar></div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" data-user-email></div>
+          <div class="sidebar-user-role">Seller</div>
+        </div>
+        <div class="dropdown">
+          <button data-dropdown="seller-dd" style="background:none;border:none;cursor:pointer;color:var(--text-muted);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+          </button>
+          <div class="dropdown-menu" id="seller-dd">
+            <button class="dropdown-item danger" data-logout>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log Out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="topbar-menu-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div style="flex:1;"><h4 id="topbar-title" style="font-size:16px;font-weight:700;">Overview</h4></div>
+      <div style="display:flex;align-items:center;gap:var(--space-sm);">
+        <button class="btn btn-primary btn-sm" onclick="Dashboard.showSection('section-products');setTimeout(openAddProductModal,100)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product
+        </button>
+        <div class="dropdown">
+          <button data-dropdown="notif-dd" style="background:var(--bg);border:none;cursor:pointer;padding:8px;border-radius:var(--radius-md);box-shadow:var(--neo-shadow-sm);display:flex;position:relative;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </button>
+          <div class="dropdown-menu" id="notif-dd" style="min-width:300px;max-height:360px;overflow-y:auto;">
+            <div style="padding:var(--space-sm) var(--space-md);border-bottom:1px solid var(--border-light);"><strong>Notifications</strong></div>
+            <div id="notif-panel"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- OVERVIEW -->
+      <section id="section-overview" class="dash-section" style="display:block;">
+        <div id="no-store-banner" class="alert alert-warning" style="display:none;margin-bottom:var(--space-lg);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>No stores yet. <a href="#" onclick="openCreateStoreModal()" style="font-weight:700;">Create your first store →</a></span>
+        </div>
+        <div class="stats-grid" style="margin-bottom:var(--space-xl);">
+          <div class="stat-card primary stagger-child"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div><div class="stat-label">Products</div><div class="stat-value" id="s-stat-products">—</div></div>
+          <div class="stat-card secondary stagger-child delay-1"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div><div class="stat-label">Orders</div><div class="stat-value" id="s-stat-orders">—</div></div>
+          <div class="stat-card success stagger-child delay-2"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-label">Revenue</div><div class="stat-value" id="s-stat-revenue">—</div></div>
+          <div class="stat-card info stagger-child delay-3"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div class="stat-label">Avg Rating</div><div class="stat-value" id="s-stat-rating">—</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);">
+          <div class="card">
+            <div class="card-header"><h4>Recent Orders</h4><button class="btn btn-ghost btn-sm" onclick="Dashboard.showSection('section-orders');loadOrders()">View All</button></div>
+            <div id="recent-orders-list"><div style="padding:var(--space-lg);text-align:center;color:var(--text-muted);">Loading…</div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h4>Recent Reviews</h4><button class="btn btn-ghost btn-sm" onclick="Dashboard.showSection('section-reviews');loadReviews()">View All</button></div>
+            <div id="recent-reviews-list"><div style="padding:var(--space-lg);text-align:center;color:var(--text-muted);">Loading…</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PRODUCTS -->
+      <section id="section-products" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);">
+          <h2>Products</h2>
+          <button class="btn btn-primary" onclick="openAddProductModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product</button>
+        </div>
+        <div class="grid-auto" id="products-grid"><div style="grid-column:1/-1;padding:var(--space-xl);text-align:center;color:var(--text-muted);">Select a store to view products</div></div>
+      </section>
+
+      <!-- ORDERS -->
+      <section id="section-orders" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);">
+          <h2>Orders</h2>
+          <select id="orders-filter" class="form-control" style="width:auto;" onchange="loadOrders()">
+            <option value="">All</option><option value="pending">Pending</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option>
+          </select>
+        </div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Order ID</th><th>Total</th><th>Status</th><th>Date</th><th>Update</th></tr></thead>
+          <tbody id="orders-tbody"><tr><td colspan="5" style="text-align:center;padding:var(--space-xl);">Loading…</td></tr></tbody>
+        </table></div></div>
+      </section>
+
+      <!-- REVIEWS -->
+      <section id="section-reviews" class="dash-section" style="display:none;">
+        <h2 style="margin-bottom:var(--space-lg);">Customer Reviews</h2>
+        <div id="reviews-grid" class="grid-3"><div style="grid-column:1/-1;padding:var(--space-xl);text-align:center;">Loading…</div></div>
+      </section>
+
+      <!-- STORE SETTINGS -->
+      <section id="section-store-settings" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);">
+          <h2>Store Settings</h2>
+          <button class="btn btn-primary" onclick="openCreateStoreModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Store</button>
+        </div>
+        <div id="store-settings-form"><div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">Select a store to edit.</div></div>
+      </section>
+
+      <!-- MALL PLACEMENT -->
+      <section id="section-map-placement" class="dash-section" style="display:none;">
+        <div style="margin-bottom:var(--space-lg);"><h2>Mall Placement</h2><p style="color:var(--text-secondary);">Click an empty cell to place your store.</p></div>
+        <div class="card"><div class="card-body"><div id="placement-map"></div></div></div>
+      </section>
+
+      <!-- TEAM MEMBERS -->
+      <section id="section-members" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);"><h2>Team Members</h2><button class="btn btn-primary" onclick="openAddMemberModal()">Add Member</button></div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Email</th><th>Role</th><th>Added</th></tr></thead>
+          <tbody id="members-tbody"><tr><td colspan="3" style="text-align:center;padding:var(--space-xl);">Loading…</td></tr></tbody>
+        </table></div></div>
+      </section>
+
+      <!-- SUBSCRIPTION -->
+      <section id="section-subscription" class="dash-section" style="display:none;">
+        <h2 style="margin-bottom:var(--space-lg);">Subscription & Billing</h2>
+        <div id="subscription-content"><div style="text-align:center;padding:var(--space-xl);">Loading…</div></div>
+      </section>
+
+      <!-- SUPPORT -->
+      <section id="section-support" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);"><h2>Support Tickets</h2><button class="btn btn-primary" onclick="openNewTicketModal()">New Ticket</button></div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Subject</th><th>Priority</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="tickets-tbody"><tr><td colspan="5" style="text-align:center;padding:var(--space-xl);">Loading…</td></tr></tbody>
+        </table></div></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/state.js"></script>
+<script src="../assets/js/map.js"></script>
+<script src="../assets/js/dashboard.js"></script>
+<script>
+  Auth.requireRole('seller');
+
+  let currentStore = null;
+  let myStores = [];
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    Dashboard.init();
+    State.init();
+    await loadMyStores();
+    UI.hidePageLoader();
+    UI.staggerReveal(document.body);
+  });
+
+  document.querySelectorAll('[data-section]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const sec = a.dataset.section;
+      Dashboard.showSection(sec);
+      document.getElementById('topbar-title').textContent = a.textContent.trim();
+      if (sec === 'section-products')      loadProducts();
+      if (sec === 'section-orders')        loadOrders();
+      if (sec === 'section-reviews')       loadReviews();
+      if (sec === 'section-store-settings')loadStoreSettingsForm();
+      if (sec === 'section-map-placement') initPlacementMap();
+      if (sec === 'section-members')       loadMembers();
+      if (sec === 'section-subscription')  loadSubscription();
+      if (sec === 'section-support')       loadTickets();
+    });
+  });
+
+  async function loadMyStores() {
+    try {
+      const data = await api.stores.myStores();
+      myStores = Array.isArray(data) ? data : (data.stores || []);
+      const sel = document.getElementById('store-select');
+      sel.innerHTML = '<option value="">— Select Store —</option>' +
+        myStores.map(s => `<option value="${s.id}">${s.name} (${s.status})</option>`).join('');
+      if (myStores.length) {
+        currentStore = myStores[0];
+        sel.value = currentStore.id;
+        await loadOverviewData();
+      } else {
+        document.getElementById('no-store-banner').style.display = 'flex';
+      }
+    } catch (err) { UI.toast(err.message, 'error'); }
+  }
+
+  function switchStore(id) {
+    currentStore = myStores.find(s => s.id === id) || null;
+    if (currentStore) loadOverviewData();
+  }
+
+  async function loadOverviewData() {
+    if (!currentStore) return;
+    try {
+      const [pd, od, rd] = await Promise.allSettled([
+        api.products.list(currentStore.id),
+        api.orders.list({ store_id: currentStore.id }),
+        api.reviews.list({ store_id: currentStore.id })
+      ]);
+      const prods   = pd.status === 'fulfilled' ? (Array.isArray(pd.value) ? pd.value : pd.value.products || []) : [];
+      const orders  = od.status === 'fulfilled' ? (Array.isArray(od.value) ? od.value : od.value.orders  || []) : [];
+      const reviews = rd.status === 'fulfilled' ? (Array.isArray(rd.value) ? rd.value : rd.value.reviews || []) : [];
+
+      document.getElementById('s-stat-products').textContent = prods.length;
+      document.getElementById('s-stat-orders').textContent   = orders.length;
+      document.getElementById('s-stat-revenue').textContent  = UI.formatCurrency(orders.reduce((s,o)=>s+parseFloat(o.total||0),0));
+      const avg = reviews.length ? (reviews.reduce((s,r)=>s+r.rating,0)/reviews.length).toFixed(1) : '—';
+      document.getElementById('s-stat-rating').textContent   = avg;
+
+      document.getElementById('recent-orders-list').innerHTML = orders.slice(0,5).map(o=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px var(--space-md);border-bottom:1px solid var(--border-light);">
+          <div><div style="font-size:13px;font-weight:600;font-family:monospace;">#${o.id.slice(0,8)}</div><div style="font-size:11px;color:var(--text-muted);">${UI.formatDate(o.created_at)}</div></div>
+          <div style="display:flex;align-items:center;gap:var(--space-sm);"><strong style="color:var(--primary);">${UI.formatCurrency(o.total)}</strong>${UI.statusBadge(o.status,CONFIG.ORDER_STATUSES)}</div>
+        </div>`).join('') || '<div style="padding:var(--space-lg);text-align:center;color:var(--text-muted);">No orders yet</div>';
+
+      document.getElementById('recent-reviews-list').innerHTML = reviews.slice(0,4).map(r=>`
+        <div style="padding:var(--space-md);border-bottom:1px solid var(--border-light);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">${UI.stars(r.rating)}<span style="font-size:11px;color:var(--text-muted);">${UI.timeAgo(r.created_at)}</span></div>
+          <div style="font-size:13px;color:var(--text-secondary);">${r.comment||'No comment'}</div>
+        </div>`).join('') || '<div style="padding:var(--space-lg);text-align:center;color:var(--text-muted);">No reviews yet</div>';
+    } catch (_) {}
+  }
+
+  async function loadProducts() {
+    if (!currentStore) { UI.toast('Select a store first','warning'); return; }
+    const grid = document.getElementById('products-grid');
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:var(--space-xl);">Loading…</div>';
+    try {
+      const data = await api.products.list(currentStore.id);
+      const prods = Array.isArray(data) ? data : (data.products || []);
+      if (!prods.length) { grid.innerHTML = UI.empty('No Products','Add your first product!','📦',`<button class="btn btn-primary" onclick="openAddProductModal()">Add Product</button>`); return; }
+      grid.innerHTML = prods.map(p => `
+        <div class="card hover-lift" style="overflow:hidden;">
+          <div style="height:140px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden;">
+            ${p.images?.[0]?`<img src="${p.images[0]}" style="width:100%;height:100%;object-fit:cover;">`:'🛍️'}
+          </div>
+          <div class="card-body">
+            <div style="font-weight:700;margin-bottom:4px;">${p.name}</div>
+            <div style="font-size:18px;font-weight:800;color:var(--primary);font-family:var(--font-display);">${UI.formatCurrency(p.price)}</div>
+            <div style="display:flex;justify-content:space-between;margin-top:var(--space-sm);">
+              <span style="font-size:12px;color:var(--text-muted);">Stock: ${p.inventory}</span>
+              <span class="badge badge-gray">${p.category}</span>
+            </div>
+          </div>
+          <div class="card-footer" style="display:flex;gap:var(--space-sm);">
+            <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="editProduct('${p.id}')">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button>
+          </div>
+        </div>`).join('');
+    } catch (err) { grid.innerHTML = UI.empty('Error', err.message); }
+  }
+
+  async function loadOrders() {
+    if (!currentStore) return;
+    const status = document.getElementById('orders-filter')?.value || '';
+    const tbody  = document.getElementById('orders-tbody');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:var(--space-lg);">Loading…</td></tr>';
+    try {
+      const data   = await api.orders.list({ store_id: currentStore.id, status });
+      const orders = Array.isArray(data) ? data : (data.orders || []);
+      tbody.innerHTML = orders.length ? orders.map(o=>`
+        <tr>
+          <td style="font-family:monospace;font-size:12px;">#${o.id.slice(0,8)}</td>
+          <td><strong>${UI.formatCurrency(o.total)}</strong></td>
+          <td>${UI.statusBadge(o.status,CONFIG.ORDER_STATUSES)}</td>
+          <td>${UI.formatDate(o.created_at)}</td>
+          <td><select class="form-control" style="padding:4px 8px;font-size:12px;width:auto;" onchange="updateOrderStatus('${o.id}',this.value)">
+            ${Object.entries(CONFIG.ORDER_STATUSES).map(([k,v])=>`<option value="${k}"${o.status===k?' selected':''}>${v.label}</option>`).join('')}
+          </select></td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" style="text-align:center;padding:var(--space-xl);">No orders found</td></tr>';
+    } catch (_) {}
+  }
+
+  async function loadReviews() {
+    if (!currentStore) return;
+    const grid = document.getElementById('reviews-grid');
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:var(--space-xl);">Loading…</div>';
+    try {
+      const data    = await api.reviews.list({ store_id: currentStore.id });
+      const reviews = Array.isArray(data) ? data : (data.reviews || []);
+      if (!reviews.length) { grid.innerHTML = UI.empty('No Reviews Yet','Reviews from customers will appear here.'); return; }
+      grid.innerHTML = reviews.map(r=>`
+        <div class="card"><div class="card-body">
+          <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-sm);">${UI.stars(r.rating)}<span style="font-size:11px;color:var(--text-muted);">${UI.timeAgo(r.created_at)}</span></div>
+          <p style="font-size:14px;color:var(--text-secondary);">${r.comment||'No comment'}</p>
+        </div></div>`).join('');
+    } catch (_) {}
+  }
+
+  function loadStoreSettingsForm() {
+    const el = document.getElementById('store-settings-form');
+    if (!currentStore) {
+      el.innerHTML = `<div style="text-align:center;padding:var(--space-2xl);"><p style="margin-bottom:var(--space-lg);">Create your first store!</p><button class="btn btn-primary btn-lg" onclick="openCreateStoreModal()">Create Store</button></div>`;
+      return;
+    }
+    const s = currentStore;
+    el.innerHTML = `
+      <div class="card" style="max-width:640px;">
+        <div class="card-header"><h4>Edit — ${s.name}</h4>${UI.statusBadge(s.status,CONFIG.STORE_STATUSES)}</div>
+        <div class="card-body">
+          <form id="edit-store-form" onsubmit="saveStoreSettings(event)">
+            <div class="form-group"><label class="form-label">Store Name</label><input type="text" class="form-control" name="name" value="${s.name||''}" required></div>
+            <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="3">${s.description||''}</textarea></div>
+            <div class="form-group"><label class="form-label">Category</label>
+              <select class="form-control" name="category">
+                ${['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys'].map(c=>`<option value="${c.toLowerCase()}"${s.category===c.toLowerCase()?' selected':''}>${c}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Logo URL</label><input type="url" class="form-control" name="logo" value="${s.logo||''}" placeholder="https://…"></div>
+            <div class="form-group"><label class="form-label">Banner URL</label><input type="url" class="form-control" name="banner" value="${s.banner||''}" placeholder="https://…"></div>
+            <div style="display:flex;gap:var(--space-sm);justify-content:flex-end;"><button type="submit" class="btn btn-primary">Save Changes</button></div>
+          </form>
+        </div>
+      </div>`;
+  }
+
+  async function saveStoreSettings(e) {
+    e.preventDefault();
+    if (!currentStore) return;
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    const btn  = e.target.querySelector('[type=submit]');
+    UI.setLoading(btn, true, 'Saving…');
+    try {
+      await api.stores.update(currentStore.id, data);
+      UI.toast('Store updated!','success');
+      await loadMyStores();
+    } catch (err) { UI.toast(err.message,'error'); }
+    finally { UI.setLoading(btn, false, 'Save Changes'); }
+  }
+
+  function initPlacementMap() {
+    if (!currentStore) { UI.toast('Select a store first','warning'); return; }
+    MallMap.init(document.getElementById('placement-map'), null);
+    setTimeout(() => MallMap.initPlacement(currentStore.id), 600);
+  }
+
+  async function loadMembers() {
+    if (!currentStore) return;
+    const tbody = document.getElementById('members-tbody');
+    try {
+      const data    = await api.stores.members(currentStore.id);
+      const members = Array.isArray(data) ? data : (data.members || []);
+      tbody.innerHTML = members.length ? members.map(m=>`
+        <tr><td>${m.user?.email||m.user_id}</td><td>${UI.badge(m.role,'secondary')}</td><td>${UI.formatDate(m.created_at)}</td></tr>`).join('')
+      : '<tr><td colspan="3" style="text-align:center;padding:var(--space-lg);">No team members</td></tr>';
+    } catch (_) {}
+  }
+
+  async function loadSubscription() {
+    const el = document.getElementById('subscription-content');
+    try {
+      const sub  = await api.subscriptions.get();
+      const plan = CONFIG.PLANS[sub.plan] || {};
+      el.innerHTML = `
+        <div class="stats-grid" style="margin-bottom:var(--space-xl);">
+          <div class="neo-card"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:var(--space-sm);">Current Plan</div><div style="font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--primary);">${plan.label||sub.plan}</div><div style="color:var(--text-secondary);font-size:14px;margin-top:4px;">Up to ${sub.store_limit} stores</div></div>
+          <div class="neo-card"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:var(--space-sm);">Stores Used</div><div style="font-family:var(--font-display);font-size:28px;font-weight:800;">${myStores.length} / ${sub.store_limit}</div></div>
+        </div>
+        <h3 style="margin-bottom:var(--space-lg);">Upgrade Plan</h3>
+        <div class="grid-3">
+          ${Object.entries(CONFIG.PLANS).filter(([k])=>k!=='custom').map(([k,p])=>`
+            <div class="neo-card">
+              <div style="font-family:var(--font-display);font-weight:800;font-size:20px;margin-bottom:4px;">${p.label}</div>
+              <div style="font-size:24px;font-weight:800;color:var(--primary);margin-bottom:var(--space-sm);">${p.price?'R'+p.price+'/mo':'Free'}</div>
+              <div style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-md);">Up to ${p.storeLimit} stores</div>
+              <button class="btn ${sub.plan===k?'btn-ghost':'btn-primary'} btn-block btn-sm" onclick="upgradePlan('${k}')" ${sub.plan===k?'disabled':''}>
+                ${sub.plan===k?'Current Plan':'Upgrade'}
+              </button>
+            </div>`).join('')}
+        </div>`;
+    } catch (_) { el.innerHTML = '<div style="text-align:center;padding:var(--space-xl);">Could not load subscription</div>'; }
+  }
+
+  async function loadTickets() {
+    const tbody = document.getElementById('tickets-tbody');
+    try {
+      const data    = await api.support.list();
+      const tickets = Array.isArray(data) ? data : (data.tickets || []);
+      tbody.innerHTML = tickets.length ? tickets.map(t=>`
+        <tr>
+          <td><strong>${t.subject}</strong></td>
+          <td>${UI.statusBadge(t.priority,CONFIG.TICKET_PRIORITIES)}</td>
+          <td>${UI.statusBadge(t.status,CONFIG.TICKET_STATUSES)}</td>
+          <td>${UI.formatDate(t.created_at)}</td>
+          <td><button class="btn btn-ghost btn-sm" onclick="openTicketThread('${t.id}')">View</button></td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" style="text-align:center;padding:var(--space-xl);">No tickets</td></tr>';
+    } catch (_) {}
+  }
+
+  /* ---- MODALS ---- */
+  function openAddProductModal(pd) {
+    UI.createModal({
+      id:'product-modal', title: pd ? 'Edit Product' : 'Add Product',
+      content:`<form id="product-form" onsubmit="submitProduct(event,'${pd?.id||''}')">
+        <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-control" name="name" value="${pd?.name||''}" required></div>
+        <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2">${pd?.description||''}</textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+          <div class="form-group"><label class="form-label">Price (R)</label><input type="number" class="form-control" name="price" min="0" step="0.01" value="${pd?.price||''}" required></div>
+          <div class="form-group"><label class="form-label">Inventory</label><input type="number" class="form-control" name="inventory" min="0" value="${pd?.inventory||0}" required></div>
+        </div>
+        <div class="form-group"><label class="form-label">Category</label>
+          <select class="form-control" name="category" required>
+            ${['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys'].map(c=>`<option value="${c.toLowerCase()}"${pd?.category===c.toLowerCase()?' selected':''}>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Image URL</label><input type="url" class="form-control" name="image" value="${pd?.images?.[0]||''}" placeholder="https://…"></div>
+      </form>`,
+      footer:`<button class="btn btn-ghost" onclick="UI.closeModal('product-modal')">Cancel</button>
+              <button class="btn btn-primary" onclick="document.getElementById('product-form').requestSubmit()">${pd?'Save Changes':'Add Product'}</button>`
+    });
+  }
+
+  async function submitProduct(e, editId) {
+    e.preventDefault();
+    if (!currentStore) { UI.toast('Select a store first','warning'); return; }
+    const data    = Object.fromEntries(new FormData(e.target).entries());
+    const images  = data.image ? [data.image] : [];
+    delete data.image;
+    const payload = { ...data, images, store_id: currentStore.id, price: parseFloat(data.price), inventory: parseInt(data.inventory) };
+    try {
+      if (editId) { await api.products.update(editId, payload); UI.toast('Product updated!','success'); }
+      else        { await api.products.create(payload);         UI.toast('Product added!','success'); }
+      UI.closeModal('product-modal');
+      loadProducts();
+    } catch (err) { UI.toast(err.message,'error'); }
+  }
+
+  async function editProduct(id) {
+    try { const p = await api.products.get(id); openAddProductModal(p); } catch (e) { UI.toast(e.message,'error'); }
+  }
+
+  async function deleteProduct(id) {
+    UI.confirmDialog({ title:'Delete Product', message:'This cannot be undone.', confirmText:'Delete', danger:true,
+      onConfirm: async()=>{ try{ await api.products.delete(id); UI.toast('Deleted','info'); loadProducts(); } catch(e){ UI.toast(e.message,'error'); } }
+    });
+  }
+
+  async function updateOrderStatus(id, status) {
+    try { await api.orders.update(id,{status}); UI.toast('Status updated','success'); } catch(e){ UI.toast(e.message,'error'); }
+  }
+
+  async function upgradePlan(plan) {
+    UI.confirmDialog({ title:'Upgrade Plan', message:`Upgrade to ${CONFIG.PLANS[plan]?.label}?`, confirmText:'Upgrade',
+      onConfirm: async()=>{ try{ await api.subscriptions.upgrade(plan); UI.toast('Plan upgraded!','success'); loadSubscription(); } catch(e){ UI.toast(e.message,'error'); } }
+    });
+  }
+
+  function openCreateStoreModal() {
+    UI.createModal({
+      id:'create-store-modal', title:'Create New Store',
+      content:`<form id="create-store-form" onsubmit="submitCreateStore(event)">
+        <div class="form-group"><label class="form-label">Store Name</label><input type="text" class="form-control" name="name" required placeholder="My Store"></div>
+        <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2"></textarea></div>
+        <div class="form-group"><label class="form-label">Category</label>
+          <select class="form-control" name="category" required>
+            ${['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys'].map(c=>`<option value="${c.toLowerCase()}">${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Logo URL</label><input type="url" class="form-control" name="logo" placeholder="https://…"></div>
+      </form>`,
+      footer:`<button class="btn btn-ghost" onclick="UI.closeModal('create-store-modal')">Cancel</button>
+              <button class="btn btn-primary" onclick="document.getElementById('create-store-form').requestSubmit()">Create Store</button>`
+    });
+  }
+
+  async function submitCreateStore(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    try {
+      await api.stores.create({ ...data, status:'draft' });
+      UI.toast('Store created! Awaiting approval.','success');
+      UI.closeModal('create-store-modal');
+      await loadMyStores();
+    } catch(err){ UI.toast(err.message,'error'); }
+  }
+
+  function openNewTicketModal() {
+    UI.createModal({
+      id:'ticket-modal', title:'New Support Ticket',
+      content:`<form id="ticket-form" onsubmit="submitTicket(event)">
+        <div class="form-group"><label class="form-label">Subject</label><input type="text" class="form-control" name="subject" required></div>
+        <div class="form-group"><label class="form-label">Category</label>
+          <select class="form-control" name="category" required>
+            <option value="billing">Billing</option><option value="technical">Technical</option><option value="store">Store Issue</option><option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Priority</label>
+          <select class="form-control" name="priority"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Message</label><textarea class="form-control" name="message" rows="3" required></textarea></div>
+      </form>`,
+      footer:`<button class="btn btn-ghost" onclick="UI.closeModal('ticket-modal')">Cancel</button>
+              <button class="btn btn-primary" onclick="document.getElementById('ticket-form').requestSubmit()">Submit</button>`
+    });
+  }
+
+  async function submitTicket(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    try { await api.support.create(data); UI.toast('Ticket submitted!','success'); UI.closeModal('ticket-modal'); loadTickets(); }
+    catch(e){ UI.toast(e.message,'error'); }
+  }
+
+  function openAddMemberModal() {
+    if (!currentStore) return;
+    UI.createModal({
+      id:'member-modal', title:'Add Team Member',
+      content:`<form id="member-form" onsubmit="submitMember(event)">
+        <div class="form-group"><label class="form-label">User Email</label><input type="email" class="form-control" name="email" required></div>
+        <div class="form-group"><label class="form-label">Role</label>
+          <select class="form-control" name="role" required><option value="manager">Manager</option><option value="editor">Editor</option><option value="viewer">Viewer</option></select>
+        </div>
+      </form>`,
+      footer:`<button class="btn btn-ghost" onclick="UI.closeModal('member-modal')">Cancel</button>
+              <button class="btn btn-primary" onclick="document.getElementById('member-form').requestSubmit()">Add</button>`
+    });
+  }
+
+  async function submitMember(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    try { await api.stores.addMember(currentStore.id, data); UI.toast('Member added!','success'); UI.closeModal('member-modal'); loadMembers(); }
+    catch(e){ UI.toast(e.message,'error'); }
+  }
+
+  function openTicketThread(id) {
+    UI.createModal({ id:'ticket-view', title:'Ticket Thread', content:'Loading…' });
+    Promise.all([api.support.get(id), api.support.messages(id)]).then(([t, msgs]) => {
+      const messages = Array.isArray(msgs) ? msgs : (msgs.messages || []);
+      const body = document.querySelector('#ticket-view .modal-body');
+      if (body) body.innerHTML = `
+        <div style="margin-bottom:var(--space-md);">${UI.statusBadge(t.status,CONFIG.TICKET_STATUSES)} <strong style="margin-left:8px;">${t.subject}</strong></div>
+        <div style="max-height:260px;overflow-y:auto;border:1px solid var(--border-light);border-radius:var(--radius-md);padding:var(--space-sm);">
+          ${messages.map(m=>`<div style="margin-bottom:var(--space-sm);padding:var(--space-sm);background:var(--bg);border-radius:var(--radius-sm);"><div style="font-size:11px;color:var(--text-muted);">${UI.timeAgo(m.created_at)}</div><div>${m.message}</div></div>`).join('') || '<p style="color:var(--text-muted);text-align:center;">No messages</p>'}
+        </div>
+        <div style="display:flex;gap:var(--space-sm);margin-top:var(--space-md);">
+          <input type="text" id="reply-input" class="form-control" placeholder="Reply…">
+          <button class="btn btn-primary" onclick="sendReply('${id}')">Send</button>
+        </div>`;
+    }).catch(_=>{});
+  }
+
+  async function sendReply(id) {
+    const input = document.getElementById('reply-input');
+    if (!input?.value.trim()) return;
+    try { await api.support.message(id, input.value.trim()); UI.toast('Sent!','success'); openTicketThread(id); }
+    catch(e){ UI.toast(e.message,'error'); }
+  }
+</script>
+</body>
+</html>
