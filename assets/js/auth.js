@@ -3,11 +3,12 @@
 // ============================================================
 
 const Auth = (() => {
-  function getToken()    { return localStorage.getItem(CONFIG.TOKEN_KEY); }
-  function getUser()     { try { return JSON.parse(localStorage.getItem(CONFIG.USER_KEY)); } catch { return null; } }
-  function isLoggedIn()  { return !!getToken(); }
+  function getToken()     { return localStorage.getItem(CONFIG.TOKEN_KEY); }
+  function getUser()      { try { return JSON.parse(localStorage.getItem(CONFIG.USER_KEY)); } catch { return null; } }
+  function isLoggedIn()   { return !!getToken(); }
 
   function saveSession(token, user) {
+    if (!token || !user) return;
     localStorage.setItem(CONFIG.TOKEN_KEY, token);
     localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(user));
   }
@@ -28,25 +29,44 @@ const Auth = (() => {
       seller:  '../dashboard/seller.html',
       shopper: '../dashboard/shopper.html'
     };
+    // Safety check: if role is missing, go to index
     window.location.href = map[role] || '../index.html';
   }
 
   async function login(email, password) {
-    const data = await api.auth.login(email, password);
-    if (data.token && data.user) {
-      saveSession(data.token, data.user);
-      return data.user;
+    const response = await api.auth.login(email, password);
+    
+    // BACKEND CHECK: response.data contains { user, session }
+    const result = response.data || response;
+    const token = result.session?.access_token;
+    const user = result.user;
+
+    if (token && user) {
+      saveSession(token, user);
+      return user;
     }
-    throw new Error(data.error || 'Login failed');
+    throw new Error(response.error || 'Login failed: Invalid credentials');
   }
 
   async function signup(email, password, role) {
-    const data = await api.auth.signup(email, password, role);
-    if (data.token && data.user) {
-      saveSession(data.token, data.user);
-      return data.user;
+    const response = await api.auth.signup(email, password, role);
+    
+    // BACKEND CHECK: response.data contains { user, session }
+    const result = response.data || response;
+    const token = result.session?.access_token;
+    const user = result.user;
+
+    if (token && user) {
+      saveSession(token, user);
+      return user;
     }
-    throw new Error(data.error || 'Signup failed');
+    
+    // If signup succeeded but session is null (e.g. waiting for email confirmation)
+    if (user && !token) {
+      return user; 
+    }
+
+    throw new Error(response.error || 'Signup failed');
   }
 
   async function logout() {
@@ -89,10 +109,10 @@ const Auth = (() => {
     const user = getUser();
     if (!user) return;
 
-    const nameEls  = document.querySelectorAll('[data-user-name]');
-    const emailEls = document.querySelectorAll('[data-user-email]');
-    const roleEls  = document.querySelectorAll('[data-user-role]');
-    const avatarEls= document.querySelectorAll('[data-user-avatar]');
+    const nameEls   = document.querySelectorAll('[data-user-name]');
+    const emailEls  = document.querySelectorAll('[data-user-email]');
+    const roleEls   = document.querySelectorAll('[data-user-role]');
+    const avatarEls = document.querySelectorAll('[data-user-avatar]');
 
     const initials = (user.email || 'U').charAt(0).toUpperCase();
     const name     = user.metadata?.name || user.email?.split('@')[0] || 'User';
@@ -105,9 +125,11 @@ const Auth = (() => {
     });
   }
 
-  return { getToken, getUser, isLoggedIn, getRole, saveSession, clearSession,
-           login, signup, logout, requireAuth, requireRole, requireGuest,
-           populateUserUI, redirect };
+  return { 
+    getToken, getUser, isLoggedIn, getRole, saveSession, clearSession,
+    login, signup, logout, requireAuth, requireRole, requireGuest,
+    populateUserUI, redirect 
+  };
 })();
 
 window.Auth = Auth;

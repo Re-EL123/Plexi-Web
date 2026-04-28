@@ -85,11 +85,11 @@ const api = (() => {
 
   // ======== AUTH ======== //
   const auth = {
-    login:  (email, password)        => post('/auth', { action: 'login', email, password }),
-    signup: (email, password, role)  => post('/auth', { action: 'signup', email, password, role }),
-    logout: ()                       => post('/auth', { action: 'logout' }),
-    me:     ()                       => get('/users/me'),
-  };
+  login:  (email, password)        => post('/auth?action=login', { email, password }),
+  signup: (email, password, role)  => post('/auth?action=signup', { email, password, role }),
+  logout: ()                       => post('/auth?action=logout'),
+  me:     ()                       => get('/auth?action=me'), // Changed from /users/me to match your handler
+};
 
   // ======== USERS ======== //
   const users = {
