@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="assets/css/neomorphism.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link rel="stylesheet" href="assets/css/animations.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     .nav-sticky {
       position:sticky;top:0;z-index:var(--z-dropdown);
@@ -167,10 +169,11 @@
     <div class="section-header">
       <div>
         <h2 class="section-title">Mall <span>Directory</span></h2>
-        <p style="color:var(--text-secondary);font-size:14px;margin-top:4px;">Click any tile to explore a store</p>
+        <p style="color:var(--text-secondary);font-size:14px;margin-top:4px;">Find stores near you — click a marker to explore</p>
       </div>
+      <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;" id="map-legend"></div>
     </div>
-    <div id="full-map"></div>
+    <div id="leaflet-map" style="width:100%;height:480px;border-radius:var(--radius-xl);overflow:hidden;border:1px solid var(--border-light);box-shadow:var(--neo-shadow);"></div>
   </div>
 </section>
 
@@ -196,10 +199,10 @@
 <!-- CTA Banner -->
 <section class="section" style="padding-top:0;">
   <div class="section-inner">
-    <div style="background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:var(--radius-xl);padding:var(--space-3xl);text-align:center;color:white;position:relative;overflow:hidden;">
+    <div id="cta-banner" style="background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:var(--radius-xl);padding:var(--space-3xl);text-align:center;color:white;position:relative;overflow:hidden;">
       <h2 style="font-family:var(--font-display);font-size:clamp(24px,4vw,36px);font-weight:800;color:white;margin-bottom:var(--space-md);">Ready to Open Your Store?</h2>
       <p style="font-size:17px;color:rgba(255,255,255,0.85);max-width:520px;margin:0 auto var(--space-xl);">Join thousands of sellers already growing their business on Plexi Digital Mall.</p>
-      <a href="signup.html" class="btn btn-xl" style="background:white;color:var(--primary);box-shadow:0 8px 24px rgba(0,0,0,0.2);">Open a Store — It's Free</a>
+      <a href="signup.html?role=seller" class="btn btn-xl" style="background:white;color:var(--primary);box-shadow:0 8px 24px rgba(0,0,0,0.2);">Open a Store — It's Free</a>
     </div>
   </div>
 </section>
@@ -227,13 +230,70 @@
 <script src="assets/js/map.js"></script>
 <script src="assets/js/dashboard.js"></script>
 <script>
-  // Nav
+  // Nav — role-aware
   const navAuth = document.getElementById('nav-auth');
   if (Auth.isLoggedIn()) {
     const u = Auth.getUser();
-    navAuth.innerHTML = `<a href="${CONFIG.ROLE_DASHBOARDS[u?.role]||'#'}" class="btn btn-ghost btn-sm">Dashboard</a><div class="avatar avatar-sm" style="cursor:pointer;">${(u?.email||'U').charAt(0).toUpperCase()}</div>`;
+    const role = u?.role;
+    const dashHref = CONFIG.ROLE_DASHBOARDS[role] || '#';
+    const roleLabel = role === 'admin' ? 'Admin Panel' : role === 'seller' ? 'Seller Hub' : 'My Account';
+    const roleBadge = role === 'admin' ? '<span style="background:var(--error);color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700;margin-left:4px;">Admin</span>' : role === 'seller' ? '<span style="background:var(--secondary);color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700;margin-left:4px;">Seller</span>' : '';
+    navAuth.innerHTML = `
+      <a href="index.html" class="btn btn-ghost btn-sm" style="font-weight:600;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        Home
+      </a>
+      <div class="dropdown">
+        <button data-dropdown="nav-user-dd" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:var(--radius-md);transition:background 0.2s;" onmouseenter="this.style.background='var(--bg)'" onmouseleave="this.style.background='none'">
+          <div class="avatar avatar-sm" style="background:var(--primary);color:#fff;font-weight:700;">${(u?.email||'U').charAt(0).toUpperCase()}</div>
+          <span style="font-size:13px;font-weight:600;color:var(--text-primary);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u?.metadata?.name || u?.email?.split('@')[0] || 'User'}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="dropdown-menu" id="nav-user-dd" style="right:0;min-width:200px;">
+          <div style="padding:8px 14px;border-bottom:1px solid var(--border-light);">
+            <div style="font-size:12px;font-weight:700;color:var(--text-primary);">${u?.email || ''}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${roleLabel}${roleBadge}</div>
+          </div>
+          <a href="${dashHref}" class="dropdown-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            ${roleLabel}
+          </a>
+          ${role === 'seller' ? `
+          <a href="${dashHref}#section-store-settings" class="dropdown-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            My Store
+          </a>` : ''}
+          ${role === 'shopper' ? `
+          <a href="${dashHref}#section-cart" class="dropdown-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            My Cart
+          </a>` : ''}
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item danger" onclick="Auth.logout()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Log Out
+          </button>
+        </div>
+      </div>`;
   } else {
-    navAuth.innerHTML = `<a href="login.html" class="btn btn-ghost btn-sm">Sign In</a><a href="signup.html" class="btn btn-primary btn-sm">Join Free</a>`;
+    navAuth.innerHTML = `
+      <a href="login.html" class="btn btn-ghost btn-sm">Sign In</a>
+      <div class="dropdown">
+        <button data-dropdown="nav-signup-dd" class="btn btn-primary btn-sm" style="display:flex;align-items:center;gap:4px;">
+          Join Free
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="dropdown-menu" id="nav-signup-dd" style="right:0;min-width:180px;">
+          <a href="signup.html?role=shopper" class="dropdown-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            Shopper
+          </a>
+          <a href="signup.html?role=seller" class="dropdown-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            Open a Store
+          </a>
+        </div>
+      </div>`;
   }
 
   const CATS = ['All','Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys','Health'];
@@ -337,7 +397,8 @@
     grid.innerHTML=stores.map(s=>{
       const oc=CONFIG.isOpen(s.trading_hours);
       const ocBadge=oc===null?'':oc?'<span style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:3px;background:rgba(39,174,96,0.9);color:white;padding:2px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;">● Open</span>':'<span style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:3px;background:rgba(192,57,43,0.9);color:white;padding:2px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;">● Closed</span>';
-      return `<a href="store/store.html?id=${s.id}" class="store-card stagger-child" style="display:block;text-decoration:none;"><div class="store-card-banner">${s.banner?`<img src="${s.banner}" alt="">`:''}${ocBadge}<div class="store-card-logo">${s.logo?`<img src="${s.logo}" alt="">`:s.name.charAt(0)}</div></div><div class="store-card-body"><div class="store-card-name">${s.name}</div><div class="store-card-category">${s.category}</div><div class="store-card-desc">${s.description||''}</div></div></a>`;}).join('');
+      const onlineBadge=s.online===true?'<span style="position:absolute;top:8px;right:8px;display:inline-flex;align-items:center;gap:3px;background:rgba(39,174,96,0.9);color:white;padding:2px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;">● Online</span>':'';
+      return `<a href="store/store.html?id=${s.id}" class="store-card stagger-child" style="display:block;text-decoration:none;"><div class="store-card-banner">${s.banner?`<img src="${s.banner}" alt="">`:''}${ocBadge}${onlineBadge}<div class="store-card-logo">${s.logo?`<img src="${s.logo}" alt="">`:s.name.charAt(0)}</div></div><div class="store-card-body"><div class="store-card-name">${s.name}</div><div class="store-card-category">${s.category}</div><div class="store-card-desc">${s.description||''}</div></div></a>`;}).join('');
     setTimeout(()=>grid.querySelectorAll('.stagger-child').forEach(el=>el.classList.add('visible')),100);
   }
 
@@ -363,11 +424,80 @@
     loadFeaturedStores();
     loadProducts(1,'all');
     loadStats();
-    MallMap.init(document.getElementById('mini-map-content'));
-    MallMap.init(document.getElementById('full-map'));
+    initLeafletMap();
     document.querySelectorAll('.ripple-container').forEach(UI.addRipple);
     setTimeout(()=>UI.staggerReveal(document.body),600);
   });
+
+  const CATEGORY_COLORS = {
+    fashion:'#E74C3C', electronics:'#3498DB', food:'#F39C12', beauty:'#9B59B6',
+    sports:'#27AE60', home:'#1ABC9C', books:'#E67E22', toys:'#F1C40F'
+  };
+  function catColor(cat){ return CATEGORY_COLORS[(cat||'').toLowerCase()] || '#7F8C8D'; }
+
+  let leafletMap = null;
+  async function initLeafletMap(){
+    const el = document.getElementById('leaflet-map');
+    if (!el || !window.L) return;
+    leafletMap = L.map(el, { zoomControl: true, scrollWheelZoom: true }).setView([-33.9249, 18.4241], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+    }).addTo(leafletMap);
+
+    // Legend
+    const legend = document.getElementById('map-legend');
+    if (legend) legend.innerHTML = Object.entries(CATEGORY_COLORS).map(([k,v])=>
+      `<div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--text-secondary);">
+        <div style="width:10px;height:10px;border-radius:3px;background:${v};"></div>${k.charAt(0).toUpperCase()+k.slice(1)}
+      </div>`).join('');
+
+    try {
+      const data = await api.map.storeLocations();
+      const stores = data.stores || [];
+      if (!stores.length) return;
+      const bounds = [];
+      stores.forEach(s => {
+        if (!s.latitude || !s.longitude) return;
+        const color = s.online ? catColor(s.category) : '#999';
+        const marker = L.circleMarker([s.latitude, s.longitude], {
+          radius: s.online ? 10 : 7,
+          fillColor: color,
+          color: '#fff',
+          weight: 2,
+          fillOpacity: s.online ? 0.9 : 0.5
+        }).addTo(leafletMap);
+
+        const onlineHtml = s.online
+          ? '<span style="color:#27ae60;font-weight:700;">● Online</span>'
+          : '<span style="color:#999;">● Offline</span>';
+        marker.bindPopup(`
+          <div style="min-width:180px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              ${s.logo ? `<img src="${s.logo}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;">` : `<div style="width:32px;height:32px;border-radius:6px;background:${catColor(s.category)};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;">${(s.name||'?').charAt(0)}</div>`}
+              <div>
+                <div style="font-weight:700;font-size:14px;">${s.name}</div>
+                <div style="font-size:11px;color:#888;">${s.category}</div>
+              </div>
+            </div>
+            <div style="font-size:12px;color:#666;margin-bottom:6px;">${s.address || 'No address set'}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              ${onlineHtml}
+              <a href="store/store.html?id=${s.id}" style="display:inline-block;padding:4px 12px;background:#6C63FF;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;">Visit</a>
+            </div>
+          </div>
+        `);
+
+        // pulsing icon for online stores
+        if (s.online) {
+          L.circleMarker([s.latitude, s.longitude], {
+            radius: 16, fillColor: color, color: color, weight: 1, fillOpacity: 0.15
+          }).addTo(leafletMap);
+        }
+        bounds.push([s.latitude, s.longitude]);
+      });
+      if (bounds.length) leafletMap.fitBounds(bounds, { padding: [50, 50] });
+    } catch (err) { console.error('Map load error:', err); }
+  }
 </script>
 </body>
 </html>

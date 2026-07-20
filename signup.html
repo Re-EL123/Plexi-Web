@@ -228,6 +228,16 @@
   <script>
     if (Auth.isLoggedIn()) Auth.redirect(Auth.getRole());
 
+    // Pre-select role from URL ?role=seller
+    const urlRole = new URLSearchParams(window.location.search).get('role');
+    if (urlRole && (urlRole === 'seller' || urlRole === 'shopper')) {
+      document.getElementById('role').value = urlRole;
+      document.querySelectorAll('.role-card').forEach(c => {
+        if (c.dataset.role === urlRole) c.classList.add('active');
+        else c.classList.remove('active');
+      });
+    }
+
     function togglePwd(fieldId, iconEl) {
       const input = document.getElementById(fieldId);
       input.type = input.type === 'password' ? 'text' : 'password';

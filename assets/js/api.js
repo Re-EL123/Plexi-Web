@@ -187,12 +187,26 @@ const api = (() => {
     getSubscriptions: (params = {}) => get(`/admin?action=manage-subscriptions&${new URLSearchParams(params)}`),
     updateSubscription: (userId, plan) => put('/admin?action=manage-subscriptions', { user_id: userId, plan }),
     tickets:       (params={})=> get(`/support?${new URLSearchParams(params)}`),
+    getStoreLocations: ()    => get('/admin?action=store-locations'),
   };
 
   // ======== MAP ======== //
   const map = {
     stores:  (params = {})  => get(`/map?action=stores&${new URLSearchParams(params)}`),
     update:  (storeId, coords) => put(`/map?action=update&store_id=${storeId}`, { coordinates: coords }),
+    heartbeat: (storeId)    => post('/map?action=heartbeat', { store_id: storeId }),
+    onlineStatus: (ids)     => get(`/map?action=online-status&store_ids=${ids.join(',')}`),
+    storeLocations: ()      => get('/map?action=store-locations'),
+  };
+
+  // ======== GEOCODE ======== //
+  const geocode = {
+    address: (address) => get(`/stores?action=geocode&address=${encodeURIComponent(address)}`),
+  };
+
+  // ======== DELIVERY ======== //
+  const delivery = {
+    preview: (lat, lng) => get(`/orders?action=delivery-preview&shipping_lat=${lat}&shipping_lng=${lng}`),
   };
 
   // ======== WISHLIST ======== //
@@ -226,7 +240,7 @@ const api = (() => {
   };
 
   return { auth, users, stores, products, orders, cart, reviews,
-           notifications, support, subscriptions, admin, map, wishlist, upload };
+           notifications, support, subscriptions, admin, map, geocode, delivery, wishlist, upload };
 })();
 
 window.api = api;

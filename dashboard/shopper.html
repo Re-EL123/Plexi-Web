@@ -131,15 +131,26 @@
           <h2>My Cart</h2>
           <button class="btn btn-danger btn-sm" onclick="clearCart()">Clear Cart</button>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 320px;gap:var(--space-xl);align-items:start;">
+        <div style="display:grid;grid-template-columns:1fr 360px;gap:var(--space-xl);align-items:start;">
           <div id="cart-items"></div>
           <div class="neo-card" id="cart-summary" style="position:sticky;top:calc(var(--header-h) + var(--space-md));">
             <h4 style="margin-bottom:var(--space-md);">Order Summary</h4>
             <div id="cart-summary-lines"></div>
-            <div style="border-top:1px solid var(--border);margin:var(--space-md) 0;padding-top:var(--space-md);">
-              <div class="flex-between"><strong>Total</strong><strong id="cart-total" style="font-size:20px;color:var(--primary);">R0.00</strong></div>
+            <div style="margin:var(--space-md) 0;">
+              <label class="form-label" style="font-size:13px;">Delivery Address</label>
+              <input type="text" id="delivery-address" class="form-control" placeholder="e.g. 45 Beach Rd, Durban" style="font-size:13px;">
+              <div id="delivery-status" style="font-size:11px;margin-top:4px;color:var(--text-muted);"></div>
             </div>
-            <button class="btn btn-primary btn-block" onclick="UI.toast('Checkout coming soon!','info')">Proceed to Checkout</button>
+            <div id="delivery-fee-box" style="display:none;padding:var(--space-sm);background:var(--primary-alpha);border-radius:var(--radius-sm);margin-bottom:var(--space-md);font-size:13px;">
+              <div class="flex-between"><span style="color:var(--text-secondary);">Base delivery</span><span id="delivery-base">R0.00</span></div>
+              <div class="flex-between"><span style="color:var(--text-secondary);">Distance fee</span><span id="delivery-dist">R0.00</span></div>
+              <div class="flex-between" style="border-top:1px solid var(--border-light);padding-top:6px;margin-top:6px;"><strong>Delivery Total</strong><strong id="delivery-total" style="color:var(--primary);">R0.00</strong></div>
+            </div>
+            <div style="border-top:1px solid var(--border);margin:var(--space-md) 0;padding-top:var(--space-md);">
+              <div class="flex-between"><span>Subtotal</span><span id="cart-subtotal">R0.00</span></div>
+              <div class="flex-between" style="margin-top:6px;"><strong>Total</strong><strong id="cart-total" style="font-size:20px;color:var(--primary);">R0.00</strong></div>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="proceedToCheckout()">Place Order</button>
           </div>
         </div>
       </section>
@@ -285,20 +296,26 @@
     } catch (_) {}
   }
 
+  let cartItems = [];
+  let cartSubtotal = 0;
+  let deliveryFee = 0;
+
   async function loadCart() {
     const el = document.getElementById('cart-items');
     el.innerHTML = '<div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">Loading…</div>';
     try {
       const data  = await api.cart.get();
-      const items = Array.isArray(data) ? data : (data.items || []);
-      if (!items.length) {
+      cartItems = Array.isArray(data) ? data : (data.items || []);
+      if (!cartItems.length) {
         el.innerHTML = UI.empty('Cart is Empty','Browse stores to add items!','🛒',`<a href="../index.html" class="btn btn-primary">Shop Now</a>`);
         document.getElementById('cart-total').textContent = 'R0.00';
+        document.getElementById('delivery-fee-box').style.display = 'none';
         return;
       }
-      const total = items.reduce((s,i)=>s+(parseFloat(i.product?.price||i.price||0)*i.quantity),0);
-      document.getElementById('cart-total').textContent = UI.formatCurrency(total);
-      el.innerHTML = items.map(item=>`
+      cartSubtotal = cartItems.reduce((s,i)=>s+(parseFloat(i.product?.price||i.price||0)*i.quantity),0);
+      document.getElementById('cart-subtotal').textContent = UI.formatCurrency(cartSubtotal);
+      document.getElementById('cart-total').textContent = UI.formatCurrency(cartSubtotal + deliveryFee);
+      el.innerHTML = cartItems.map(item=>`
         <div class="card" style="display:flex;align-items:center;gap:var(--space-md);padding:var(--space-md);margin-bottom:var(--space-sm);">
           <div style="width:72px;height:72px;border-radius:var(--radius-md);background:var(--bg);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
             ${item.product?.images?.[0]?`<img src="${item.product.images[0]}" style="width:100%;height:100%;object-fit:cover;">`:'<span style="font-size:32px;">🛍️</span>'}
@@ -319,6 +336,74 @@
           </button>
         </div>`).join('');
     } catch(e){ el.innerHTML = UI.empty('Error', e.message); }
+  }
+
+  let deliveryTimer = null;
+  document.getElementById('delivery-address')?.addEventListener('input', function() {
+    clearTimeout(deliveryTimer);
+    const val = this.value.trim();
+    if (val.length < 5) { document.getElementById('delivery-fee-box').style.display = 'none'; return; }
+    deliveryTimer = setTimeout(() => updateDeliveryFee(val), 800);
+  });
+
+  async function updateDeliveryFee(address) {
+    const status = document.getElementById('delivery-status');
+    status.textContent = 'Calculating delivery…';
+    status.style.color = 'var(--text-muted)';
+    try {
+      const coords = await api.geocode.address(address);
+      const preview = await api.delivery.preview(coords.latitude, coords.longitude);
+      deliveryFee = preview.delivery_fee || 0;
+      document.getElementById('delivery-base').textContent = UI.formatCurrency(preview.base_fee);
+      document.getElementById('delivery-dist').textContent = UI.formatCurrency(deliveryFee - preview.base_fee);
+      document.getElementById('delivery-total').textContent = UI.formatCurrency(deliveryFee);
+      document.getElementById('delivery-fee-box').style.display = 'block';
+      document.getElementById('cart-total').textContent = UI.formatCurrency(cartSubtotal + deliveryFee);
+      const storeName = preview.nearest_store?.name ? ` (nearest: ${preview.nearest_store.name}, ${preview.nearest_store.distance_km}km)` : '';
+      status.textContent = `Delivery calculated${storeName}`;
+      status.style.color = 'var(--success)';
+    } catch (err) {
+      deliveryFee = 0;
+      document.getElementById('delivery-fee-box').style.display = 'none';
+      document.getElementById('cart-total').textContent = UI.formatCurrency(cartSubtotal);
+      status.textContent = 'Could not calculate delivery';
+      status.style.color = 'var(--error)';
+    }
+  }
+
+  async function proceedToCheckout() {
+    if (!cartItems.length) { UI.toast('Cart is empty', 'warning'); return; }
+    const address = document.getElementById('delivery-address')?.value?.trim();
+    let shipping_lat = null, shipping_lng = null;
+    if (address) {
+      try {
+        const coords = await api.geocode.address(address);
+        shipping_lat = coords.latitude;
+        shipping_lng = coords.longitude;
+      } catch (_) {}
+    }
+    UI.confirmDialog({
+      title: 'Place Order',
+      message: `Total: ${UI.formatCurrency(cartSubtotal + deliveryFee)}${deliveryFee > 0 ? ' (incl. delivery)' : ''}`,
+      confirmText: 'Confirm Order',
+      onConfirm: async () => {
+        try {
+          const items = cartItems.map(i => ({ product_id: i.product_id || i.product?.id, quantity: i.quantity, variant: i.variant }));
+          const payload = { items };
+          if (shipping_lat && shipping_lng) {
+            payload.shipping_lat = shipping_lat;
+            payload.shipping_lng = shipping_lng;
+            payload.shipping_address = { street: address };
+          }
+          await api.orders.create(payload);
+          UI.toast('Order placed!', 'success');
+          deliveryFee = 0;
+          document.getElementById('delivery-fee-box').style.display = 'none';
+          loadCart();
+          loadOverview();
+        } catch (err) { UI.toast(err.message, 'error'); }
+      }
+    });
   }
 
   async function updateCartQty(id, qty) {
