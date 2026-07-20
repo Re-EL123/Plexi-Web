@@ -267,18 +267,75 @@ async function loadUsers(page=1){
   Dashboard.renderTable(document.getElementById('users-tbody'),u.map(usr=>`<tr><td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">${usr.email.charAt(0).toUpperCase()}</div><div><div style="font-weight:600;font-size:13px;">${usr.email}</div><div style="font-size:11px;color:var(--text-muted);">${usr.id?.slice(0,12)}…</div></div></div></td><td>${UI.badge(usr.role,usr.role==='admin'?'error':usr.role==='seller'?'secondary':'info')}</td><td>${usr.banned?UI.badge('Banned','error'):UI.badge('Active','success')}</td><td>${UI.formatDate(usr.created_at)}</td><td class="table-actions">${usr.banned?`<button class="btn btn-ghost btn-sm" onclick="unbanUser('${usr.id}')">Unban</button>`:`<button class="btn btn-danger btn-sm" onclick="banUser('${usr.id}')">Ban</button>`}</td></tr>`),'No users found');
   Dashboard.renderPagination('users-pagination',page,Math.ceil(tot/15),`(p)=>loadUsers(p)`);}catch(e){UI.toast(e.message,'error');}
 }
-async function banUser(id){UI.confirmDialog({title:'Ban User',message:'This user will be blocked.',confirmText:'Ban',danger:true,onConfirm:async()=>{try{await api.admin.banUser(id,'Banned by admin');UI.toast('User banned','success');loadUsers(1);loadRecentUsers();}catch(e){UI.toast(e.message,'error');}}});}
+function banUser(id){
+  UI.createModal({
+    id:'ban-modal', title:'Ban User',
+    content:`<form id="ban-form" onsubmit="submitBan(event,'${id}')">
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md);">This user will be blocked from accessing the platform. All their stores will be suspended.</p>
+      <div class="form-group"><label class="form-label">Reason</label><textarea class="form-control" name="reason" rows="3" required placeholder="e.g. Repeated policy violations, fraudulent activity…"></textarea></div>
+    </form>`,
+    footer:`<button class="btn btn-ghost" onclick="UI.closeModal('ban-modal')">Cancel</button>
+            <button class="btn btn-danger" onclick="document.getElementById('ban-form').requestSubmit()">Ban User</button>`
+  });
+}
+async function submitBan(e, id){
+  e.preventDefault();
+  const reason=new FormData(e.target).get('reason');
+  try{await api.admin.banUser(id,reason);UI.toast('User banned','success');UI.closeModal('ban-modal');loadUsers(1);loadRecentUsers();loadAdminStores(1);}
+  catch(err){UI.toast(err.message,'error');}
+}
 async function unbanUser(id){try{await api.admin.unbanUser(id);UI.toast('User unbanned','success');loadUsers(1);}catch(e){UI.toast(e.message,'error');}}
 
 async function loadAdminStores(page=1){
   const q=document.getElementById('stores-search')?.value||'';const status=document.getElementById('stores-status')?.value||'';
   try{const d=await api.admin.stores({page,limit:15,search:q,status});const s=Array.isArray(d)?d:(d.stores||[]);const tot=d.total||s.length;
-  Dashboard.renderTable(document.getElementById('stores-tbody'),s.map(st=>`<tr><td><strong>${st.name}</strong></td><td>${st.category}</td><td>${UI.statusBadge(st.status,CONFIG.STORE_STATUSES)}</td><td>${st.featured?'⭐':'—'}</td><td>${UI.formatDate(st.created_at)}</td><td class="table-actions"><a href="../store/store.html?id=${st.id}" class="btn btn-ghost btn-sm">View</a>${st.status==='draft'?`<button class="btn btn-success btn-sm" onclick="approveStore('${st.id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectStore('${st.id}')">Reject</button>`:''}${st.status==='published'?`<button class="btn btn-danger btn-sm" onclick="suspendStore('${st.id}')">Suspend</button>`:''}${st.status==='suspended'?`<button class="btn btn-success btn-sm" onclick="approveStore('${st.id}')">Restore</button>`:''}${`<button class="btn btn-ghost btn-sm" onclick="toggleFeature('${st.id}')" style="font-size:11px;">${st.featured?'Unfeature':'⭐ Feature'}</button>`}</td></tr>`),'No stores found');
+  Dashboard.renderTable(document.getElementById('stores-tbody'),s.map(st=>{
+    let actions=`<a href="../store/store.html?id=${st.id}" class="btn btn-ghost btn-sm">View</a>`;
+    if(st.status==='draft')actions+=`<button class="btn btn-success btn-sm" onclick="approveStore('${st.id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectStore('${st.id}')">Reject</button>`;
+    if(st.status==='published')actions+=`<button class="btn btn-danger btn-sm" onclick="suspendStore('${st.id}')">Suspend</button>`;
+    if(st.status==='suspended'){
+      const until=st.suspended_until?` until ${new Date(st.suspended_until).toLocaleDateString()}`:' (indefinite)';
+      actions+=`<button class="btn btn-success btn-sm" onclick="unsuspendStore('${st.id}')">Unsuspend</button>`;
+    }
+    actions+=`<button class="btn btn-ghost btn-sm" onclick="toggleFeature('${st.id}')" style="font-size:11px;">${st.featured?'Unfeature':'⭐ Feature'}</button>`;
+    let suspensionInfo='';
+    if(st.status==='suspended'){
+      suspensionInfo=`<div style="font-size:11px;color:var(--error);margin-top:4px;">${st.suspension_reason?st.suspension_reason:'No reason given'}${st.suspended_until?' — until '+new Date(st.suspended_until).toLocaleDateString():' — indefinite'}</div>`;
+    }
+    return `<tr><td><strong>${st.name}</strong>${suspensionInfo}</td><td>${st.category}</td><td>${UI.statusBadge(st.status,CONFIG.STORE_STATUSES)}</td><td>${st.featured?'⭐':'—'}</td><td>${UI.formatDate(st.created_at)}</td><td class="table-actions">${actions}</td></tr>`;}),'No stores found');
   Dashboard.renderPagination('stores-pagination',page,Math.ceil(tot/15),`(p)=>loadAdminStores(p)`);}catch(e){UI.toast(e.message,'error');}
 }
 async function approveStore(id){try{await api.admin.approveStore(id);UI.toast('Store approved!','success');loadAdminStores(1);loadPendingStores();loadAdminStats();}catch(e){UI.toast(e.message,'error');}}
 async function rejectStore(id){UI.confirmDialog({title:'Reject Store',message:'Reject this store application?',confirmText:'Reject',danger:true,onConfirm:async()=>{try{await api.admin.rejectStore(id,'Does not meet requirements');UI.toast('Store rejected','info');loadAdminStores(1);loadPendingStores();}catch(e){UI.toast(e.message,'error');}}});}
-async function suspendStore(id){UI.confirmDialog({title:'Suspend Store',message:'Suspend this store?',confirmText:'Suspend',danger:true,onConfirm:async()=>{try{await api.admin.suspendStore(id,'Policy violation');UI.toast('Store suspended','info');loadAdminStores(1);}catch(e){UI.toast(e.message,'error');}}});}
+function suspendStore(id){
+  UI.createModal({
+    id:'suspend-modal', title:'Suspend Store',
+    content:`<form id="suspend-form" onsubmit="submitSuspend(event,'${id}')">
+      <div class="form-group"><label class="form-label">Reason for suspension</label><textarea class="form-control" name="reason" rows="3" required placeholder="e.g. Policy violation, misleading listings…"></textarea></div>
+      <div class="form-group"><label class="form-label">Duration</label>
+        <select class="form-control" name="duration" required>
+          <option value="3">3 days</option>
+          <option value="7" selected>7 days</option>
+          <option value="14">14 days</option>
+          <option value="30">30 days</option>
+          <option value="90">90 days</option>
+          <option value="">Indefinite</option>
+        </select>
+      </div>
+    </form>`,
+    footer:`<button class="btn btn-ghost" onclick="UI.closeModal('suspend-modal')">Cancel</button>
+            <button class="btn btn-danger" onclick="document.getElementById('suspend-form').requestSubmit()">Suspend</button>`
+  });
+}
+async function submitSuspend(e, id){
+  e.preventDefault();
+  const fd=new FormData(e.target);
+  const reason=fd.get('reason');
+  const duration=fd.get('duration')?parseInt(fd.get('duration')):null;
+  try{await api.admin.suspendStore(id,reason,duration);UI.toast('Store suspended','success');UI.closeModal('suspend-modal');loadAdminStores(1);}
+  catch(err){UI.toast(err.message,'error');}
+}
+async function unsuspendStore(id){try{await api.admin.unsuspendStore(id);UI.toast('Store restored!','success');loadAdminStores(1);}catch(e){UI.toast(e.message,'error');}}
 async function toggleFeature(id){try{await api.admin.featureStore(id);UI.toast('Updated!','success');loadAdminStores(1);}catch(e){UI.toast(e.message,'error');}}
 
 async function loadAdminOrders(page=1){
