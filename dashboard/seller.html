@@ -54,6 +54,9 @@
         <a href="#" data-section="section-store-settings">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Store Settings
         </a>
+        <a href="#" data-section="section-trading-hours">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Trading Hours
+        </a>
         <a href="#" data-section="section-map-placement">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Mall Placement
         </a>
@@ -183,6 +186,27 @@
         <div id="store-settings-form"><div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">Select a store to edit.</div></div>
       </section>
 
+      <!-- TRADING HOURS -->
+      <section id="section-trading-hours" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);">
+          <div>
+            <h2>Trading Hours</h2>
+            <p style="color:var(--text-secondary);font-size:14px;margin-top:4px;">Set when your store is open for customers.</p>
+          </div>
+        </div>
+        <div class="card" style="max-width:640px;">
+          <div class="card-body">
+            <form id="trading-hours-form" onsubmit="saveTradingHours(event)">
+              <div id="trading-hours-rows" style="display:flex;flex-direction:column;gap:var(--space-md);"></div>
+              <div style="display:flex;justify-content:flex-end;gap:var(--space-sm);margin-top:var(--space-xl);">
+                <button type="button" class="btn btn-ghost" onclick="setDefaultHours()">Reset to Defaults</button>
+                <button type="submit" class="btn btn-primary">Save Trading Hours</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
       <!-- MALL PLACEMENT -->
       <section id="section-map-placement" class="dash-section" style="display:none;">
         <div style="margin-bottom:var(--space-lg);"><h2>Mall Placement</h2><p style="color:var(--text-secondary);">Click an empty cell to place your store.</p></div>
@@ -251,6 +275,7 @@
       if (sec === 'section-orders')        loadOrders();
       if (sec === 'section-reviews')       loadReviews();
       if (sec === 'section-store-settings')loadStoreSettingsForm();
+      if (sec === 'section-trading-hours') loadTradingHours();
       if (sec === 'section-map-placement') initPlacementMap();
       if (sec === 'section-members')       loadMembers();
       if (sec === 'section-subscription')  loadSubscription();
@@ -437,6 +462,67 @@
       await loadMyStores();
     } catch (err) { UI.toast(err.message,'error'); }
     finally { UI.setLoading(btn, false, 'Save Changes'); }
+  }
+
+  /* ---- TRADING HOURS ---- */
+  const defaultTradingHours = {
+    mon:{open:'09:00',close:'17:00',enabled:true},
+    tue:{open:'09:00',close:'17:00',enabled:true},
+    wed:{open:'09:00',close:'17:00',enabled:true},
+    thu:{open:'09:00',close:'17:00',enabled:true},
+    fri:{open:'09:00',close:'17:00',enabled:true},
+    sat:{open:'09:00',close:'13:00',enabled:true},
+    sun:{open:'',close:'',enabled:false}
+  };
+
+  function loadTradingHours() {
+    if (!currentStore) { UI.toast('Select a store first','warning'); return; }
+    renderTradingHoursRows(currentStore.trading_hours || defaultTradingHours);
+  }
+
+  function renderTradingHoursRows(hours) {
+    const container = document.getElementById('trading-hours-rows');
+    container.innerHTML = CONFIG.TRADING_DAYS.map(day => {
+      const d = hours[day] || { open:'', close:'', enabled:false };
+      return `
+        <div style="display:flex;align-items:center;gap:var(--space-md);padding:var(--space-sm) 0;border-bottom:1px solid var(--border-light);" class="trading-row">
+          <label style="display:flex;align-items:center;gap:8px;min-width:130px;cursor:pointer;">
+            <input type="checkbox" name="${day}_enabled" ${d.enabled?'checked':''} onchange="toggleDayInputs('${day}',this.checked)" style="width:18px;height:18px;accent-color:var(--primary);">
+            <span style="font-weight:600;font-size:14px;">${CONFIG.TRADING_DAY_LABELS[day]}</span>
+          </label>
+          <div class="day-inputs" id="day-inputs-${day}" style="display:flex;align-items:center;gap:var(--space-sm);flex:1;${d.enabled?'':'opacity:0.4;pointer-events:none;'}">
+            <input type="time" name="${day}_open" value="${d.open||''}" class="form-control" style="width:auto;padding:6px 10px;font-size:13px;">
+            <span style="color:var(--text-muted);font-size:13px;">to</span>
+            <input type="time" name="${day}_close" value="${d.close||''}" class="form-control" style="width:auto;padding:6px 10px;font-size:13px;">
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  window.toggleDayInputs = function(day, enabled) {
+    const el = document.getElementById(`day-inputs-${day}`);
+    if (el) { el.style.opacity = enabled ? '1' : '0.4'; el.style.pointerEvents = enabled ? 'auto' : 'none'; }
+  };
+
+  window.setDefaultHours = function() { renderTradingHoursRows(defaultTradingHours); };
+
+  async function saveTradingHours(e) {
+    e.preventDefault();
+    if (!currentStore) return;
+    const form = e.target;
+    const trading_hours = {};
+    CONFIG.TRADING_DAYS.forEach(day => {
+      trading_hours[day] = {
+        open:    form[`${day}_open`]?.value || '',
+        close:   form[`${day}_close`]?.value || '',
+        enabled: form[`${day}_enabled`]?.checked || false
+      };
+    });
+    try {
+      await api.stores.update(currentStore.id, { trading_hours });
+      UI.toast('Trading hours saved!','success');
+      currentStore.trading_hours = trading_hours;
+    } catch (err) { UI.toast(err.message,'error'); }
   }
 
   function initPlacementMap() {

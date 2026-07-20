@@ -284,6 +284,10 @@
           </div>
         </div>
       </div>
+      <div class="neo-card" style="margin-top:var(--space-lg);">
+        <h4 style="margin-bottom:var(--space-md);">Trading Hours</h4>
+        <div id="about-trading-hours" style="display:grid;gap:var(--space-sm);">—</div>
+      </div>
     </div>
   </div>
 
@@ -373,9 +377,10 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         ${s.category}
       </span>
-      <span>${UI.statusBadge(s.status, CONFIG.STORE_STATUSES)}</span>
-      <span>Joined ${UI.formatDate(s.created_at)}</span>
-      <span id="product-count-sub"></span>
+    <span id="store-open-badge"></span>
+    <span>${UI.statusBadge(s.status, CONFIG.STORE_STATUSES)}</span>
+    <span>Joined ${UI.formatDate(s.created_at)}</span>
+    <span id="product-count-sub"></span>
     `;
 
     // About tab
@@ -384,6 +389,15 @@
     document.getElementById('about-status').innerHTML        = UI.statusBadge(s.status, CONFIG.STORE_STATUSES);
     document.getElementById('about-since').textContent       = UI.formatDate(s.created_at);
     document.getElementById('about-featured').innerHTML      = s.featured ? UI.badge('Yes','success') : UI.badge('No','gray');
+
+    // Trading hours
+    renderTradingHours(s.trading_hours);
+    const isOpen = CONFIG.isOpen(s.trading_hours);
+    document.getElementById('store-open-badge').innerHTML = isOpen === null
+      ? ''
+      : isOpen
+        ? '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(39,174,96,0.1);color:var(--success);padding:3px 10px;border-radius:var(--radius-pill);font-size:12px;font-weight:700;">● Open Now</span>'
+        : '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(192,57,43,0.1);color:var(--error);padding:3px 10px;border-radius:var(--radius-pill);font-size:12px;font-weight:700;">● Closed</span>';
   }
 
   async function loadProducts() {
@@ -642,6 +656,44 @@
   }
 
   function capitalize(s) { return (s||'').charAt(0).toUpperCase() + (s||'').slice(1); }
+
+  function renderTradingHours(hours) {
+    const el = document.getElementById('about-trading-hours');
+    if (!hours || typeof hours !== 'object') { el.innerHTML = '<span style="font-size:13px;color:var(--text-muted);">Not set</span>'; return; }
+    const dayMap = ['sun','mon','tue','wed','thu','fri','sat'];
+    const now = new Date();
+    const today = dayMap[now.getDay()];
+    el.innerHTML = CONFIG.TRADING_DAYS.map(day => {
+      const d = hours[day] || { open:'', close:'', enabled:false };
+      const isToday = day === today;
+      let timeStr = 'Closed';
+      let dotColor = 'var(--text-muted)';
+      if (d.enabled && d.open && d.close) {
+        timeStr = `${formatTime12(d.open)} – ${formatTime12(d.close)}`;
+        if (isToday) {
+          const open = CONFIG.isOpen(hours);
+          dotColor = open ? 'var(--success)' : 'var(--error)';
+        } else {
+          dotColor = 'var(--text-secondary)';
+        }
+      }
+      return `<div class="flex-between" style="padding:6px 0;${isToday?'font-weight:700;':''}${d.enabled?'':'opacity:0.5;'}">
+        <span style="font-size:13px;${isToday?'color:var(--text-primary);':'color:var(--text-muted);'}">${CONFIG.TRADING_DAY_LABELS[day]}${isToday?' (Today)':''}</span>
+        <span style="font-size:13px;display:flex;align-items:center;gap:6px;color:var(--text-secondary);">
+          <span style="width:6px;height:6px;border-radius:50%;background:${dotColor};flex-shrink:0;"></span>
+          ${timeStr}
+        </span>
+      </div>`;
+    }).join('');
+  }
+
+  function formatTime12(t) {
+    if (!t) return '';
+    const [h, m] = t.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hr = h % 12 || 12;
+    return `${hr}:${String(m).padStart(2,'0')} ${ampm}`;
+  }
 </script>
 </body>
 </html>
