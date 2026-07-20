@@ -158,10 +158,27 @@
           <div class="neo-card" id="cart-summary" style="position:sticky;top:calc(var(--header-h) + var(--space-md));">
             <h4 style="margin-bottom:var(--space-md);">Order Summary</h4>
             <div id="cart-summary-lines"></div>
+            <div style="margin:var(--space-md) 0;padding:var(--space-sm) 0;border-top:1px solid var(--border-light);">
+              <label class="form-label" style="font-size:13px;font-weight:700;">Your Details</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);">
+                <div class="form-group" style="margin:0;">
+                  <input type="text" id="cust-name" class="form-control" placeholder="First name" style="font-size:13px;" oninput="saveCheckoutDetails()">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <input type="text" id="cust-surname" class="form-control" placeholder="Surname" style="font-size:13px;" oninput="saveCheckoutDetails()">
+                </div>
+              </div>
+              <div class="form-group" style="margin:var(--space-sm) 0 0;">
+                <input type="tel" id="cust-phone" class="form-control" placeholder="Cellphone number" style="font-size:13px;" oninput="saveCheckoutDetails()">
+              </div>
+              <div class="form-group" style="margin:var(--space-sm) 0 0;">
+                <input type="email" id="cust-email" class="form-control" placeholder="Email address" style="font-size:13px;" oninput="saveCheckoutDetails()">
+              </div>
+            </div>
             <div style="margin:var(--space-md) 0;">
               <label class="form-label" style="font-size:13px;">Delivery Address</label>
               <div class="address-autocomplete" id="delivery-address-ac" style="position:relative;">
-                <input type="text" id="delivery-address" class="form-control" placeholder="Start typing your address…" style="font-size:13px;" autocomplete="off">
+                <input type="text" id="delivery-address" class="form-control" placeholder="Start typing your address…" style="font-size:13px;" autocomplete="off" oninput="saveCheckoutDetails()">
                 <div id="delivery-address-suggestions" class="address-suggestions" style="display:none;"></div>
               </div>
               <div id="delivery-status" style="font-size:11px;margin-top:4px;color:var(--text-muted);"></div>
@@ -317,6 +334,7 @@
       document.getElementById('profile-name').value  = user.metadata?.name || '';
     }
     await loadOverview();
+    loadCheckoutDetails();
     UI.hidePageLoader();
     UI.staggerReveal(document.body);
     initDeliveryAutocomplete();
@@ -329,7 +347,7 @@
       Dashboard.showSection(sec);
       document.getElementById('topbar-title').textContent = a.textContent.trim();
       if (sec === 'section-orders')       loadOrders();
-      if (sec === 'section-cart')         loadCart();
+      if (sec === 'section-cart')         { loadCart(); loadCheckoutDetails(); }
       if (sec === 'section-wishlist')     loadWishlist();
       if (sec === 'section-reviews')      loadReviews();
       if (sec === 'section-notifications')loadNotifFull();
@@ -517,7 +535,18 @@
 
   async function proceedToCheckout() {
     if (!cartItems.length) { UI.toast('Cart is empty', 'warning'); return; }
+
+    const name = document.getElementById('cust-name')?.value?.trim();
+    const surname = document.getElementById('cust-surname')?.value?.trim();
+    const phone = document.getElementById('cust-phone')?.value?.trim();
+    const email = document.getElementById('cust-email')?.value?.trim();
     const address = document.getElementById('delivery-address')?.value?.trim();
+
+    if (!name || !surname || !phone || !email) {
+      UI.toast('Please fill in your name, surname, phone and email', 'warning');
+      return;
+    }
+
     let shipping_lat = null, shipping_lng = null;
     if (address) {
       try {
@@ -526,14 +555,23 @@
         shipping_lng = coords.longitude;
       } catch (_) {}
     }
+
+    saveCheckoutDetails();
+
     UI.confirmDialog({
       title: 'Place Order',
-      message: `Total: ${UI.formatCurrency(cartSubtotal + deliveryFee)}${deliveryFee > 0 ? ' (incl. delivery)' : ''}`,
+      message: `Total: ${UI.formatCurrency(cartSubtotal + deliveryFee)}${deliveryFee > 0 ? ' (incl. delivery)' : ''}<br><small style="color:var(--text-muted);">Delivering to ${name} ${surname} · ${phone}</small>`,
       confirmText: 'Confirm Order',
       onConfirm: async () => {
         try {
           const items = cartItems.map(i => ({ product_id: i.product_id || i.product?.id, quantity: i.quantity, variant: i.variant }));
-          const payload = { items };
+          const payload = {
+            items,
+            customer_name: name,
+            customer_surname: surname,
+            customer_phone: phone,
+            customer_email: email
+          };
           if (shipping_lat && shipping_lng) {
             payload.shipping_lat = shipping_lat;
             payload.shipping_lng = shipping_lng;
@@ -548,6 +586,28 @@
         } catch (err) { UI.toast(err.message, 'error'); }
       }
     });
+  }
+
+  function saveCheckoutDetails() {
+    const details = {
+      name: document.getElementById('cust-name')?.value || '',
+      surname: document.getElementById('cust-surname')?.value || '',
+      phone: document.getElementById('cust-phone')?.value || '',
+      email: document.getElementById('cust-email')?.value || '',
+      address: document.getElementById('delivery-address')?.value || ''
+    };
+    localStorage.setItem('plexi_checkout_details', JSON.stringify(details));
+  }
+
+  function loadCheckoutDetails() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('plexi_checkout_details') || '{}');
+      if (saved.name) document.getElementById('cust-name').value = saved.name;
+      if (saved.surname) document.getElementById('cust-surname').value = saved.surname;
+      if (saved.phone) document.getElementById('cust-phone').value = saved.phone;
+      if (saved.email) document.getElementById('cust-email').value = saved.email;
+      if (saved.address) document.getElementById('delivery-address').value = saved.address;
+    } catch (_) {}
   }
 
   async function updateCartQty(id, qty) {
