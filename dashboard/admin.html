@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="../assets/css/neomorphism.css">
   <link rel="stylesheet" href="../assets/css/components.css">
   <link rel="stylesheet" href="../assets/css/animations.css">
-  <style>.dash-section{display:none;}.dash-section.active{display:block;animation:fadeInUp 0.4s ease;}</style>
 </head>
 <body>
 <div id="page-loader" class="page-loader"><div class="loader-logo">Admin<span>Panel</span></div><div class="loader-bar"><div class="loader-bar-fill"></div></div></div>
@@ -168,18 +167,19 @@ document.addEventListener('DOMContentLoaded', async()=>{
 async function loadAdminStats(){
   try{
     const d=await api.admin.stats();
-    document.getElementById('stat-users').textContent=d.users?.total||0;
-    document.getElementById('stat-stores').textContent=d.stores?.total||0;
-    document.getElementById('stat-orders').textContent=d.orders?.total||0;
-    document.getElementById('stat-revenue').textContent=UI.formatCurrency(d.revenue||0);
+    const ov=d.overview||{};
+    document.getElementById('stat-users').textContent=ov.totalUsers||0;
+    document.getElementById('stat-stores').textContent=ov.totalStores||0;
+    document.getElementById('stat-orders').textContent=ov.totalOrders||0;
+    document.getElementById('stat-revenue').textContent=UI.formatCurrency(ov.totalRevenue||0);
     document.getElementById('open-tickets-count').textContent=d.tickets?.open||0;
     // Analytics
     const aEl=document.getElementById('analytics-stats');
-    if(aEl)aEl.innerHTML=`<div class="stat-card primary"><div class="stat-label">Total Users</div><div class="stat-value">${d.users?.total||0}</div></div><div class="stat-card secondary"><div class="stat-label">Sellers</div><div class="stat-value">${d.users?.sellers||0}</div></div><div class="stat-card success"><div class="stat-label">Published Stores</div><div class="stat-value">${d.stores?.published||0}</div></div><div class="stat-card info"><div class="stat-label">Open Tickets</div><div class="stat-value">${d.tickets?.open||0}</div></div>`;
+    if(aEl)aEl.innerHTML=`<div class="stat-card primary"><div class="stat-label">Total Users</div><div class="stat-value">${ov.totalUsers||0}</div></div><div class="stat-card secondary"><div class="stat-label">Sellers</div><div class="stat-value">${(d.subscriptions?.business||0)+(d.subscriptions?.enterprise||0)}</div></div><div class="stat-card success"><div class="stat-label">Published Stores</div><div class="stat-value">${ov.totalStores||0}</div></div><div class="stat-card info"><div class="stat-label">Open Tickets</div><div class="stat-value">${d.tickets?.open||0}</div></div>`;
     const oEl=document.getElementById('orders-chart');
-    if(oEl&&d.orders){const ss=['pending','processing','shipped','delivered','cancelled'];const mx=Math.max(...ss.map(s=>d.orders[s]||0),1);oEl.innerHTML=ss.map(s=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="width:80px;font-size:12px;font-weight:600;text-transform:capitalize;color:var(--text-secondary);">${s}</div><div style="flex:1;background:var(--bg);border-radius:99px;height:10px;box-shadow:var(--neo-shadow-inset);overflow:hidden;"><div style="height:100%;width:${((d.orders[s]||0)/mx)*100}%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;"></div></div><div style="font-size:12px;font-weight:700;width:24px;">${d.orders[s]||0}</div></div>`).join('');}
+    if(oEl){const ra=d.recentActivity||{};oEl.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="width:120px;font-size:12px;font-weight:600;color:var(--text-secondary);">New Users (7d)</div><strong>${ra.newUsers||0}</strong></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="width:120px;font-size:12px;font-weight:600;color:var(--text-secondary);">New Stores (7d)</div><strong>${ra.newStores||0}</strong></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="width:120px;font-size:12px;font-weight:600;color:var(--text-secondary);">New Orders (7d)</div><strong>${ra.newOrders||0}</strong></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="width:120px;font-size:12px;font-weight:600;color:var(--text-secondary);">Total Products</div><strong>${ov.totalProducts||0}</strong></div>`;}
     const uEl=document.getElementById('users-chart');
-    if(uEl&&d.users){const roles=[{l:'Admins',v:d.users.admins||0,c:'var(--primary)'},{l:'Sellers',v:d.users.sellers||0,c:'var(--secondary)'},{l:'Shoppers',v:d.users.shoppers||0,c:'var(--success)'}];const tot=roles.reduce((s,r)=>s+r.v,0)||1;uEl.innerHTML=roles.map(r=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="width:8px;height:8px;border-radius:50%;background:${r.c};"></div><div style="flex:1;font-size:13px;color:var(--text-secondary);">${r.l}</div><strong>${r.v}</strong><div style="font-size:12px;color:var(--text-muted);">${Math.round(r.v/tot*100)}%</div></div>`).join('');}
+    if(uEl&&d.subscriptions){const subs=d.subscriptions;const tot=Object.values(subs).reduce((s,v)=>s+v,0)||1;const colors={free:'var(--success)',business:'var(--secondary)',enterprise:'var(--primary)',custom:'var(--text-muted)'};uEl.innerHTML=Object.entries(subs).map(([k,v])=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="width:8px;height:8px;border-radius:50%;background:${colors[k]||'var(--gray-300)'};"></div><div style="flex:1;font-size:13px;color:var(--text-secondary);">${k.charAt(0).toUpperCase()+k.slice(1)}</div><strong>${v}</strong><div style="font-size:12px;color:var(--text-muted);">${Math.round(v/tot*100)}%</div></div>`).join('');}
   }catch(e){console.error(e);}
 }
 

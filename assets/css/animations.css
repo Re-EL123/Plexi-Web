@@ -1,10 +1,106 @@
-.auth-blob.b1 { animation: floatBlob; }
-.auth-blob.b2 { animation: floatBlob; }
-.auth-blob.b3 { animation: floatBlob; }
+/* ============================================================
+   PLEXI DIGITAL MALL — Animations & Keyframes
+   ============================================================ */
+
+/* ---- Auth blobs ---- */
+.auth-blob.b1 { animation: floatBlob 18s ease-in-out infinite; }
+.auth-blob.b2 { animation: floatBlob 22s ease-in-out infinite 2s; }
+.auth-blob.b3 { animation: floatBlob 26s ease-in-out infinite 4s; }
 
 @keyframes floatBlob {
-  0% { translate(0,0) scale(1); }
-  33% { translate(30px,-40px) scale(1.1); }
-  66% { translate(-25px,25px) scale(.95); }
-  100% { translate(0,0) scale(1); }
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(30px, -40px) scale(1.1); }
+  66%  { transform: translate(-25px, 25px) scale(0.95); }
+  100% { transform: translate(0, 0) scale(1); }
 }
+
+/* ---- Fade / scale entrance ---- */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes loader-fill {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(24px); }
+}
+
+@keyframes toast-progress {
+  from { width: 100%; }
+  to   { width: 0; }
+}
+
+/* ---- Auth gradient ---- */
+@keyframes authGradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ---- Loading dots ---- */
+@keyframes loadDot {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+.loading-dots { display: inline-flex; gap: 6px; align-items: center; }
+.loading-dots span {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: currentColor;
+  animation: loadDot 1.2s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+/* ---- Animation utility classes ---- */
+.animate-fadeIn { animation: fadeIn 0.4s ease forwards; }
+.animate-fadeInUp { animation: fadeInUp 0.4s ease forwards; }
+.animate-fadeInDown {
+  opacity: 0; transform: translateY(-12px);
+  animation: fadeInDown 0.4s ease forwards;
+}
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-scaleIn { animation: scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.animate-bounceIn { animation: scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.animate-float { animation: floatBlob 6s ease-in-out infinite; }
+
+/* ---- Stagger reveal (UI.staggerReveal) ---- */
+.stagger-child {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+.stagger-child.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.delay-1 { transition-delay: 0.08s; }
+.delay-2 { transition-delay: 0.16s; }
+.delay-3 { transition-delay: 0.24s; }

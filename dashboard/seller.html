@@ -9,12 +9,7 @@
   <link rel="stylesheet" href="../assets/css/neomorphism.css">
   <link rel="stylesheet" href="../assets/css/components.css">
   <link rel="stylesheet" href="../assets/css/animations.css">
-  <style>
-    .sidebar-overlay{display:none;position:fixed;inset:0;background:var(--overlay);z-index:99;}
-    .sidebar-overlay.show{display:block;}
-    .topbar-menu-btn{display:none;background:var(--bg);border:none;cursor:pointer;padding:8px;border-radius:var(--radius-md);box-shadow:var(--neo-shadow-sm);}
-    @media(max-width:1024px){.topbar-menu-btn{display:flex;align-items:center;}}
-  </style>
+
 </head>
 <body>
 
@@ -261,7 +256,8 @@
 
   async function loadMyStores() {
     try {
-      const data = await api.stores.myStores();
+      const user = Auth.getUser();
+      const data = await api.stores.myStores(user?.id);
       myStores = Array.isArray(data) ? data : (data.stores || []);
       const sel = document.getElementById('store-select');
       sel.innerHTML = '<option value="">— Select Store —</option>' +
