@@ -686,7 +686,8 @@
         // pulsing icon for online stores
         if (s.online) {
           L.circleMarker([s.latitude, s.longitude], {
-            radius: 16, fillColor: color, color: color, weight: 1, fillOpacity: 0.15
+            radius: 16, fillColor: color, color: color, weight: 1, fillOpacity: 0.15,
+            interactive: false
           }).addTo(leafletMap);
         }
         bounds.push([s.latitude, s.longitude]);
