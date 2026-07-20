@@ -194,6 +194,8 @@ const api = (() => {
     tickets:       (params={})=> get(`/support?${new URLSearchParams(params)}`),
     getStoreLocations: ()    => get('/admin?action=store-locations'),
     reports: (params = {})  => get(`/admin?action=reports&${new URLSearchParams(params)}`),
+    banking:  (params = {})  => get(`/admin?action=banking&${new URLSearchParams(params)}`),
+    verifyBanking: (id, verified, notes) => post('/admin?action=banking-verify', { banking_id: id, verified, admin_notes: notes }),
   };
 
   // ======== MAP ======== //
