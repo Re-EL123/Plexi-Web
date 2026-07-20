@@ -182,7 +182,9 @@ const api = (() => {
     suspendStore:  (id, r)    => post('/admin?action=approve-store', { store_id: id, approved: false, reason: r }),
     rejectStore:   (id, r)    => post('/admin?action=approve-store', { store_id: id, approved: false, reason: r }),
     featureStore:  (id)       => post(`/admin?action=feature-store`, { store_id: id }),
-    broadcast:     (title, message, role) => post('/admin?action=broadcast', { title, message, user_role: role }),
+    broadcast:     (title, message, role, userId) => post('/admin?action=broadcast', { title, message, user_role: role, user_id: userId }),
+    getSubscriptions: (params = {}) => get(`/admin?action=manage-subscriptions&${new URLSearchParams(params)}`),
+    updateSubscription: (userId, plan) => put('/admin?action=manage-subscriptions', { user_id: userId, plan }),
     tickets:       (params={})=> get(`/support?${new URLSearchParams(params)}`),
   };
 
