@@ -46,9 +46,9 @@ const CONFIG = {
   },
 
   ROLE_DASHBOARDS: {
-    admin:   '../dashboard/admin.html',
-    seller:  '../dashboard/seller.html',
-    shopper: '../dashboard/shopper.html'
+    admin:   'dashboard/admin.html',
+    seller:  'dashboard/seller.html',
+    shopper: 'dashboard/shopper.html'
   },
 
   ROUTES: {
