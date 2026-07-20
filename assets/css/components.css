@@ -884,6 +884,7 @@ a.link-underline:hover::after { transform: scaleX(1); }
   flex-direction: column;
   gap: 6px;
   transition: transform 0.28s ease, box-shadow 0.28s ease;
+  cursor: pointer;
 }
 .stat-card:hover { transform: translateY(-4px); box-shadow: var(--neo-shadow-lg); }
 .stat-icon {
