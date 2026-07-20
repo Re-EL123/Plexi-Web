@@ -259,7 +259,7 @@
               <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
                 <div class="form-group">
                   <label class="form-label">Bank Name *</label>
-                  <select id="sb-name" class="form-control" required>
+                  <select id="sb-name" class="form-control" required onchange="fillBankBranch('sb-name','sb-branch')">
                     <option value="">Select Bank</option>
                     <option value="ABSA">ABSA</option>
                     <option value="Capitec">Capitec</option>
@@ -288,7 +288,7 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label">Branch Code</label>
-                  <input type="text" id="sb-branch" class="form-control" placeholder="e.g. 632005" pattern="[0-9]{6}">
+                  <input type="text" id="sb-branch" class="form-control" readonly placeholder="Auto-filled from bank" style="background:var(--bg-tertiary);cursor:not-allowed;">
                 </div>
               </div>
               <div class="form-group">
@@ -823,6 +823,22 @@
         }
       }
     } catch (_) {}
+  }
+
+  const BANK_BRANCHES = {
+    'ABSA': '632005',
+    'Capitec': '470010',
+    'FNB': '250655',
+    'Nedbank': '198765',
+    'Standard Bank': '051001',
+    'Investec': '580105',
+    'TymeBank': '678910',
+    'African Bank': '430000'
+  };
+
+  function fillBankBranch(selectId, inputId) {
+    const bank = document.getElementById(selectId).value;
+    document.getElementById(inputId).value = BANK_BRANCHES[bank] || '';
   }
 
   function previewShopperProof(input) {
