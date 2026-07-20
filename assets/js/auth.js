@@ -26,7 +26,7 @@ const Auth = (() => {
   function redirect(role) {
     const map = {
       admin:   '../dashboard/admin.html',
-      seller:  '../dashboard/seller.html',
+      seller:  '/dashboard/seller.html',
       shopper: '../dashboard/shopper.html'
     };
     // Safety check: if role is missing, go to index
