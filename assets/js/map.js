@@ -177,7 +177,7 @@ const MallMap = (() => {
         <div style="padding:var(--space-md);">
           <p style="color:var(--text-secondary);font-size:13px;margin-bottom:var(--space-md);">${store.description || 'No description available.'}</p>
           <div style="display:flex;gap:var(--space-sm);">
-            <a href="../store/store.html?id=${store.id}" class="btn btn-primary btn-sm">
+            <a href="${CONFIG.link('store')}?id=${store.id}" class="btn btn-primary btn-sm">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3h22l-2 13H3L1 3z"/><path d="M16 16a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M6 16a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/></svg>
               Visit Store
             </a>

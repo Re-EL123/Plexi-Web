@@ -8,6 +8,7 @@ const CONFIG = {
   TOKEN_KEY: 'authToken',
   USER_KEY: 'plexiUser',
   TIMEOUT: 15000,
+  REPO_NAME: 'Plexi-Web',
 
   PLANS: {
     free:       { label: 'Free',       storeLimit: 1,   price: 0 },
@@ -60,6 +61,12 @@ const CONFIG = {
     shopper:  'dashboard/shopper.html',
     store:    'store/store.html',
     product:  'store/product.html'
+  },
+
+  link(route) {
+    const depth = (location.pathname.replace(/^\//, '').split('/').length) - 1;
+    const prefix = depth > 0 ? '../'.repeat(depth) : '';
+    return prefix + this.ROUTES[route];
   }
 };
 
