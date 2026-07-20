@@ -22,6 +22,15 @@ const api = (() => {
     return h;
   }
 
+  function parseBody(data) {
+    if (data && data.body) {
+      try {
+        return typeof data.body === 'string' ? JSON.parse(data.body) : data.body;
+      } catch (_) {}
+    }
+    return data;
+  }
+
   async function request(method, path, body = null, opts = {}) {
     const url = `${BASE}${path}`;
     const options = {
@@ -51,6 +60,8 @@ const api = (() => {
       } else {
         data = await res.text();
       }
+
+      data = parseBody(data);
 
       if (!res.ok) {
         const msg = data?.error || data?.message || `Request failed (${res.status})`;
