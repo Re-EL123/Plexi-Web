@@ -549,22 +549,69 @@
             ${['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys'].map(c=>`<option value="${c.toLowerCase()}">${c}</option>`).join('')}
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Logo URL</label><input type="url" class="form-control" name="logo" placeholder="https://…"></div>
+        <div class="form-group"><label class="form-label">Store Logo</label>
+          <div id="logo-upload-area" style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:24px;text-align:center;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('logo-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--primary)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="event.preventDefault();this.style.borderColor='var(--border)';handleLogoDrop(event)">
+            <div id="logo-preview" style="display:none;margin-bottom:8px"><img id="logo-preview-img" style="max-height:80px;max-width:160px;border-radius:var(--radius-sm);object-fit:cover"></div>
+            <div id="logo-placeholder"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><p style="color:var(--text-secondary);font-size:13px;margin:4px 0 0">Click or drag to upload logo</p></div>
+          </div>
+          <input type="file" id="logo-file-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleLogoSelect(this)">
+        </div>
+        <div id="logo-error" class="form-error" style="display:none;color:var(--error);font-size:12px;margin-top:4px"></div>
       </form>`,
       footer:`<button class="btn btn-ghost" onclick="UI.closeModal('create-store-modal')">Cancel</button>
-              <button class="btn btn-primary" onclick="document.getElementById('create-store-form').requestSubmit()">Create Store</button>`
+              <button class="btn btn-primary" id="create-store-btn" onclick="document.getElementById('create-store-form').requestSubmit()">Create Store</button>`
     });
+  }
+
+  let selectedLogoFile = null;
+
+  window.handleLogoSelect = function(input) {
+    const file = input.files[0];
+    if (file) previewLogo(file);
+  };
+
+  window.handleLogoDrop = function(e) {
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) previewLogo(file);
+  };
+
+  function previewLogo(file) {
+    const errEl = document.getElementById('logo-error');
+    errEl.style.display = 'none';
+    if (file.size > 5 * 1024 * 1024) {
+      errEl.textContent = 'File too large. Max 5MB.';
+      errEl.style.display = 'block';
+      return;
+    }
+    selectedLogoFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('logo-preview-img').src = e.target.result;
+      document.getElementById('logo-preview').style.display = 'block';
+      document.getElementById('logo-placeholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
   }
 
   async function submitCreateStore(e) {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.target).entries());
+    const btn = document.getElementById('create-store-btn');
     try {
+      if (selectedLogoFile) {
+        btn.disabled = true;
+        btn.textContent = 'Uploading...';
+        const uploadResult = await api.upload.file(selectedLogoFile, 'stores');
+        data.logo = uploadResult.url;
+      }
+      delete data[''];
       await api.stores.create({ ...data, status:'draft' });
       UI.toast('Store created! Awaiting approval.','success');
       UI.closeModal('create-store-modal');
+      selectedLogoFile = null;
       await loadMyStores();
     } catch(err){ UI.toast(err.message,'error'); }
+    finally { if(btn){ btn.disabled = false; btn.textContent = 'Create Store'; } }
   }
 
   function openNewTicketModal() {

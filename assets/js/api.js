@@ -198,8 +198,31 @@ const api = (() => {
     remove: (pid) => del(`/products?action=wishlist&id=${pid}`),
   };
 
+  // ======== UPLOAD ======== //
+  const upload = {
+    file: async (file, folder = 'general') => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const base64 = reader.result.split(',')[1];
+            const result = await post('/products?action=upload', {
+              file: base64,
+              filename: file.name,
+              contentType: file.type,
+              folder
+            });
+            resolve(result);
+          } catch (err) { reject(err); }
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
   return { auth, users, stores, products, orders, cart, reviews,
-           notifications, support, subscriptions, admin, map, wishlist };
+           notifications, support, subscriptions, admin, map, wishlist, upload };
 })();
 
 window.api = api;
