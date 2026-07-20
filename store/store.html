@@ -11,6 +11,23 @@
   <link rel="stylesheet" href="../assets/css/components.css">
   <link rel="stylesheet" href="../assets/css/animations.css">
   <style>
+    .search-suggestions {
+      position:absolute;top:100%;left:0;right:0;z-index:200;
+      background:var(--bg);border:1px solid var(--border);
+      border-radius:var(--radius-md);box-shadow:var(--neo-shadow-lg);
+      max-height:320px;overflow-y:auto;margin-top:4px;
+    }
+    .search-sg-section { padding:6px 12px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted); }
+    .search-sg-item {
+      display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;
+      text-decoration:none;color:var(--text-primary);transition:background 0.12s;
+    }
+    .search-sg-item:hover,.search-sg-item:focus { background:var(--bg-alt);outline:none; }
+    .search-sg-thumb { width:36px;height:36px;border-radius:var(--radius-sm);object-fit:cover;flex-shrink:0;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden; }
+    .search-sg-info { flex:1;overflow:hidden; }
+    .search-sg-name { font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .search-sg-meta { font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .search-sg-empty { padding:16px;text-align:center;font-size:13px;color:var(--text-muted); }
     .store-hero {
       height: 260px;
       background: linear-gradient(135deg, var(--primary), var(--secondary));
@@ -110,11 +127,12 @@
       <img src="../assets/icons/logo.jpg" alt="Plexi">
       Plexi<span>Mall</span>
     </a>
-    <div class="navbar-search" style="flex:1;max-width:380px;">
+    <div class="navbar-search" style="flex:1;max-width:380px;position:relative;" id="store-search-wrap">
       <div class="search-bar">
         <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="product-search" placeholder="Search in this store…" oninput="filterProducts(this.value)">
+        <input type="text" id="product-search" placeholder="Search in this store…" autocomplete="off" oninput="handleStoreSearchInput(this.value)" onfocus="showStoreSuggestions()" onblur="setTimeout(()=>hideStoreSuggestions(),200)">
       </div>
+      <div id="store-search-suggestions" class="search-suggestions" style="display:none;"></div>
     </div>
     <div class="navbar-nav">
       <a href="../index.html">
@@ -178,8 +196,12 @@
       <div style="display:flex;gap:var(--space-sm);align-items:center;padding-top:52px;">
         <button id="follow-btn" class="btn btn-outline btn-sm" onclick="toggleFollow()" style="display:none;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          Follow
+          <span id="follow-btn-text">Follow</span>
         </button>
+        <span id="followers-count" style="font-size:13px;color:var(--text-muted);display:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span id="followers-count-num">0</span> followers
+        </span>
         <button class="btn btn-primary btn-sm" onclick="scrollToProducts()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           Browse Products
@@ -320,6 +342,8 @@
     initNav();
     UI.initDropdowns();
     await loadStore();
+    loadFollowersCount();
+    loadFollowState();
     UI.hidePageLoader();
   });
 
@@ -586,6 +610,57 @@
     applyFilters();
   }
 
+  // ---- STORE SEARCH SUGGESTIONS ---- //
+  let storeSgTimer = null;
+  function handleStoreSearchInput(q) {
+    clearTimeout(storeSgTimer);
+    if (!q.trim()) { hideStoreSuggestions(); applyFilters(); return; }
+    storeSgTimer = setTimeout(() => fetchStoreSuggestions(q), 250);
+  }
+
+  async function fetchStoreSuggestions(q) {
+    const el = document.getElementById('store-search-suggestions');
+    if (!el || !allProducts.length) return;
+    const lower = q.toLowerCase();
+    const matches = allProducts.filter(p => p.name?.toLowerCase().includes(lower) || p.description?.toLowerCase().includes(lower) || p.category?.toLowerCase().includes(lower)).slice(0, 6);
+    if (!matches.length) {
+      el.innerHTML = `<div class="search-sg-empty">No products match "${q}"</div>`;
+      el.style.display = 'block';
+      return;
+    }
+    el.innerHTML = `<div class="search-sg-section">Products</div>` + matches.map(p => `
+      <a href="product.html?id=${p.id}" class="search-sg-item" onmousedown="event.preventDefault();location.href=this.href">
+        <div class="search-sg-thumb">${p.images?.[0] ? `<img src="${p.images[0]}" style="width:100%;height:100%;object-fit:cover;">` : '📦'}</div>
+        <div class="search-sg-info">
+          <div class="search-sg-name">${p.name}</div>
+          <div class="search-sg-meta">${UI.formatCurrency(p.price)} · ${p.category || ''}</div>
+        </div>
+      </a>`).join('') + `
+      <button class="search-sg-item" onmousedown="event.preventDefault();document.getElementById('product-search').value='${q}';hideStoreSuggestions();applyFilters();" style="border-top:1px solid var(--border-light);justify-content:center;color:var(--primary);font-weight:600;font-size:13px;">
+        View all results for "${q}"
+      </button>`;
+    el.style.display = 'block';
+  }
+
+  function showStoreSuggestions() {
+    const q = document.getElementById('product-search')?.value?.trim();
+    const el = document.getElementById('store-search-suggestions');
+    if (q && el && el.children.length) el.style.display = 'block';
+  }
+
+  function hideStoreSuggestions() {
+    const el = document.getElementById('store-search-suggestions');
+    if (el) el.style.display = 'none';
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#store-search-wrap')) hideStoreSuggestions();
+  });
+
+  document.getElementById('product-search')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); hideStoreSuggestions(); applyFilters(); }
+  });
+
   function filterProducts(val) { applyFilters(); }
   function sortProducts(val)   { sortOrder = val; applyFilters(); }
   function goPage(p)           { currentPage = p; renderProducts(); scrollToProducts(); }
@@ -636,14 +711,63 @@
     } catch (_) {}
   }
 
-  function toggleFollow() {
+  async function toggleFollow() {
+    if (!Auth.isLoggedIn()) { UI.toast('Please login to follow stores', 'warning'); return; }
     const btn = document.getElementById('follow-btn');
     const following = btn.dataset.following === 'true';
-    btn.dataset.following = !following;
-    btn.innerHTML = following
-      ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Follow`
-      : `<svg width="14" height="14" viewBox="0 0 24 24" fill="var(--primary)" stroke="var(--primary)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Following`;
-    UI.toast(following ? 'Unfollowed store' : 'Now following this store!', following ? 'info' : 'success');
+    btn.disabled = true;
+    try {
+      if (following) {
+        await api.stores.unfollow(storeId);
+        btn.dataset.following = 'false';
+        document.getElementById('follow-btn-text').textContent = 'Follow';
+        btn.querySelector('svg').setAttribute('fill', 'none');
+        btn.style.borderColor = '';
+        btn.style.color = '';
+        UI.toast('Unfollowed store', 'info');
+      } else {
+        await api.stores.follow(storeId);
+        btn.dataset.following = 'true';
+        document.getElementById('follow-btn-text').textContent = 'Following';
+        btn.querySelector('svg').setAttribute('fill', 'var(--primary)');
+        btn.querySelector('svg').setAttribute('stroke', 'var(--primary)');
+        btn.style.borderColor = 'var(--primary)';
+        btn.style.color = 'var(--primary)';
+        UI.toast('Now following this store!', 'success');
+      }
+      loadFollowersCount();
+    } catch (err) {
+      UI.toast(err.message || 'Failed', 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function loadFollowersCount() {
+    try {
+      const data = await api.stores.followersCount(storeId);
+      const count = data.count ?? 0;
+      document.getElementById('followers-count-num').textContent = count.toLocaleString();
+      document.getElementById('followers-count').style.display = count > 0 ? 'inline-flex' : 'none';
+    } catch (_) {}
+  }
+
+  async function loadFollowState() {
+    if (!Auth.isLoggedIn() || !storeId) return;
+    try {
+      const data = await api.stores.isFollowing(storeId);
+      const btn = document.getElementById('follow-btn');
+      if (data.following) {
+        btn.dataset.following = 'true';
+        document.getElementById('follow-btn-text').textContent = 'Following';
+        btn.querySelector('svg').setAttribute('fill', 'var(--primary)');
+        btn.querySelector('svg').setAttribute('stroke', 'var(--primary)');
+        btn.style.borderColor = 'var(--primary)';
+        btn.style.color = 'var(--primary)';
+      } else {
+        btn.dataset.following = 'false';
+      }
+    } catch (_) {}
   }
 
   function openReviewModal() {

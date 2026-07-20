@@ -109,6 +109,10 @@ const api = (() => {
     approve: (id)                    => post(`/admin?action=approve-store`, { store_id: id, approved: true }),
     members: (storeId)               => get(`/stores?id=${storeId}&action=members`),
     addMember:(storeId, d)           => post(`/stores?id=${storeId}&action=members`, d),
+    follow:   (storeId)              => post(`/stores?action=follow&id=${storeId}`),
+    unfollow: (storeId)              => del(`/stores?action=unfollow&id=${storeId}`),
+    followersCount: (storeId)        => get(`/stores?action=followers-count&id=${storeId}`),
+    isFollowing: (storeId)           => get(`/stores?action=is-following&id=${storeId}`),
   };
 
   // ======== PRODUCTS ======== //

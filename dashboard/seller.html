@@ -154,6 +154,7 @@
           <div class="stat-card secondary stagger-child delay-1"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div><div class="stat-label">Orders</div><div class="stat-value" id="s-stat-orders">—</div></div>
           <div class="stat-card success stagger-child delay-2"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-label">Revenue</div><div class="stat-value" id="s-stat-revenue">—</div></div>
           <div class="stat-card info stagger-child delay-3"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div class="stat-label">Avg Rating</div><div class="stat-value" id="s-stat-rating">—</div></div>
+          <div class="stat-card stagger-child delay-4" style="background:rgba(142,68,173,0.06);"><div class="stat-icon" style="color:#8E44AD;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="stat-label">Followers</div><div class="stat-value" id="s-stat-followers" style="color:#8E44AD;">—</div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);">
           <div class="card">
@@ -328,20 +329,23 @@
   async function loadOverviewData() {
     if (!currentStore) return;
     try {
-      const [pd, od, rd] = await Promise.allSettled([
+      const [pd, od, rd, fd] = await Promise.allSettled([
         api.products.list(currentStore.id),
         api.orders.list({ store_id: currentStore.id }),
-        api.reviews.list({ store_id: currentStore.id })
+        api.reviews.list({ store_id: currentStore.id }),
+        api.stores.followersCount(currentStore.id)
       ]);
       const prods   = pd.status === 'fulfilled' ? (Array.isArray(pd.value) ? pd.value : pd.value.products || []) : [];
       const orders  = od.status === 'fulfilled' ? (Array.isArray(od.value) ? od.value : od.value.orders  || []) : [];
       const reviews = rd.status === 'fulfilled' ? (Array.isArray(rd.value) ? rd.value : rd.value.reviews || []) : [];
+      const followers = fd.status === 'fulfilled' ? (fd.value?.count || 0) : 0;
 
       document.getElementById('s-stat-products').textContent = prods.length;
       document.getElementById('s-stat-orders').textContent   = orders.length;
       document.getElementById('s-stat-revenue').textContent  = UI.formatCurrency(orders.reduce((s,o)=>s+parseFloat(o.total||0),0));
       const avg = reviews.length ? (reviews.reduce((s,r)=>s+r.rating,0)/reviews.length).toFixed(1) : '—';
       document.getElementById('s-stat-rating').textContent   = avg;
+      document.getElementById('s-stat-followers').textContent = followers.toLocaleString();
 
       document.getElementById('recent-orders-list').innerHTML = orders.slice(0,5).map(o=>`
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px var(--space-md);border-bottom:1px solid var(--border-light);">
