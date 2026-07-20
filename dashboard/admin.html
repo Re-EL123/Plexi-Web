@@ -33,6 +33,10 @@
         <a href="#" data-section="sec-products"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Products</a>
       </div>
       <div class="sidebar-section">
+        <div class="sidebar-section-label">Communication</div>
+        <a href="#" data-section="sec-alerts"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Send Alerts</a>
+      </div>
+      <div class="sidebar-section">
         <div class="sidebar-section-label">Support</div>
         <a href="#" data-section="sec-tickets"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Support Tickets<span class="nav-badge" id="open-tickets-count">0</span></a>
         <a href="#" data-section="sec-map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Mall Map</a>
@@ -130,6 +134,41 @@
         <div id="admin-map"></div>
       </div>
 
+      <!-- ALERTS -->
+      <div id="sec-alerts" class="dash-section">
+        <div class="section-header mb-lg"><h2 class="section-title">Send <span>Alerts</span></h2></div>
+        <div class="grid-2" style="align-items:start;">
+          <div class="card">
+            <div class="card-header"><h4 style="font-family:var(--font-display);">New Broadcast</h4></div>
+            <div class="card-body">
+              <form id="alert-form" onsubmit="sendAlert(event)">
+                <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-control" name="title" required placeholder="e.g. System maintenance scheduled"></div>
+                <div class="form-group"><label class="form-label">Message</label><textarea class="form-control" name="message" rows="4" required placeholder="Write the notification message…"></textarea></div>
+                <div class="form-group"><label class="form-label">Send to</label>
+                  <select class="form-control" name="user_role">
+                    <option value="">All Users</option>
+                    <option value="shopper">Shoppers Only</option>
+                    <option value="seller">Sellers Only</option>
+                  </select>
+                </div>
+                <div style="display:flex;gap:var(--space-sm);justify-content:flex-end;">
+                  <button type="reset" class="btn btn-ghost">Clear</button>
+                  <button type="submit" class="btn btn-primary" id="alert-send-btn">Send Alert</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h4 style="font-family:var(--font-display);">Recent Alerts</h4></div>
+            <div class="card-body" style="padding:0;">
+              <div class="table-wrap" style="border:none;border-radius:0;">
+                <table><thead><tr><th>Title</th><th>Message</th><th>Sent</th></tr></thead><tbody id="alerts-tbody"></tbody></table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ANALYTICS -->
       <div id="sec-analytics" class="dash-section">
         <div class="section-header mb-lg"><h2 class="section-title">Platform <span>Analytics</span></h2></div>
@@ -158,7 +197,7 @@ function gotoSection(id){Dashboard.showSection(id);document.querySelectorAll('.s
 
 document.addEventListener('DOMContentLoaded', async()=>{
   Dashboard.init(); UI.hidePageLoader(); document.getElementById('sidebar-toggle').style.display='flex';
-  document.querySelectorAll('[data-section]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();gotoSection(a.dataset.section);if(a.dataset.section==='sec-map')MallMap.render();});});
+  document.querySelectorAll('[data-section]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();gotoSection(a.dataset.section);if(a.dataset.section==='sec-map')MallMap.render();if(a.dataset.section==='sec-alerts')loadRecentAlerts();});});
   await loadAdminStats(); loadPendingStores(); loadRecentUsers();
   loadUsers(1); loadAdminStores(1); loadAdminOrders(1); loadAdminProducts(1); loadTickets(1);
   MallMap.init(document.getElementById('admin-map'));
@@ -250,6 +289,31 @@ async function viewTicket(id){
   }catch(e){UI.toast(e.message,'error');}
 }
 async function replyTicket(id){const msg=document.getElementById('ticket-reply')?.value?.trim();if(!msg)return;try{await api.support.message(id,msg);UI.toast('Reply sent','success');UI.closeModal('ticket-modal');}catch(e){UI.toast(e.message,'error');}}
+
+async function sendAlert(e){
+  e.preventDefault();
+  const form=e.target;const data=Object.fromEntries(new FormData(form).entries());
+  const btn=document.getElementById('alert-send-btn');
+  UI.setLoading(btn,true,'Sending…');
+  try{
+    await api.admin.broadcast(data.title,data.message,data.user_role||undefined);
+    UI.toast('Alert sent to '+((data.user_role==='seller')?'sellers':(data.user_role==='shopper')?'shoppers':'all users')+'!','success');
+    form.reset();loadRecentAlerts();
+  }catch(err){UI.toast(err.message,'error');}
+  finally{UI.setLoading(btn,false,'Send Alert');}
+}
+
+async function loadRecentAlerts(){
+  const tbody=document.getElementById('alerts-tbody');
+  if(!tbody)return;
+  try{
+    const d=await api.notifications.list({limit:10});
+    const all=Array.isArray(d)?d:(d.notifications||[]);
+    const broadcasts=all.filter(n=>n.type==='announcement'||n.metadata?.broadcast);
+    tbody.innerHTML=broadcasts.length?broadcasts.map(n=>`<tr><td><strong style="font-size:13px;">${n.title||'Alert'}</strong></td><td style="font-size:13px;color:var(--text-secondary);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.message||''}</td><td style="font-size:12px;color:var(--text-muted);">${UI.timeAgo(n.created_at)}</td></tr>`).join('')
+    :'<tr><td colspan="3" style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">No alerts sent yet</td></tr>';
+  }catch(_){tbody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:var(--space-xl);">Could not load alerts</td></tr>';}
+}
 </script>
 </body>
 </html>
