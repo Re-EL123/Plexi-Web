@@ -395,11 +395,25 @@
             <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="3">${s.description||''}</textarea></div>
             <div class="form-group"><label class="form-label">Category</label>
               <select class="form-control" name="category">
-                ${['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys'].map(c=>`<option value="${c.toLowerCase()}"${s.category===c.toLowerCase()?' selected':''}>${c}</option>`).join('')}
+                ${['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys'].map(c=>`<option value="${c.toLowerCase()}${s.category===c.toLowerCase()?' selected':''}">${c}</option>`).join('')}
               </select>
             </div>
-            <div class="form-group"><label class="form-label">Logo URL</label><input type="url" class="form-control" name="logo" value="${s.logo||''}" placeholder="https://…"></div>
-            <div class="form-group"><label class="form-label">Banner URL</label><input type="url" class="form-control" name="banner" value="${s.banner||''}" placeholder="https://…"></div>
+            <div class="form-group"><label class="form-label">Store Logo</label>
+              <div class="file-upload-area" onclick="document.getElementById('edit-logo-input').click()">
+                ${s.logo ? `<img src="${s.logo}" style="max-height:60px;max-width:160px;border-radius:var(--radius-sm);object-fit:cover;margin-bottom:8px;display:block">` : ''}
+                <p style="color:var(--text-secondary);font-size:13px;margin:0">Click to ${s.logo?'replace':'upload'} logo</p>
+              </div>
+              <input type="file" id="edit-logo-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewEditFile(this,'edit-logo-preview','logo')">
+              <div id="edit-logo-preview" style="display:none;margin-top:4px"><img style="max-height:60px;max-width:160px;border-radius:var(--radius-sm);object-fit:cover"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Banner Image</label>
+              <div class="file-upload-area" onclick="document.getElementById('edit-banner-input').click()">
+                ${s.banner ? `<img src="${s.banner}" style="max-height:60px;max-width:160px;border-radius:var(--radius-sm);object-fit:cover;margin-bottom:8px;display:block">` : ''}
+                <p style="color:var(--text-secondary);font-size:13px;margin:0">Click to ${s.banner?'replace':'upload'} banner</p>
+              </div>
+              <input type="file" id="edit-banner-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewEditFile(this,'edit-banner-preview','banner')">
+              <div id="edit-banner-preview" style="display:none;margin-top:4px"><img style="max-height:60px;max-width:160px;border-radius:var(--radius-sm);object-fit:cover"></div>
+            </div>
             <div style="display:flex;gap:var(--space-sm);justify-content:flex-end;"><button type="submit" class="btn btn-primary">Save Changes</button></div>
           </form>
         </div>
@@ -409,10 +423,14 @@
   async function saveStoreSettings(e) {
     e.preventDefault();
     if (!currentStore) return;
-    const data = Object.fromEntries(new FormData(e.target).entries());
-    const btn  = e.target.querySelector('[type=submit]');
+    const data    = Object.fromEntries(new FormData(e.target).entries());
+    const btn     = e.target.querySelector('[type=submit]');
     UI.setLoading(btn, true, 'Saving…');
     try {
+      const logoUrl   = await uploadPendingFile('logo', 'stores');
+      const bannerUrl = await uploadPendingFile('banner', 'stores');
+      if (logoUrl)   data.logo   = logoUrl;
+      if (bannerUrl) data.banner = bannerUrl;
       await api.stores.update(currentStore.id, data);
       UI.toast('Store updated!','success');
       await loadMyStores();
@@ -480,6 +498,29 @@
     } catch (_) {}
   }
 
+  /* ---- FILE UPLOAD HELPERS ---- */
+  const pendingFiles = {};
+
+  window.previewEditFile = function(input, previewId, key) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { UI.toast('File too large. Max 5MB.','error'); return; }
+    pendingFiles[key] = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = document.getElementById(previewId);
+      if (preview) { preview.style.display = 'block'; preview.querySelector('img').src = e.target.result; }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  async function uploadPendingFile(key, folder) {
+    if (!pendingFiles[key]) return null;
+    const result = await api.upload.file(pendingFiles[key], folder);
+    delete pendingFiles[key];
+    return result.url;
+  }
+
   /* ---- MODALS ---- */
   function openAddProductModal(pd) {
     UI.createModal({
@@ -496,7 +537,13 @@
             ${['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys'].map(c=>`<option value="${c.toLowerCase()}"${pd?.category===c.toLowerCase()?' selected':''}>${c}</option>`).join('')}
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Image URL</label><input type="url" class="form-control" name="image" value="${pd?.images?.[0]||''}" placeholder="https://…"></div>
+        <div class="form-group"><label class="form-label">Product Image</label>
+          <div class="file-upload-area" onclick="document.getElementById('product-img-input').click()">
+            ${pd?.images?.[0] ? `<img src="${pd.images[0]}" style="max-height:60px;max-width:120px;border-radius:var(--radius-sm);object-fit:cover;margin-bottom:8px;display:block">` : '<p style="color:var(--text-secondary);font-size:13px;margin:0">Click to upload image</p>'}
+          </div>
+          <input type="file" id="product-img-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewEditFile(this,'product-img-preview','product-img')">
+          <div id="product-img-preview" style="display:none;margin-top:4px"><img style="max-height:60px;max-width:120px;border-radius:var(--radius-sm);object-fit:cover"></div>
+        </div>
       </form>`,
       footer:`<button class="btn btn-ghost" onclick="UI.closeModal('product-modal')">Cancel</button>
               <button class="btn btn-primary" onclick="document.getElementById('product-form').requestSubmit()">${pd?'Save Changes':'Add Product'}</button>`
@@ -507,15 +554,19 @@
     e.preventDefault();
     if (!currentStore) { UI.toast('Select a store first','warning'); return; }
     const data    = Object.fromEntries(new FormData(e.target).entries());
-    const images  = data.image ? [data.image] : [];
-    delete data.image;
-    const payload = { ...data, images, store_id: currentStore.id, price: parseFloat(data.price), inventory: parseInt(data.inventory) };
+    const btn     = e.target.querySelector('[type=submit]');
+    UI.setLoading(btn, true, 'Saving…');
     try {
+      const imageUrl = await uploadPendingFile('product-img', 'products');
+      const images   = imageUrl ? [imageUrl] : (data.image ? [data.image] : []);
+      delete data.image;
+      const payload  = { ...data, images, store_id: currentStore.id, price: parseFloat(data.price), inventory: parseInt(data.inventory) };
       if (editId) { await api.products.update(editId, payload); UI.toast('Product updated!','success'); }
       else        { await api.products.create(payload);         UI.toast('Product added!','success'); }
       UI.closeModal('product-modal');
       loadProducts();
     } catch (err) { UI.toast(err.message,'error'); }
+    finally { UI.setLoading(btn, false, editId ? 'Save Changes' : 'Add Product'); }
   }
 
   async function editProduct(id) {

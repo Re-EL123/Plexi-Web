@@ -180,6 +180,19 @@ select.form-control {
   padding-right: 36px;
 }
 
+.file-upload-area {
+  border: 2px dashed var(--border, #e2e8f0);
+  border-radius: var(--radius-md, 12px);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.file-upload-area:hover {
+  border-color: var(--primary, #6C63FF);
+  background: var(--primary-alpha, rgba(108,99,255,0.04));
+}
+
 /* Input group with icon */
 .input-group {
   display: flex;
