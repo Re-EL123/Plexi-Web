@@ -701,6 +701,27 @@ select.form-control {
 .section-title span { color: var(--primary); }
 
 /* ============================================================
+   LEAFLET MAP (index page)
+   ============================================================ */
+.leaflet-map-container {
+  width: 100%;
+  height: clamp(280px, 40vw, 400px);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--neo-shadow);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+.leaflet-map-container .leaflet-popup-content-wrapper {
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+.leaflet-map-container .leaflet-popup-tip {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+}
+
+/* ============================================================
    MICRO-INTERACTIONS
    ============================================================ */
 
