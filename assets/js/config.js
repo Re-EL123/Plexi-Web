@@ -61,12 +61,6 @@ const CONFIG = {
     shopper:  'dashboard/shopper.html',
     store:    'store/store.html',
     product:  'store/product.html'
-  },
-
-  link(route) {
-    const depth = (location.pathname.replace(/^\//, '').split('/').length) - 1;
-    const prefix = depth > 0 ? '../'.repeat(depth) : '';
-    return prefix + this.ROUTES[route];
   }
 };
 
