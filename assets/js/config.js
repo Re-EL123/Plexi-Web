@@ -52,14 +52,14 @@ const CONFIG = {
   },
 
   ROUTES: {
-    login:    '../login.html',
-    signup:   '../signup.html',
-    home:     '../index.html',
-    admin:    '../dashboard/admin.html',
-    seller:   '../dashboard/seller.html',
-    shopper:  '../dashboard/shopper.html',
-    store:    '../store/store.html',
-    product:  '../store/product.html'
+    login:    'login.html',
+    signup:   'signup.html',
+    home:     'index.html',
+    admin:    'dashboard/admin.html',
+    seller:   'dashboard/seller.html',
+    shopper:  'dashboard/shopper.html',
+    store:    'store/store.html',
+    product:  'store/product.html'
   }
 };
 
