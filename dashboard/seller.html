@@ -30,6 +30,11 @@
     .ac-loading,.ac-empty { padding:var(--space-sm) var(--space-md);font-size:12px;color:var(--text-muted);text-align:center; }
   </style>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 </head>
 <body>
 
@@ -88,6 +93,10 @@
         <a href="#" data-section="section-support">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Support
           <span class="nav-badge" id="notif-badge" style="display:none;">0</span>
+        </a>
+        <a href="#" data-section="section-reports">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          Reports
         </a>
         <a href="../index.html">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>View Mall
@@ -257,6 +266,51 @@
         </table></div></div>
       </section>
 
+      <!-- REPORTS -->
+      <section id="section-reports" class="dash-section" style="display:none;">
+        <div class="section-header mb-lg">
+          <h2 class="section-title">Store <span>Reports</span></h2>
+          <div style="display:flex;gap:var(--space-sm);">
+            <select id="report-period" class="form-control" style="width:auto;" onchange="loadSellerReport()">
+              <option value="30">Last 30 Days</option>
+              <option value="90">Last 90 Days</option>
+              <option value="365">Last Year</option>
+              <option value="0">All Time</option>
+            </select>
+            <div class="dropdown">
+              <button data-dropdown="seller-export-dd" class="btn btn-primary btn-sm">Export ▾</button>
+              <div class="dropdown-menu" id="seller-export-dd">
+                <button class="dropdown-item" onclick="exportSellerReport('xlsx')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Excel (.xlsx)</button>
+                <button class="dropdown-item" onclick="exportSellerReport('csv')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CSV</button>
+                <button class="dropdown-item" onclick="exportSellerReport('pdf')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF</button>
+                <button class="dropdown-item" onclick="exportSellerReport('pptx')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PowerPoint</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="stats-grid" style="margin-bottom:var(--space-xl);" id="report-stats"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);margin-bottom:var(--space-xl);">
+          <div class="card">
+            <div class="card-header"><h4>Revenue Over Time</h4></div>
+            <div class="card-body" style="height:280px;"><canvas id="chart-revenue"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h4>Orders by Status</h4></div>
+            <div class="card-body" style="height:280px;display:flex;align-items:center;justify-content:center;"><canvas id="chart-orders-status"></canvas></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);">
+          <div class="card">
+            <div class="card-header"><h4>Products by Category</h4></div>
+            <div class="card-body" style="height:280px;display:flex;align-items:center;justify-content:center;"><canvas id="chart-products-cat"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h4>Revenue Table</h4></div>
+            <div class="card-body" style="max-height:280px;overflow-y:auto;" id="report-table"></div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -300,6 +354,7 @@
       if (sec === 'section-members')       loadMembers();
       if (sec === 'section-subscription')  loadSubscription();
       if (sec === 'section-support')       loadTickets();
+      if (sec === 'section-reports')      loadSellerReport();
     });
   });
 
@@ -946,6 +1001,220 @@
     if (!input?.value.trim()) return;
     try { await api.support.message(id, input.value.trim()); UI.toast('Sent!','success'); openTicketThread(id); }
     catch(e){ UI.toast(e.message,'error'); }
+  }
+</script>
+<script>
+  // ---- SELLER REPORTS ---- //
+  let revenueChart = null, ordersChart = null, productsChart = null;
+  let sellerReportData = {};
+
+  async function loadSellerReport() {
+    if (!currentStore) return;
+    const days = parseInt(document.getElementById('report-period').value);
+    const params = { store_id: currentStore.id, type: 'revenue' };
+    if (days > 0) {
+      const start = new Date(Date.now() - days * 86400000).toISOString();
+      params.start_date = start;
+    }
+
+    try {
+      const [revData, ordData, prodData, sumData] = await Promise.allSettled([
+        api.orders.report(params),
+        api.orders.report({ ...params, type: 'orders' }),
+        api.orders.report({ ...params, type: 'products' }),
+        api.orders.report({ ...params, type: 'summary' })
+      ]);
+
+      const revenue = revData.status === 'fulfilled' ? revData.value : [];
+      const orders = ordData.status === 'fulfilled' ? ordData.value : {};
+      const products = prodData.status === 'fulfilled' ? prodData.value : {};
+      const summary = sumData.status === 'fulfilled' ? sumData.value : {};
+
+      sellerReportData = { revenue, orders, products, summary };
+
+      renderReportStats(summary);
+      renderRevenueChart(revenue);
+      renderOrdersChart(orders);
+      renderProductsChart(products);
+      renderRevenueTable(revenue);
+    } catch (err) {
+      UI.toast('Failed to load reports: ' + err.message, 'error');
+    }
+  }
+
+  function renderReportStats(s) {
+    document.getElementById('report-stats').innerHTML = `
+      <div class="stat-card primary stagger-child"><div class="stat-label">Total Revenue</div><div class="stat-value">${UI.formatCurrency(s.totalRevenue || 0)}</div></div>
+      <div class="stat-card secondary stagger-child delay-1"><div class="stat-label">Total Orders</div><div class="stat-value">${s.totalOrders || 0}</div></div>
+      <div class="stat-card success stagger-child delay-2"><div class="stat-label">Last 30 Days Revenue</div><div class="stat-value">${UI.formatCurrency(s.recentRevenue || 0)}</div></div>
+      <div class="stat-card info stagger-child delay-3"><div class="stat-label">Followers</div><div class="stat-value">${s.followers || 0}</div></div>
+    `;
+  }
+
+  function renderRevenueChart(data) {
+    const ctx = document.getElementById('chart-revenue');
+    if (revenueChart) revenueChart.destroy();
+    revenueChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.map(d => d.date),
+        datasets: [{
+          label: 'Revenue (ZAR)',
+          data: data.map(d => d.revenue),
+          borderColor: '#6C63FF',
+          backgroundColor: 'rgba(108,99,255,0.1)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3,
+          pointBackgroundColor: '#6C63FF'
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { display: true, ticks: { maxTicksLimit: 10, font: { size: 11 } } },
+          y: { ticks: { callback: v => 'R' + v.toLocaleString(), font: { size: 11 } } }
+        }
+      }
+    });
+  }
+
+  function renderOrdersChart(data) {
+    const ctx = document.getElementById('chart-orders-status');
+    if (ordersChart) ordersChart.destroy();
+    const colors = { pending: '#F39C12', processing: '#3498DB', shipped: '#9B59B6', delivered: '#27AE60', cancelled: '#E74C3C' };
+    ordersChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: (data.labels || []).map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+        datasets: [{ data: data.data || [], backgroundColor: (data.labels || []).map(l => colors[l] || '#95A5A6'), borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 12 } } } } }
+    });
+  }
+
+  function renderProductsChart(data) {
+    const ctx = document.getElementById('chart-products-cat');
+    if (productsChart) productsChart.destroy();
+    const palette = ['#6C63FF','#E74C3C','#F39C12','#27AE60','#3498DB','#9B59B6','#1ABC9C','#E67E22'];
+    productsChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: (data.byCategory?.labels || []).map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+        datasets: [{ label: 'Products', data: data.byCategory?.data || [], backgroundColor: palette.slice(0, (data.byCategory?.labels || []).length), borderRadius: 6 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } } } }
+    });
+  }
+
+  function renderRevenueTable(data) {
+    const el = document.getElementById('report-table');
+    if (!data.length) { el.innerHTML = '<div style="text-align:center;padding:var(--space-lg);color:var(--text-muted);">No data</div>'; return; }
+    el.innerHTML = `<table style="width:100%;font-size:13px;"><thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:2px solid var(--border);">Date</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid var(--border);">Orders</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid var(--border);">Revenue</th></tr></thead><tbody>${data.map(d => `<tr><td style="padding:6px 8px;border-bottom:1px solid var(--border-light);">${d.date}</td><td style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border-light);">${d.orders}</td><td style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border-light);font-weight:600;color:var(--primary);">${UI.formatCurrency(d.revenue)}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  // ---- EXPORTS ---- //
+  function exportSellerReport(fmt) {
+    const d = sellerReportData;
+    if (!d.revenue?.length && !d.summary) { UI.toast('No data to export', 'warning'); return; }
+    if (fmt === 'xlsx') exportXlsx(d);
+    else if (fmt === 'csv') exportCsv(d);
+    else if (fmt === 'pdf') exportPdf(d);
+    else if (fmt === 'pptx') exportPptx(d);
+  }
+
+  function exportXlsx(d) {
+    const wb = XLSX.utils.book_new();
+    if (d.revenue?.length) {
+      const ws = XLSX.utils.json_to_sheet(d.revenue.map(r => ({ Date: r.date, Orders: r.orders, Revenue: r.revenue })));
+      XLSX.utils.book_append_sheet(wb, ws, 'Revenue');
+    }
+    if (d.orders?.labels) {
+      const ws = XLSX.utils.json_to_sheet(d.orders.labels.map((l, i) => ({ Status: l, Count: d.orders.data[i] })));
+      XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+    }
+    if (d.products?.byCategory?.labels) {
+      const ws = XLSX.utils.json_to_sheet(d.products.byCategory.labels.map((l, i) => ({ Category: l, Count: d.products.byCategory.data[i] })));
+      XLSX.utils.book_append_sheet(wb, ws, 'Products');
+    }
+    XLSX.writeFile(wb, `plexi-report-${new Date().toISOString().split('T')[0]}.xlsx`);
+    UI.toast('Excel downloaded!', 'success');
+  }
+
+  function exportCsv(d) {
+    let csv = 'Date,Orders,Revenue\n';
+    (d.revenue || []).forEach(r => { csv += `${r.date},${r.orders},${r.revenue}\n`; });
+    csv += '\nStatus,Count\n';
+    (d.orders?.labels || []).forEach((l, i) => { csv += `${l},${d.orders.data[i]}\n`; });
+    downloadBlob(csv, `plexi-report-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+    UI.toast('CSV downloaded!', 'success');
+  }
+
+  function exportPdf(d) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Plexi Mall — Store Report', 14, 20);
+    doc.setFontSize(11);
+    doc.text(`Store: ${currentStore?.name || 'N/A'}`, 14, 28);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 34);
+
+    if (d.summary) {
+      doc.setFontSize(13);
+      doc.text('Summary', 14, 46);
+      doc.setFontSize(10);
+      doc.text(`Total Revenue: R${(d.summary.totalRevenue || 0).toLocaleString()}`, 14, 53);
+      doc.text(`Total Orders: ${d.summary.totalOrders || 0}`, 14, 59);
+      doc.text(`Followers: ${d.summary.followers || 0}`, 14, 65);
+      doc.text(`Products: ${d.summary.products || 0}`, 14, 71);
+    }
+
+    if (d.revenue?.length) {
+      doc.autoTable({
+        startY: d.summary ? 80 : 46,
+        head: [['Date', 'Orders', 'Revenue (ZAR)']],
+        body: d.revenue.map(r => [r.date, r.orders, `R${r.revenue.toLocaleString()}`]),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [108, 99, 255] }
+      });
+    }
+    doc.save(`plexi-report-${new Date().toISOString().split('T')[0]}.pdf`);
+    UI.toast('PDF downloaded!', 'success');
+  }
+
+  function exportPptx(d) {
+    const pptx = new PptxGenJS();
+    pptx.author = 'Plexi Mall';
+    pptx.title = 'Store Report';
+
+    const slide = pptx.addSlide();
+    slide.addText('Store Report', { x: 0.5, y: 0.3, w: 9, fontSize: 28, bold: true, color: '6C63FF' });
+    slide.addText(`${currentStore?.name || ''} — ${new Date().toLocaleDateString()}`, { x: 0.5, y: 1.0, w: 9, fontSize: 14, color: '666666' });
+
+    if (d.summary) {
+      slide.addText([
+        { text: `Revenue: R${(d.summary.totalRevenue || 0).toLocaleString()}\n`, options: { fontSize: 16, bold: true } },
+        { text: `Orders: ${d.summary.totalOrders || 0}  |  Followers: ${d.summary.followers || 0}  |  Products: ${d.summary.products || 0}`, options: { fontSize: 12, color: '444444' } }
+      ], { x: 0.5, y: 1.8, w: 9 });
+    }
+
+    if (d.revenue?.length) {
+      const tblRows = [['Date', 'Orders', 'Revenue']];
+      d.revenue.forEach(r => tblRows.push([r.date, String(r.orders), `R${r.revenue.toLocaleString()}`]));
+      slide.addTable(tblRows, { x: 0.5, y: 3.2, w: 9, fontSize: 10, border: { pt: 0.5, color: 'CCCCCC' }, colW: [3, 2, 3] });
+    }
+
+    pptx.writeFile({ fileName: `plexi-report-${new Date().toISOString().split('T')[0]}.pptx` });
+    UI.toast('PowerPoint downloaded!', 'success');
+  }
+
+  function downloadBlob(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 </script>
 </body>

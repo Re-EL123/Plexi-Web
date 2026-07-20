@@ -10,6 +10,11 @@
   <link rel="stylesheet" href="../assets/css/components.css">
   <link rel="stylesheet" href="../assets/css/animations.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
@@ -27,6 +32,10 @@
         <div class="sidebar-section-label">Overview</div>
         <a href="#" class="active" data-section="sec-overview"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
         <a href="#" data-section="sec-analytics"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</a>
+        <a href="#" data-section="sec-reports">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          Reports
+        </a>
       </div>
       <div class="sidebar-section">
         <div class="sidebar-section-label">Management</div>
@@ -237,6 +246,55 @@
           <div class="card"><div class="card-header"><h4>Users by Role</h4></div><div class="card-body" id="users-chart" style="min-height:180px;"></div></div>
         </div>
       </div>
+
+      <!-- REPORTS -->
+      <div id="sec-reports" class="dash-section">
+        <div class="section-header mb-lg">
+          <h2 class="section-title">Platform <span>Reports</span></h2>
+          <div style="display:flex;gap:var(--space-sm);">
+            <select id="admin-report-period" class="form-control" style="width:auto;" onchange="loadAdminReport()">
+              <option value="30">Last 30 Days</option>
+              <option value="90">Last 90 Days</option>
+              <option value="365">Last Year</option>
+              <option value="0">All Time</option>
+            </select>
+            <div class="dropdown">
+              <button data-dropdown="admin-export-dd" class="btn btn-primary btn-sm">Export ▾</button>
+              <div class="dropdown-menu" id="admin-export-dd">
+                <button class="dropdown-item" onclick="exportAdminReport('xlsx')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Excel (.xlsx)</button>
+                <button class="dropdown-item" onclick="exportAdminReport('csv')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CSV</button>
+                <button class="dropdown-item" onclick="exportAdminReport('pdf')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF</button>
+                <button class="dropdown-item" onclick="exportAdminReport('pptx')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PowerPoint</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="stats-grid" style="margin-bottom:var(--space-xl);" id="admin-report-stats"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);margin-bottom:var(--space-xl);">
+          <div class="card">
+            <div class="card-header"><h4>Revenue Over Time</h4></div>
+            <div class="card-body" style="height:280px;"><canvas id="admin-chart-revenue"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h4>Orders by Status</h4></div>
+            <div class="card-body" style="height:280px;display:flex;align-items:center;justify-content:center;"><canvas id="admin-chart-orders"></canvas></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);margin-bottom:var(--space-xl);">
+          <div class="card">
+            <div class="card-header"><h4>User Signups (Monthly)</h4></div>
+            <div class="card-body" style="height:280px;"><canvas id="admin-chart-users"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h4>Stores by Category</h4></div>
+            <div class="card-body" style="height:280px;display:flex;align-items:center;justify-content:center;"><canvas id="admin-chart-stores"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h4>Revenue Table</h4></div>
+          <div class="card-body" style="max-height:300px;overflow-y:auto;" id="admin-report-table"></div>
+        </div>
+      </div>
     </main>
   </div>
 </div>
@@ -256,7 +314,7 @@ function gotoSection(id){Dashboard.showSection(id);document.querySelectorAll('.s
 
 document.addEventListener('DOMContentLoaded', async()=>{
   Dashboard.init(); UI.hidePageLoader(); document.getElementById('sidebar-toggle').style.display='flex';
-  document.querySelectorAll('[data-section]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();gotoSection(a.dataset.section);if(a.dataset.section==='sec-map')MallMap.render();if(a.dataset.section==='sec-alerts')loadRecentAlerts();if(a.dataset.section==='sec-subscriptions')loadSubscriptions(1);if(a.dataset.section==='sec-gps')loadGPSData();});});
+  document.querySelectorAll('[data-section]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();gotoSection(a.dataset.section);if(a.dataset.section==='sec-map')MallMap.render();if(a.dataset.section==='sec-alerts')loadRecentAlerts();if(a.dataset.section==='sec-subscriptions')loadSubscriptions(1);if(a.dataset.section==='sec-gps')loadGPSData();if(a.dataset.section==='sec-reports')loadAdminReport();});});
   await loadAdminStats(); loadPendingStores(); loadRecentUsers();
   loadUsers(1); loadAdminStores(1); loadAdminOrders(1); loadAdminProducts(1); loadTickets(1);
   MallMap.init(document.getElementById('admin-map'));
@@ -566,6 +624,222 @@ function renderGPSMap(stores) {
 }
 
 setInterval(loadGPSData, 30000);
+</script>
+<script>
+  let aRevenueChart = null, aOrdersChart = null, aUsersChart = null, aStoresChart = null;
+  let adminReportData = {};
+
+  async function loadAdminReport() {
+    const days = parseInt(document.getElementById('admin-report-period').value);
+    const params = {};
+    if (days > 0) {
+      const start = new Date(Date.now() - days * 86400000).toISOString();
+      params.start_date = start;
+    }
+
+    try {
+      const [rev, ord, usr, str] = await Promise.allSettled([
+        api.admin.reports({ ...params, type: 'revenue' }),
+        api.admin.reports({ ...params, type: 'orders' }),
+        api.admin.reports({ type: 'users' }),
+        api.admin.reports({ type: 'stores' })
+      ]);
+
+      const revenue = rev.status === 'fulfilled' ? rev.value : [];
+      const orders = ord.status === 'fulfilled' ? ord.value : {};
+      const users = usr.status === 'fulfilled' ? usr.value : {};
+      const stores = str.status === 'fulfilled' ? str.value : {};
+
+      adminReportData = { revenue, orders, users, stores };
+
+      const totalRev = (revenue || []).reduce((s, r) => s + (r.revenue || 0), 0);
+      const totalOrd = (revenue || []).reduce((s, r) => s + (r.orders || 0), 0);
+      document.getElementById('admin-report-stats').innerHTML = `
+        <div class="stat-card primary stagger-child"><div class="stat-label">Period Revenue</div><div class="stat-value">${UI.formatCurrency(totalRev)}</div></div>
+        <div class="stat-card secondary stagger-child delay-1"><div class="stat-label">Period Orders</div><div class="stat-value">${totalOrd}</div></div>
+        <div class="stat-card success stagger-child delay-2"><div class="stat-label">Total Users</div><div class="stat-value">${users.byRole?.raw?.length || 0}</div></div>
+        <div class="stat-card info stagger-child delay-3"><div class="stat-label">Total Stores</div><div class="stat-value">${(stores.byStatus?.data || []).reduce((a, b) => a + b, 0)}</div></div>
+      `;
+
+      renderAdminRevenueChart(revenue);
+      renderAdminOrdersChart(orders);
+      renderAdminUsersChart(users);
+      renderAdminStoresChart(stores);
+      renderAdminRevenueTable(revenue);
+    } catch (err) {
+      UI.toast('Failed to load reports', 'error');
+    }
+  }
+
+  function renderAdminRevenueChart(data) {
+    const ctx = document.getElementById('admin-chart-revenue');
+    if (aRevenueChart) aRevenueChart.destroy();
+    aRevenueChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: (data || []).map(d => d.date),
+        datasets: [{
+          label: 'Revenue (ZAR)',
+          data: (data || []).map(d => d.revenue),
+          borderColor: '#6C63FF',
+          backgroundColor: 'rgba(108,99,255,0.1)',
+          fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#6C63FF'
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 10, font: { size: 11 } } }, y: { ticks: { callback: v => 'R' + v.toLocaleString(), font: { size: 11 } } } } }
+    });
+  }
+
+  function renderAdminOrdersChart(data) {
+    const ctx = document.getElementById('admin-chart-orders');
+    if (aOrdersChart) aOrdersChart.destroy();
+    const colors = { pending: '#F39C12', processing: '#3498DB', shipped: '#9B59B6', delivered: '#27AE60', cancelled: '#E74C3C' };
+    aOrdersChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: (data.labels || []).map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+        datasets: [{ data: data.data || [], backgroundColor: (data.labels || []).map(l => colors[l] || '#95A5A6'), borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 12 } } } } }
+    });
+  }
+
+  function renderAdminUsersChart(data) {
+    const ctx = document.getElementById('admin-chart-users');
+    if (aUsersChart) aUsersChart.destroy();
+    aUsersChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: data.monthlySignups?.labels || [],
+        datasets: [{ label: 'New Users', data: data.monthlySignups?.data || [], backgroundColor: 'rgba(108,99,255,0.7)', borderRadius: 4 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } }, x: { ticks: { font: { size: 10 } } } } }
+    });
+  }
+
+  function renderAdminStoresChart(data) {
+    const ctx = document.getElementById('admin-chart-stores');
+    if (aStoresChart) aStoresChart.destroy();
+    const palette = ['#6C63FF','#E74C3C','#F39C12','#27AE60','#3498DB','#9B59B6','#1ABC9C','#E67E22'];
+    aStoresChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: (data.byCategory?.labels || []).map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+        datasets: [{ label: 'Stores', data: data.byCategory?.data || [], backgroundColor: palette.slice(0, (data.byCategory?.labels || []).length), borderRadius: 6 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } } } }
+    });
+  }
+
+  function renderAdminRevenueTable(data) {
+    const el = document.getElementById('admin-report-table');
+    if (!data?.length) { el.innerHTML = '<div style="text-align:center;padding:var(--space-lg);color:var(--text-muted);">No data</div>'; return; }
+    el.innerHTML = `<table style="width:100%;font-size:13px;"><thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:2px solid var(--border);">Date</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid var(--border);">Orders</th><th style="text-align:right;padding:6px 8px;border-bottom:2px solid var(--border);">Revenue</th></tr></thead><tbody>${data.map(d => `<tr><td style="padding:6px 8px;border-bottom:1px solid var(--border-light);">${d.date}</td><td style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border-light);">${d.orders}</td><td style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border-light);font-weight:600;color:var(--primary);">${UI.formatCurrency(d.revenue)}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  function exportAdminReport(fmt) {
+    const d = adminReportData;
+    if (!d.revenue?.length && !d.orders) { UI.toast('No data to export', 'warning'); return; }
+    if (fmt === 'xlsx') exportAdminXlsx(d);
+    else if (fmt === 'csv') exportAdminCsv(d);
+    else if (fmt === 'pdf') exportAdminPdf(d);
+    else if (fmt === 'pptx') exportAdminPptx(d);
+  }
+
+  function exportAdminXlsx(d) {
+    const wb = XLSX.utils.book_new();
+    if (d.revenue?.length) {
+      const ws = XLSX.utils.json_to_sheet(d.revenue.map(r => ({ Date: r.date, Orders: r.orders, Revenue: r.revenue })));
+      XLSX.utils.book_append_sheet(wb, ws, 'Revenue');
+    }
+    if (d.orders?.labels) {
+      const ws = XLSX.utils.json_to_sheet(d.orders.labels.map((l, i) => ({ Status: l, Count: d.orders.data[i] })));
+      XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+    }
+    if (d.users?.byRole?.labels) {
+      const ws = XLSX.utils.json_to_sheet(d.users.byRole.labels.map((l, i) => ({ Role: l, Count: d.users.byRole.data[i] })));
+      XLSX.utils.book_append_sheet(wb, ws, 'Users');
+    }
+    if (d.stores?.byCategory?.labels) {
+      const ws = XLSX.utils.json_to_sheet(d.stores.byCategory.labels.map((l, i) => ({ Category: l, Count: d.stores.byCategory.data[i] })));
+      XLSX.utils.book_append_sheet(wb, ws, 'Stores');
+    }
+    XLSX.writeFile(wb, `plexi-admin-report-${new Date().toISOString().split('T')[0]}.xlsx`);
+    UI.toast('Excel downloaded!', 'success');
+  }
+
+  function exportAdminCsv(d) {
+    let csv = 'Date,Orders,Revenue\n';
+    (d.revenue || []).forEach(r => { csv += `${r.date},${r.orders},${r.revenue}\n`; });
+    csv += '\nStatus,Count\n';
+    (d.orders?.labels || []).forEach((l, i) => { csv += `${l},${d.orders.data[i]}\n`; });
+    csv += '\nRole,Count\n';
+    (d.users?.byRole?.labels || []).forEach((l, i) => { csv += `${l},${d.users.byRole.data[i]}\n`; });
+    downloadBlob(csv, `plexi-admin-report-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+    UI.toast('CSV downloaded!', 'success');
+  }
+
+  function exportAdminPdf(d) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Plexi Mall — Admin Report', 14, 20);
+    doc.setFontSize(11);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+
+    let y = 40;
+    if (d.revenue?.length) {
+      const totalRev = d.revenue.reduce((s, r) => s + r.revenue, 0);
+      doc.setFontSize(13); doc.text('Revenue', 14, y); y += 7;
+      doc.setFontSize(10); doc.text(`Total: R${totalRev.toLocaleString()}`, 14, y); y += 8;
+      doc.autoTable({
+        startY: y, head: [['Date', 'Orders', 'Revenue (ZAR)']],
+        body: d.revenue.map(r => [r.date, r.orders, `R${r.revenue.toLocaleString()}`]),
+        styles: { fontSize: 9 }, headStyles: { fillColor: [108, 99, 255] }
+      });
+      y = doc.lastAutoTable.finalY + 10;
+    }
+    if (d.orders?.labels) {
+      doc.setFontSize(13); doc.text('Orders by Status', 14, y); y += 7;
+      doc.autoTable({
+        startY: y, head: [['Status', 'Count']],
+        body: d.orders.labels.map((l, i) => [l, d.orders.data[i]]),
+        styles: { fontSize: 9 }, headStyles: { fillColor: [108, 99, 255] }
+      });
+    }
+    doc.save(`plexi-admin-report-${new Date().toISOString().split('T')[0]}.pdf`);
+    UI.toast('PDF downloaded!', 'success');
+  }
+
+  function exportAdminPptx(d) {
+    const pptx = new PptxGenJS();
+    pptx.author = 'Plexi Mall';
+    pptx.title = 'Admin Report';
+    const slide = pptx.addSlide();
+    slide.addText('Platform Report', { x: 0.5, y: 0.3, w: 9, fontSize: 28, bold: true, color: '6C63FF' });
+    slide.addText(new Date().toLocaleDateString(), { x: 0.5, y: 1.0, w: 9, fontSize: 14, color: '666666' });
+
+    if (d.revenue?.length) {
+      const totalRev = d.revenue.reduce((s, r) => s + r.revenue, 0);
+      const totalOrd = d.revenue.reduce((s, r) => s + r.orders, 0);
+      slide.addText(`Revenue: R${totalRev.toLocaleString()}  |  Orders: ${totalOrd}`, { x: 0.5, y: 1.8, w: 9, fontSize: 14, bold: true });
+    }
+    if (d.revenue?.length) {
+      const tblRows = [['Date', 'Orders', 'Revenue']];
+      d.revenue.forEach(r => tblRows.push([r.date, String(r.orders), `R${r.revenue.toLocaleString()}`]));
+      slide.addTable(tblRows, { x: 0.5, y: 2.6, w: 9, fontSize: 9, border: { pt: 0.5, color: 'CCCCCC' }, colW: [3, 2, 3] });
+    }
+    pptx.writeFile({ fileName: `plexi-admin-report-${new Date().toISOString().split('T')[0]}.pptx` });
+    UI.toast('PowerPoint downloaded!', 'success');
+  }
+
+  function downloadBlob(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 </script>
 </body>
 </html>

@@ -132,6 +132,7 @@ const api = (() => {
     create: (data)         => post('/orders', data),
     update: (id, data)     => put(`/orders?id=${id}`, data),
     cancel: (id)           => put(`/orders?id=${id}`, { status: 'cancelled' }),
+    report: (params = {})  => get(`/orders?action=report&${new URLSearchParams(params)}`),
   };
 
   // ======== CART ======== //
@@ -192,6 +193,7 @@ const api = (() => {
     updateSubscription: (userId, plan) => put('/admin?action=manage-subscriptions', { user_id: userId, plan }),
     tickets:       (params={})=> get(`/support?${new URLSearchParams(params)}`),
     getStoreLocations: ()    => get('/admin?action=store-locations'),
+    reports: (params = {})  => get(`/admin?action=reports&${new URLSearchParams(params)}`),
   };
 
   // ======== MAP ======== //

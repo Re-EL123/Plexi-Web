@@ -327,7 +327,34 @@
 
   function filterCategory(cat,btn) {
     document.querySelectorAll('.cat-scroll .chip').forEach(c=>c.classList.remove('active'));
-    btn.classList.add('active'); activeCat=cat; loadProducts(1,cat);
+    btn.classList.add('active'); activeCat=cat;
+    loadProducts(1,cat);
+    loadStoresByCategory(cat);
+  }
+
+  async function loadStoresByCategory(cat) {
+    const grid = document.getElementById('featured-stores');
+    try {
+      const params = { status: 'published', limit: 20 };
+      if (cat !== 'all') params.category = cat;
+      const data = await api.stores.list(params);
+      const stores = Array.isArray(data) ? data : (data.stores || []);
+      if (!stores.length) {
+        grid.innerHTML = UI.empty('No Stores', cat === 'all' ? 'No stores yet.' : 'No ' + cat + ' stores found.');
+        return;
+      }
+      grid.innerHTML = stores.map((s, i) => {
+        const oc = CONFIG.isOpen(s.trading_hours);
+        const ocBadge = oc === null ? '' : oc ? '<span style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:3px;background:rgba(39,174,96,0.9);color:white;padding:2px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;">● Open</span>' : '<span style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:3px;background:rgba(192,57,43,0.9);color:white;padding:2px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;">● Closed</span>';
+        return '<a href=\"store/store.html?id=' + s.id + '\" class=\"store-card stagger-child\" style=\"display:block;text-decoration:none;animation-delay:' + (i * 60) + 'ms;\">' +
+          '<div class=\"store-card-banner\">' + (s.banner ? '<img src=\"' + s.banner + '\" alt=\"\">' : '') + ocBadge + '<div class=\"store-card-logo\">' + (s.logo ? '<img src=\"' + s.logo + '\" alt=\"\">' : s.name.charAt(0)) + '</div>' + (s.featured ? '<span class=\"badge badge-secondary\" style=\"position:absolute;top:8px;right:8px;\">⭐ Featured</span>' : '') + '</div>' +
+          '<div class=\"store-card-body\"><div class=\"store-card-name\">' + s.name + '</div><div class=\"store-card-category\">' + s.category + '</div><div class=\"store-card-desc\">' + (s.description || '') + '</div></div>' +
+        '</a>';
+      }).join('');
+      setTimeout(() => grid.querySelectorAll('.stagger-child').forEach(el => el.classList.add('visible')), 100);
+    } catch (e) {
+      grid.innerHTML = UI.empty('Error', 'Could not load stores.');
+    }
   }
 
   async function loadFeaturedStores() {
