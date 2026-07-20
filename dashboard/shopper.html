@@ -76,6 +76,9 @@
         <a href="#" data-section="section-support">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Support
         </a>
+        <a href="#" data-section="section-banking">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Banking
+        </a>
         <a href="../index.html">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Continue Shopping
         </a>
@@ -223,6 +226,71 @@
         </table></div></div>
       </section>
 
+      <!-- BANKING DETAILS -->
+      <section id="section-banking" class="dash-section" style="display:none;">
+        <div class="section-header mb-lg">
+          <h2 class="section-title">Banking <span>Details</span></h2>
+        </div>
+        <div class="card" style="max-width:700px;">
+          <div class="card-header"><h4>Payment Account</h4></div>
+          <div class="card-body">
+            <form id="shopper-banking-form" onsubmit="saveShopperBanking(event)">
+              <div class="form-group">
+                <label class="form-label">Account Holder Name *</label>
+                <input type="text" id="sb-holder" class="form-control" placeholder="e.g. John Smith" required>
+              </div>
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+                <div class="form-group">
+                  <label class="form-label">Bank Name *</label>
+                  <select id="sb-name" class="form-control" required>
+                    <option value="">Select Bank</option>
+                    <option value="ABSA">ABSA</option>
+                    <option value="Capitec">Capitec</option>
+                    <option value="FNB">FNB</option>
+                    <option value="Investec">Investec</option>
+                    <option value="Nedbank">Nedbank</option>
+                    <option value="Standard Bank">Standard Bank</option>
+                    <option value="TymeBank">TymeBank</option>
+                    <option value="Discovery Bank">Discovery Bank</option>
+                    <option value="African Bank">African Bank</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Account Type *</label>
+                  <select id="sb-type" class="form-control" required>
+                    <option value="cheque">Cheque / Current</option>
+                    <option value="savings">Savings</option>
+                    <option value="transmission">Transmission</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+                <div class="form-group">
+                  <label class="form-label">Account Number *</label>
+                  <input type="text" id="sb-account" class="form-control" placeholder="e.g. 1234567890" pattern="[0-9]{6,18}" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Branch Code</label>
+                  <input type="text" id="sb-branch" class="form-control" placeholder="e.g. 632005" pattern="[0-9]{6}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Proof of Bank Account (bank statement / cancelled cheque)</label>
+                <div id="sb-proof-drop" class="upload-drop" style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:var(--space-xl);text-align:center;cursor:pointer;" onclick="document.getElementById('sb-proof-input').click()">
+                  <input type="file" id="sb-proof-input" accept="image/*,.pdf" style="display:none;" onchange="previewShopperProof(this)">
+                  <div id="sb-proof-preview" style="color:var(--text-muted);font-size:13px;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin:0 auto var(--space-sm);display:block;opacity:0.5;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Click to upload or drag and drop<br><small>PDF or image, max 5MB</small>
+                  </div>
+                </div>
+              </div>
+              <div id="sb-verified-status" style="display:none;padding:var(--space-md);border-radius:var(--radius-md);margin-bottom:var(--space-md);font-size:13px;"></div>
+              <button type="submit" class="btn btn-primary" id="shopper-banking-btn">Save Banking Details</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -266,6 +334,7 @@
       if (sec === 'section-reviews')      loadReviews();
       if (sec === 'section-notifications')loadNotifFull();
       if (sec === 'section-support')      loadTickets();
+      if (sec === 'section-banking')      loadShopperBanking();
     });
   });
 
@@ -665,8 +734,72 @@
     } catch(e){ UI.toast(e.message,'error'); }
   }
 </script>
+<script>
+  // ---- SHOPPER BANKING ---- //
+  let shopperBankProofFile = null;
 
-<style>
+  async function loadShopperBanking() {
+    try {
+      const data = await api.banking.get();
+      if (data) {
+        document.getElementById('sb-holder').value = data.account_holder || '';
+        document.getElementById('sb-name').value = data.bank_name || '';
+        document.getElementById('sb-type').value = data.account_type || 'cheque';
+        document.getElementById('sb-account').value = data.account_number || '';
+        document.getElementById('sb-branch').value = data.branch_code || '';
+        if (data.proof_url) {
+          document.getElementById('sb-proof-preview').innerHTML = `<a href="${data.proof_url}" target="_blank" style="color:var(--primary);font-size:12px;">View uploaded proof →</a>`;
+        }
+        const statusEl = document.getElementById('sb-verified-status');
+        statusEl.style.display = 'block';
+        if (data.account_verified) {
+          statusEl.style.background = 'rgba(39,174,96,0.1)';
+          statusEl.style.color = '#27ae60';
+          statusEl.innerHTML = '<strong>✓ Bank account verified</strong>';
+        } else {
+          statusEl.style.background = 'rgba(243,156,18,0.1)';
+          statusEl.style.color = '#f39c12';
+          statusEl.innerHTML = '<strong>Pending verification</strong> — Upload proof of account for faster approval';
+        }
+      }
+    } catch (_) {}
+  }
+
+  function previewShopperProof(input) {
+    const file = input.files[0];
+    if (!file) return;
+    shopperBankProofFile = file;
+    document.getElementById('sb-proof-preview').innerHTML = `<div style="font-size:12px;color:var(--primary);font-weight:600;">${file.name}</div><div style="font-size:11px;color:var(--text-muted);">${(file.size/1024).toFixed(0)} KB</div>`;
+  }
+
+  async function saveShopperBanking(e) {
+    e.preventDefault();
+    const btn = document.getElementById('shopper-banking-btn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      let proofUrl = null;
+      if (shopperBankProofFile) {
+        const uploaded = await api.upload.file(shopperBankProofFile, 'banking');
+        proofUrl = uploaded.url;
+      }
+      const payload = {
+        account_holder: document.getElementById('sb-holder').value,
+        bank_name: document.getElementById('sb-name').value,
+        account_number: document.getElementById('sb-account').value,
+        account_type: document.getElementById('sb-type').value,
+        branch_code: document.getElementById('sb-branch').value || null,
+        proof_url: proofUrl
+      };
+      await api.banking.save(payload);
+      UI.toast('Banking details saved!', 'success');
+      loadShopperBanking();
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Banking Details';
+    }
+  }
+</script>
   @media(max-width:768px){
     #section-cart>div{grid-template-columns:1fr!important;}
     #cart-summary{position:static!important;}

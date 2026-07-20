@@ -98,6 +98,13 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
           Reports
         </a>
+        <a href="#" data-section="section-banking">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Banking
+        </a>
+        <a href="#" data-section="section-verification">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Verification
+          <span id="verified-badge-nav" style="display:none;font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(39,174,96,0.1);color:#27ae60;font-weight:700;">✓</span>
+        </a>
         <a href="../index.html">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>View Mall
         </a>
@@ -109,7 +116,7 @@
         <div class="sidebar-user-avatar" data-user-avatar></div>
         <div class="sidebar-user-info">
           <div class="sidebar-user-name" data-user-email></div>
-          <div class="sidebar-user-role">Seller</div>
+          <div class="sidebar-user-role">Seller <span id="verified-badge-role" style="display:none;color:#27ae60;font-size:10px;font-weight:700;">✓ Verified</span></div>
         </div>
         <div class="dropdown">
           <button data-dropdown="seller-dd" style="background:none;border:none;cursor:pointer;color:var(--text-muted);">
@@ -311,6 +318,232 @@
         </div>
       </section>
 
+      <!-- BANKING DETAILS -->
+      <section id="section-banking" class="dash-section" style="display:none;">
+        <div class="section-header mb-lg">
+          <h2 class="section-title">Banking <span>Details</span></h2>
+        </div>
+        <div class="card" style="max-width:700px;">
+          <div class="card-header"><h4>Bank Account</h4></div>
+          <div class="card-body">
+            <form id="banking-form" onsubmit="saveBanking(event)">
+              <div class="form-group">
+                <label class="form-label">Account Holder Name *</label>
+                <input type="text" id="bank-holder" class="form-control" placeholder="e.g. John Smith (Pty) Ltd" required>
+              </div>
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+                <div class="form-group">
+                  <label class="form-label">Bank Name *</label>
+                  <select id="bank-name" class="form-control" required>
+                    <option value="">Select Bank</option>
+                    <option value="ABSA">ABSA</option>
+                    <option value="Capitec">Capitec</option>
+                    <option value="FNB">FNB</option>
+                    <option value="Investec">Investec</option>
+                    <option value="Nedbank">Nedbank</option>
+                    <option value="Standard Bank">Standard Bank</option>
+                    <option value="TymeBank">TymeBank</option>
+                    <option value="Discovery Bank">Discovery Bank</option>
+                    <option value="African Bank">African Bank</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Account Type *</label>
+                  <select id="bank-type" class="form-control" required>
+                    <option value="cheque">Cheque / Current</option>
+                    <option value="savings">Savings</option>
+                    <option value="transmission">Transmission</option>
+                    <option value="business">Business</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+                <div class="form-group">
+                  <label class="form-label">Account Number *</label>
+                  <input type="text" id="bank-account" class="form-control" placeholder="e.g. 1234567890" pattern="[0-9]{6,18}" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Branch Code</label>
+                  <input type="text" id="bank-branch" class="form-control" placeholder="e.g. 632005" pattern="[0-9]{6}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Proof of Bank Account (bank statement / cancelled cheque)</label>
+                <div id="bank-proof-drop" class="upload-drop" style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:var(--space-xl);text-align:center;cursor:pointer;" onclick="document.getElementById('bank-proof-input').click()">
+                  <input type="file" id="bank-proof-input" accept="image/*,.pdf" style="display:none;" onchange="previewBankProof(this)">
+                  <div id="bank-proof-preview" style="color:var(--text-muted);font-size:13px;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin:0 auto var(--space-sm);display:block;opacity:0.5;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Click to upload or drag and drop<br><small>PDF or image, max 5MB</small>
+                  </div>
+                </div>
+              </div>
+              <div id="bank-verified-status" style="display:none;padding:var(--space-md);border-radius:var(--radius-md);margin-bottom:var(--space-md);font-size:13px;"></div>
+              <button type="submit" class="btn btn-primary" id="banking-save-btn">Save Banking Details</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- VERIFICATION BADGE -->
+      <section id="section-verification" class="dash-section" style="display:none;">
+        <div class="section-header mb-lg">
+          <h2 class="section-title">Seller <span>Verification</span></h2>
+        </div>
+
+        <div id="verify-status-card" class="card mb-lg" style="max-width:700px;display:none;"></div>
+
+        <div id="verify-form-card" class="card" style="max-width:700px;">
+          <div class="card-header">
+            <h4>Apply for Verification Badge</h4>
+            <span style="font-size:13px;color:var(--text-muted);">R29/month</span>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-info" style="margin-bottom:var(--space-lg);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <div>
+                <strong>KYC & South African Compliance</strong><br>
+                <span style="font-size:12px;">To comply with FICA, POPIA, and the SA Companies Act, we require the following information and documents. Your data is encrypted and handled per SA data protection law.</span>
+              </div>
+            </div>
+
+            <form id="verify-form" onsubmit="submitVerification(event)">
+              <h4 style="font-size:14px;font-weight:700;margin:var(--space-lg) 0 var(--space-md);color:var(--primary);">Personal Information</h4>
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+                <div class="form-group">
+                  <label class="form-label">Full Legal Name *</label>
+                  <input type="text" id="v-fullname" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">SA ID Number *</label>
+                  <input type="text" id="v-idnumber" class="form-control" placeholder="13-digit SA ID" pattern="[0-9]{13}" title="13-digit South African ID number" required>
+                </div>
+              </div>
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+                <div class="form-group">
+                  <label class="form-label">Date of Birth</label>
+                  <input type="date" id="v-dob" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone Number</label>
+                  <input type="tel" id="v-phone" class="form-control" placeholder="e.g. 082 123 4567">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Residential Address *</label>
+                <input type="text" id="v-address" class="form-control" placeholder="Street address" required>
+              </div>
+              <div class="form-row" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:var(--space-md);">
+                <div class="form-group">
+                  <label class="form-label">City *</label>
+                  <input type="text" id="v-city" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Province</label>
+                  <select id="v-province" class="form-control">
+                    <option value="">Select</option>
+                    <option value="EC">Eastern Cape</option>
+                    <option value="FS">Free State</option>
+                    <option value="GP">Gauteng</option>
+                    <option value="KZN">KwaZulu-Natal</option>
+                    <option value="LP">Limpopo</option>
+                    <option value="MP">Mpumalanga</option>
+                    <option value="NC">Northern Cape</option>
+                    <option value="NW">North West</option>
+                    <option value="WC">Western Cape</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Postal Code</label>
+                  <input type="text" id="v-postal" class="form-control" pattern="[0-9]{4}">
+                </div>
+              </div>
+
+              <h4 style="font-size:14px;font-weight:700;margin:var(--space-lg) 0 var(--space-md);color:var(--primary);">Business Information</h4>
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+                <div class="form-group">
+                  <label class="form-label">Business Name</label>
+                  <input type="text" id="v-bizname" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Business Type</label>
+                  <select id="v-biztype" class="form-control">
+                    <option value="">Select</option>
+                    <option value="sole_proprietor">Sole Proprietor</option>
+                    <option value="pty_ltd">Private Company (Pty) Ltd</option>
+                    <option value="cc">Close Corporation</option>
+                    <option value="partnership">Partnership</option>
+                    <option value="trust">Trust</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+                <div class="form-group">
+                  <label class="form-label">CIPC Registration Number</label>
+                  <input type="text" id="v-regnumber" class="form-control" placeholder="e.g. 2023/123456/07">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tax Number (SARS)</label>
+                  <input type="text" id="v-taxnumber" class="form-control" placeholder="e.g. 9012345678">
+                </div>
+              </div>
+              <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+                <div class="form-group">
+                  <label class="form-label">Industry</label>
+                  <input type="text" id="v-industry" class="form-control" placeholder="e.g. Retail, Electronics">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Website</label>
+                  <input type="url" id="v-website" class="form-control" placeholder="https://">
+                </div>
+              </div>
+
+              <h4 style="font-size:14px;font-weight:700;margin:var(--space-lg) 0 var(--space-md);color:var(--primary);">Required Documents</h4>
+              <div class="form-group">
+                <label class="form-label">SA ID Document (front & back) *</label>
+                <div class="upload-drop" style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:var(--space-md);text-align:center;cursor:pointer;" onclick="document.getElementById('v-id-doc').click()">
+                  <input type="file" id="v-id-doc" accept="image/*,.pdf" style="display:none;" onchange="previewVerifyDoc(this,'v-id-preview')">
+                  <div id="v-id-preview" style="color:var(--text-muted);font-size:12px;">Click to upload ID document</div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Proof of Address (utility bill / bank statement, max 3 months old) *</label>
+                <div class="upload-drop" style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:var(--space-md);text-align:center;cursor:pointer;" onclick="document.getElementById('v-poa-doc').click()">
+                  <input type="file" id="v-poa-doc" accept="image/*,.pdf" style="display:none;" onchange="previewVerifyDoc(this,'v-poa-preview')">
+                  <div id="v-poa-preview" style="color:var(--text-muted);font-size:12px;">Click to upload proof of address</div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">CIPC Company Certificate (if applicable)</label>
+                <div class="upload-drop" style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:var(--space-md);text-align:center;cursor:pointer;" onclick="document.getElementById('v-cipc-doc').click()">
+                  <input type="file" id="v-cipc-doc" accept="image/*,.pdf" style="display:none;" onchange="previewVerifyDoc(this,'v-cipc-preview')">
+                  <div id="v-cipc-preview" style="color:var(--text-muted);font-size:12px;">Click to upload CIPC certificate</div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tax Clearance Certificate (if applicable)</label>
+                <div class="upload-drop" style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:var(--space-md);text-align:center;cursor:pointer;" onclick="document.getElementById('v-tax-doc').click()">
+                  <input type="file" id="v-tax-doc" accept="image/*,.pdf" style="display:none;" onchange="previewVerifyDoc(this,'v-tax-preview')">
+                  <div id="v-tax-preview" style="color:var(--text-muted);font-size:12px;">Click to upload tax clearance</div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top:var(--space-lg);">
+                <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text-secondary);cursor:pointer;">
+                  <input type="checkbox" id="v-agree" required style="margin-top:3px;">
+                  I confirm that all information provided is true and accurate. I understand that providing false information may result in permanent ban. I agree to the <a href="#" style="color:var(--primary);">Terms of Service</a> and consent to Plexi Mall processing my personal information in accordance with POPIA.
+                </label>
+              </div>
+
+              <button type="submit" class="btn btn-primary" id="verify-submit-btn" style="margin-top:var(--space-md);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Submit Verification Application — R29/month
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -335,6 +568,7 @@
     Dashboard.init();
     State.init();
     await loadMyStores();
+    loadVerificationStatus();
     UI.hidePageLoader();
     UI.staggerReveal(document.body);
   });
@@ -355,6 +589,8 @@
       if (sec === 'section-subscription')  loadSubscription();
       if (sec === 'section-support')       loadTickets();
       if (sec === 'section-reports')      loadSellerReport();
+      if (sec === 'section-banking')      loadBankingDetails();
+      if (sec === 'section-verification') loadVerificationStatus();
     });
   });
 
@@ -389,6 +625,8 @@
       if (active === 'section-trading-hours')  loadTradingHours();
       if (active === 'section-members')        loadMembers();
       if (active === 'section-reports')        loadSellerReport();
+      if (active === 'section-banking')        loadBankingDetails();
+      if (active === 'section-verification')   loadVerificationStatus();
     }
   }
 
@@ -1226,6 +1464,205 @@
     const a = document.createElement('a'); a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+</script>
+<script>
+  // ---- BANKING DETAILS ---- //
+  let bankProofFile = null;
+
+  async function loadBankingDetails() {
+    try {
+      const data = await api.banking.get();
+      if (data) {
+        document.getElementById('bank-holder').value = data.account_holder || '';
+        document.getElementById('bank-name').value = data.bank_name || '';
+        document.getElementById('bank-type').value = data.account_type || 'cheque';
+        document.getElementById('bank-account').value = data.account_number || '';
+        document.getElementById('bank-branch').value = data.branch_code || '';
+        if (data.proof_url) {
+          document.getElementById('bank-proof-preview').innerHTML = `<a href="${data.proof_url}" target="_blank" style="color:var(--primary);font-size:12px;">View uploaded proof →</a>`;
+        }
+        const statusEl = document.getElementById('bank-verified-status');
+        statusEl.style.display = 'block';
+        if (data.account_verified) {
+          statusEl.style.background = 'rgba(39,174,96,0.1)';
+          statusEl.style.color = '#27ae60';
+          statusEl.innerHTML = '<strong>✓ Bank account verified</strong>';
+        } else {
+          statusEl.style.background = 'rgba(243,156,18,0.1)';
+          statusEl.style.color = '#f39c12';
+          statusEl.innerHTML = '<strong>Pending verification</strong> — Upload proof of account for faster approval';
+        }
+      }
+    } catch (_) {}
+  }
+
+  function previewBankProof(input) {
+    const file = input.files[0];
+    if (!file) return;
+    bankProofFile = file;
+    document.getElementById('bank-proof-preview').innerHTML = `<div style="font-size:12px;color:var(--primary);font-weight:600;">${file.name}</div><div style="font-size:11px;color:var(--text-muted);">${(file.size/1024).toFixed(0)} KB</div>`;
+  }
+
+  async function saveBanking(e) {
+    e.preventDefault();
+    const btn = document.getElementById('banking-save-btn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+
+    try {
+      let proofUrl = null;
+      if (bankProofFile) {
+        const uploaded = await api.upload.file(bankProofFile, 'banking');
+        proofUrl = uploaded.url;
+      }
+
+      const payload = {
+        account_holder: document.getElementById('bank-holder').value,
+        bank_name: document.getElementById('bank-name').value,
+        account_number: document.getElementById('bank-account').value,
+        account_type: document.getElementById('bank-type').value,
+        branch_code: document.getElementById('bank-branch').value || null,
+        proof_url: proofUrl
+      };
+
+      await api.banking.save(payload);
+      UI.toast('Banking details saved!', 'success');
+      loadBankingDetails();
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Banking Details';
+    }
+  }
+
+  // ---- VERIFICATION ---- //
+  let verifyFiles = {};
+
+  async function loadVerificationStatus() {
+    try {
+      const data = await api.verification.status();
+      const navBadge = document.getElementById('verified-badge-nav');
+
+      if (!data) {
+        document.getElementById('verify-status-card').style.display = 'none';
+        document.getElementById('verify-form-card').style.display = 'block';
+        if (navBadge) navBadge.style.display = 'none';
+        return;
+      }
+
+      if (data.status === 'approved') {
+        document.getElementById('verify-form-card').style.display = 'none';
+        document.getElementById('verify-status-card').style.display = 'block';
+        document.getElementById('verify-status-card').innerHTML = `
+          <div class="card-body" style="text-align:center;padding:var(--space-xl);">
+            <div style="width:64px;height:64px;border-radius:50%;background:rgba(39,174,96,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h3 style="color:#27ae60;margin-bottom:var(--space-sm);">✓ Verified Seller</h3>
+            <p style="color:var(--text-secondary);font-size:14px;">Your verification badge is active. Your stores display a verified badge to customers.</p>
+            <p style="color:var(--text-muted);font-size:12px;">Verified since ${UI.formatDate(data.reviewed_at || data.created_at)}</p>
+          </div>`;
+        if (navBadge) navBadge.style.display = 'inline';
+        const roleEl = document.getElementById('verified-badge-role');
+        if (roleEl) roleEl.style.display = 'inline';
+        return;
+      }
+
+      if (navBadge) navBadge.style.display = 'none';
+
+      if (data.status === 'pending') {
+        document.getElementById('verify-form-card').style.display = 'none';
+        document.getElementById('verify-status-card').style.display = 'block';
+        document.getElementById('verify-status-card').innerHTML = `
+          <div class="card-body" style="text-align:center;padding:var(--space-xl);">
+            <div style="width:64px;height:64px;border-radius:50%;background:rgba(243,156,18,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-md);">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f39c12" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h3 style="color:#f39c12;margin-bottom:var(--space-sm);">Application Under Review</h3>
+            <p style="color:var(--text-secondary);font-size:14px;">Your verification application is being reviewed by our team. This usually takes 1-3 business days.</p>
+            <p style="color:var(--text-muted);font-size:12px;">Submitted ${UI.formatDate(data.created_at)}</p>
+          </div>`;
+        return;
+      }
+
+      if (data.status === 'rejected') {
+        document.getElementById('verify-form-card').style.display = 'block';
+        document.getElementById('verify-status-card').style.display = 'block';
+        document.getElementById('verify-status-card').innerHTML = `
+          <div class="card-body" style="padding:var(--space-lg);">
+            <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-md);">
+              <div style="width:48px;height:48px;border-radius:50%;background:rgba(231,76,60,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              </div>
+              <div>
+                <h4 style="color:#e74c3c;margin:0;">Application Rejected</h4>
+                <p style="font-size:13px;color:var(--text-secondary);margin:0;">${data.admin_notes || 'Please review your information and reapply.'}</p>
+              </div>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);">Rejected on ${UI.formatDate(data.reviewed_at)}</p>
+          </div>`;
+        return;
+      }
+    } catch (_) {}
+  }
+
+  function previewVerifyDoc(input, previewId) {
+    const file = input.files[0];
+    if (!file) return;
+    const docType = input.id.replace('v-', '').replace('-doc', '');
+    verifyFiles[docType] = file;
+    document.getElementById(previewId).innerHTML = `<div style="font-size:12px;color:var(--primary);font-weight:600;">${file.name}</div><div style="font-size:11px;color:var(--text-muted);">${(file.size/1024).toFixed(0)} KB</div>`;
+  }
+
+  async function submitVerification(e) {
+    e.preventDefault();
+    const btn = document.getElementById('verify-submit-btn');
+    btn.disabled = true; btn.textContent = 'Uploading documents…';
+
+    try {
+      const uploadDoc = async (file, docType) => {
+        if (!file) return null;
+        const result = await api.upload.file(file, 'verification');
+        return result.url;
+      };
+
+      const idDocUrl = await uploadDoc(verifyFiles.id, 'id_document');
+      const poaDocUrl = await uploadDoc(verifyFiles.poa, 'proof_of_address');
+      const cipcDocUrl = await uploadDoc(verifyFiles.cipc, 'cipc_certificate');
+      const taxDocUrl = await uploadDoc(verifyFiles.tax, 'tax_clearance');
+
+      btn.textContent = 'Submitting…';
+
+      const payload = {
+        full_name: document.getElementById('v-fullname').value,
+        id_number: document.getElementById('v-idnumber').value,
+        date_of_birth: document.getElementById('v-dob').value || null,
+        phone: document.getElementById('v-phone').value || null,
+        address: document.getElementById('v-address').value,
+        city: document.getElementById('v-city').value,
+        province: document.getElementById('v-province').value || null,
+        postal_code: document.getElementById('v-postal').value || null,
+        business_name: document.getElementById('v-bizname').value || null,
+        registration_number: document.getElementById('v-regnumber').value || null,
+        tax_number: document.getElementById('v-taxnumber').value || null,
+        business_type: document.getElementById('v-biztype').value || null,
+        industry: document.getElementById('v-industry').value || null,
+        website: document.getElementById('v-website').value || null,
+        id_document_url: idDocUrl,
+        proof_of_address_url: poaDocUrl,
+        cipc_certificate_url: cipcDocUrl,
+        tax_clearance_url: taxDocUrl
+      };
+
+      await api.verification.apply(payload);
+      UI.toast('Application submitted! We\'ll review it within 1-3 business days.', 'success');
+      loadVerificationStatus();
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Submit Verification Application — R29/month';
+    }
   }
 </script>
 </body>

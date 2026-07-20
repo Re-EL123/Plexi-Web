@@ -54,6 +54,7 @@
         <a href="#" data-section="sec-tickets"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Support Tickets<span class="nav-badge" id="open-tickets-count">0</span></a>
         <a href="#" data-section="sec-map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Mall Map</a>
         <a href="#" data-section="sec-gps"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>GPS Tracker<span class="nav-badge" id="gps-online-nav" style="display:none;">0</span></a>
+        <a href="#" data-section="sec-verification"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Verification<span class="nav-badge" id="pending-verify-count" style="display:none;">0</span></a>
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -295,6 +296,23 @@
           <div class="card-body" style="max-height:300px;overflow-y:auto;" id="admin-report-table"></div>
         </div>
       </div>
+
+      <!-- VERIFICATION BADGE REVIEW -->
+      <div id="sec-verification" class="dash-section">
+        <div class="section-header mb-lg">
+          <h2 class="section-title">Verification <span>Applications</span></h2>
+          <div style="display:flex;gap:var(--space-sm);">
+            <select id="verify-filter" class="form-control" style="width:auto;" onchange="loadVerifyApps()">
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+        </div>
+        <div id="verify-apps-list"></div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -314,7 +332,7 @@ function gotoSection(id){Dashboard.showSection(id);document.querySelectorAll('.s
 
 document.addEventListener('DOMContentLoaded', async()=>{
   Dashboard.init(); UI.hidePageLoader(); document.getElementById('sidebar-toggle').style.display='flex';
-  document.querySelectorAll('[data-section]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();gotoSection(a.dataset.section);if(a.dataset.section==='sec-map')MallMap.render();if(a.dataset.section==='sec-alerts')loadRecentAlerts();if(a.dataset.section==='sec-subscriptions')loadSubscriptions(1);if(a.dataset.section==='sec-gps')loadGPSData();if(a.dataset.section==='sec-reports')loadAdminReport();});});
+  document.querySelectorAll('[data-section]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();gotoSection(a.dataset.section);if(a.dataset.section==='sec-map')MallMap.render();if(a.dataset.section==='sec-alerts')loadRecentAlerts();if(a.dataset.section==='sec-subscriptions')loadSubscriptions(1);if(a.dataset.section==='sec-gps')loadGPSData();if(a.dataset.section==='sec-reports')loadAdminReport();if(a.dataset.section==='sec-verification')loadVerifyApps();});});
   await loadAdminStats(); loadPendingStores(); loadRecentUsers();
   loadUsers(1); loadAdminStores(1); loadAdminOrders(1); loadAdminProducts(1); loadTickets(1);
   MallMap.init(document.getElementById('admin-map'));
@@ -839,6 +857,80 @@ setInterval(loadGPSData, 30000);
     const a = document.createElement('a'); a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+</script>
+<script>
+  // ---- ADMIN VERIFICATION ---- //
+  async function loadVerifyApps() {
+    const status = document.getElementById('verify-filter').value;
+    const list = document.getElementById('verify-apps-list');
+    list.innerHTML = '<div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">Loading…</div>';
+
+    try {
+      const apps = await api.verification.admin.list(status);
+      const pendingCount = (await api.verification.admin.list('pending')).length || 0;
+      const badge = document.getElementById('pending-verify-count');
+      if (badge) { badge.textContent = pendingCount; badge.style.display = pendingCount > 0 ? 'inline' : 'none'; }
+
+      if (!apps.length) {
+        list.innerHTML = '<div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">No applications found</div>';
+        return;
+      }
+
+      list.innerHTML = apps.map(a => `
+        <div class="card" style="margin-bottom:var(--space-md);">
+          <div class="card-body">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:var(--space-md);">
+              <div style="flex:1;min-width:200px;">
+                <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-sm);">
+                  <strong style="font-size:16px;">${a.full_name}</strong>
+                  <span class="badge ${a.status === 'approved' ? 'badge-success' : a.status === 'rejected' ? 'badge-danger' : 'badge-warning'}" style="font-size:11px;">${a.status}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-xs);font-size:13px;color:var(--text-secondary);">
+                  <div><strong>ID:</strong> ${a.id_number || '—'}</div>
+                  <div><strong>Phone:</strong> ${a.phone || '—'}</div>
+                  <div><strong>City:</strong> ${a.city || '—'}, ${a.province || ''}</div>
+                  <div><strong>Business:</strong> ${a.business_name || '—'}</div>
+                  <div><strong>Type:</strong> ${a.business_type || '—'}</div>
+                  <div><strong>CIPC:</strong> ${a.registration_number || '—'}</div>
+                  <div><strong>Tax:</strong> ${a.tax_number || '—'}</div>
+                  <div><strong>Industry:</strong> ${a.industry || '—'}</div>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);margin-top:var(--space-sm);">
+                  ${a.id_document_url ? `<a href="${a.id_document_url}" target="_blank" class="btn btn-ghost btn-sm">📄 ID Document</a>` : ''}
+                  ${a.proof_of_address_url ? `<a href="${a.proof_of_address_url}" target="_blank" class="btn btn-ghost btn-sm">📄 Proof of Address</a>` : ''}
+                  ${a.cipc_certificate_url ? `<a href="${a.cipc_certificate_url}" target="_blank" class="btn btn-ghost btn-sm">📄 CIPC Certificate</a>` : ''}
+                  ${a.tax_clearance_url ? `<a href="${a.tax_clearance_url}" target="_blank" class="btn btn-ghost btn-sm">📄 Tax Clearance</a>` : ''}
+                </div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:var(--space-sm);">Submitted ${UI.formatDate(a.created_at)}${a.reviewed_at ? ` · Reviewed ${UI.formatDate(a.reviewed_at)}` : ''}</div>
+                ${a.admin_notes ? `<div style="margin-top:var(--space-sm);padding:var(--space-sm);background:var(--bg-alt);border-radius:var(--radius-sm);font-size:12px;"><strong>Admin notes:</strong> ${a.admin_notes}</div>` : ''}
+              </div>
+              ${a.status === 'pending' ? `
+              <div style="display:flex;flex-direction:column;gap:var(--space-sm);min-width:140px;">
+                <input type="text" id="verify-notes-${a.id}" class="form-control" placeholder="Admin notes (optional)" style="font-size:12px;">
+                <button class="btn btn-sm" style="background:rgba(39,174,96,0.1);color:#27ae60;border:1px solid rgba(39,174,96,0.3);" onclick="reviewVerify('${a.id}','approve')">✓ Approve</button>
+                <button class="btn btn-sm" style="background:rgba(231,76,60,0.1);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);" onclick="reviewVerify('${a.id}','reject')">✕ Reject</button>
+              </div>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } catch (err) {
+      list.innerHTML = '<div style="text-align:center;padding:var(--space-xl);color:var(--error);">Error loading applications</div>';
+    }
+  }
+
+  async function reviewVerify(id, action) {
+    const notes = document.getElementById(`verify-notes-${id}`)?.value || '';
+    if (!confirm(`Are you sure you want to ${action} this application?`)) return;
+
+    try {
+      await api.verification.admin.review(id, action, notes);
+      UI.toast(`Application ${action === 'approve' ? 'approved' : 'rejected'}`, 'success');
+      loadVerifyApps();
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    }
   }
 </script>
 </body>

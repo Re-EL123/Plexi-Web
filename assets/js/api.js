@@ -272,6 +272,24 @@ const api = (() => {
     remove: (pid) => del(`/products?action=wishlist&id=${pid}`),
   };
 
+  // ======== BANKING ======== //
+  const banking = {
+    get:    ()        => get('/users?action=banking'),
+    save:   (data)    => post('/users?action=banking', data),
+    update: (data)    => put('/users?action=banking', data),
+  };
+
+  // ======== VERIFICATION ======== //
+  const verification = {
+    apply:  (data)    => post('/users?action=verify-apply', data),
+    status: ()        => get('/users?action=verify-status'),
+    upload: (data)    => post('/users?action=verify-upload', data),
+    admin: {
+      list:   (status='pending') => get(`/admin?action=verify-applications&status=${status}`),
+      review: (id, action, notes) => post('/admin?action=verify-review', { application_id: id, action, admin_notes: notes }),
+    }
+  };
+
   // ======== UPLOAD ======== //
   const upload = {
     file: async (file, folder = 'general') => {
@@ -296,7 +314,7 @@ const api = (() => {
   };
 
   return { auth, users, stores, products, orders, cart, reviews,
-           notifications, support, subscriptions, admin, map, geocode, delivery, wishlist, upload };
+           notifications, support, subscriptions, admin, map, geocode, delivery, wishlist, upload, banking, verification };
 })();
 
 window.api = api;
