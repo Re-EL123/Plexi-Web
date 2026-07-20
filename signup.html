@@ -20,6 +20,12 @@
       padding: var(--space-3xl);
       position: relative; overflow: hidden;
     }
+    /* Live animated background */
+    .auth-visual.auth-bg-animated {
+      background: linear-gradient(-45deg, var(--primary-dark), var(--primary), var(--secondary), var(--secondary-dark), var(--primary-dark));
+      background-size: 400% 400%;
+      animation: authGradient 14s ease infinite;
+    }
     .auth-visual::before {
       content:''; position:absolute;
       width:400px;height:400px;border-radius:50%;
@@ -59,6 +65,10 @@
       max-width: 480px;
       animation: fadeInUp 0.5s ease;
     }
+    /* Animated gradient card edge */
+    .auth-card.auth-card-edged {
+      box-shadow: var(--neo-shadow-lg);
+    }
 
     .auth-header { text-align:center;margin-bottom:var(--space-lg); }
     .auth-header h2 { font-family:var(--font-display);font-size:26px;font-weight:800;margin-bottom:4px; }
@@ -93,7 +103,10 @@
 </head>
 <body>
   <div class="auth-layout">
-    <div class="auth-visual">
+    <div class="auth-visual auth-bg-animated">
+      <div class="auth-blob b1"></div>
+      <div class="auth-blob b2"></div>
+      <div class="auth-blob b3"></div>
       <div class="auth-visual-content">
         <div style="font-size:56px;margin-bottom:var(--space-md);">🏪</div>
         <h1>Join Plexi Mall</h1>
@@ -113,7 +126,7 @@
     </div>
 
     <div class="auth-panel">
-      <div class="auth-card">
+      <div class="auth-card auth-card-edged">
         <div class="auth-header">
           <div style="display:flex;align-items:center;justify-content:center;gap:var(--space-sm);margin-bottom:var(--space-sm);">
             <img src="assets/icons/logo.jpg" alt="Plexi" style="width:36px;height:36px;border-radius:9px;object-fit:cover;">

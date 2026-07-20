@@ -37,6 +37,12 @@
       position: relative;
       overflow: hidden;
     }
+    /* Live animated background */
+    .auth-visual.auth-bg-animated {
+      background: linear-gradient(-45deg, var(--primary-dark), var(--primary), var(--secondary), var(--secondary-dark), var(--primary-dark));
+      background-size: 400% 400%;
+      animation: authGradient 14s ease infinite;
+    }
 
     .auth-visual::before {
       content: '';
@@ -110,6 +116,10 @@
       max-width: 440px;
       animation: fadeInUp 0.5s ease;
     }
+    /* Animated gradient card edge */
+    .auth-card.auth-card-edged {
+      box-shadow: var(--neo-shadow-lg);
+    }
 
     .auth-header { text-align: center; margin-bottom: var(--space-xl); }
     .auth-header h2 {
@@ -144,7 +154,10 @@
 <body>
   <div class="auth-layout">
     <!-- Visual Side -->
-    <div class="auth-visual animate-fadeIn">
+    <div class="auth-visual auth-bg-animated animate-fadeIn">
+      <div class="auth-blob b1"></div>
+      <div class="auth-blob b2"></div>
+      <div class="auth-blob b3"></div>
       <div class="auth-visual-content">
         <div class="auth-visual-logo">
           <img src="assets/icons/logo.jpg" alt="Plexi">
@@ -176,7 +189,7 @@
 
     <!-- Form Side -->
     <div class="auth-panel">
-      <div class="auth-card">
+      <div class="auth-card auth-card-edged">
         <div class="auth-header">
           <div class="navbar-logo" style="justify-content:center;margin-bottom:var(--space-sm);">
             <img src="assets/icons/logo.jpg" alt="Plexi" style="width:40px;height:40px;border-radius:10px;">
