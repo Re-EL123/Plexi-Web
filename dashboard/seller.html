@@ -10,6 +10,25 @@
   <link rel="stylesheet" href="../assets/css/neomorphism.css">
   <link rel="stylesheet" href="../assets/css/components.css">
   <link rel="stylesheet" href="../assets/css/animations.css">
+  <style>
+    .address-suggestions {
+      position:absolute;top:100%;left:0;right:0;z-index:100;
+      background:var(--bg);border:1px solid var(--border);
+      border-radius:var(--radius-md);box-shadow:var(--neo-shadow-lg);
+      max-height:260px;overflow-y:auto;margin-top:4px;
+    }
+    .ac-item {
+      display:flex;align-items:flex-start;gap:var(--space-sm);
+      padding:var(--space-sm) var(--space-md);cursor:pointer;
+      border:none;background:none;width:100%;text-align:left;
+      font-size:13px;transition:background 0.15s;
+    }
+    .ac-item:hover,.ac-item:focus { background:var(--bg-alt);outline:none; }
+    .ac-label { font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px; }
+    .ac-sub   { font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;margin-top:1px; }
+    .ac-source { font-size:9px;color:var(--text-muted);background:var(--bg-alt);padding:1px 5px;border-radius:var(--radius-sm);flex-shrink:0;text-transform:uppercase;font-weight:700;letter-spacing:0.04em; }
+    .ac-loading,.ac-empty { padding:var(--space-sm) var(--space-md);font-size:12px;color:var(--text-muted);text-align:center; }
+  </style>
 
 </head>
 <body>
@@ -425,9 +444,15 @@
               </select>
             </div>
             <div class="form-group"><label class="form-label">Store Address</label>
-              <div style="display:flex;gap:var(--space-sm);">
-                <input type="text" class="form-control" name="address" value="${s.address||''}" placeholder="e.g. 123 Main St, Cape Town" style="flex:1;">
-                <button type="button" class="btn btn-ghost btn-sm" onclick="geocodeStoreAddress()" id="geocode-btn">Locate</button>
+              <div class="address-autocomplete" id="store-address-ac" style="position:relative;">
+                <div style="display:flex;gap:var(--space-sm);">
+                  <input type="text" class="form-control" name="address" id="store-address-input" value="${s.address||''}" placeholder="Start typing an address…" style="flex:1;" autocomplete="off">
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="geocodeStoreAddress()" id="geocode-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>
+                    Locate
+                  </button>
+                </div>
+                <div id="store-address-suggestions" class="address-suggestions" style="display:none;"></div>
               </div>
               <div id="geocode-status" style="font-size:12px;margin-top:4px;color:var(--text-muted);"></div>
               <input type="hidden" name="latitude" id="store-latitude" value="${s.latitude||''}">
@@ -453,6 +478,7 @@
           </form>
         </div>
       </div>`;
+    initAddressAutocomplete();
   }
 
   async function saveStoreSettings(e) {
@@ -475,10 +501,71 @@
     finally { UI.setLoading(btn, false, 'Save Changes'); }
   }
 
-  async function geocodeStoreAddress() {
-    const input = document.querySelector('#edit-store-form [name=address]');
+  // ---- ADDRESS AUTOCOMPLETE ---- //
+  let acDebounce = null;
+  let acResults  = [];
+
+  function initAddressAutocomplete() {
+    const input  = document.getElementById('store-address-input');
+    const list   = document.getElementById('store-address-suggestions');
+    if (!input || !list) return;
+
+    input.addEventListener('input', () => {
+      clearTimeout(acDebounce);
+      const q = input.value.trim();
+      if (q.length < 3) { list.style.display = 'none'; return; }
+      acDebounce = setTimeout(() => fetchAddressSuggestions(q, list), 350);
+    });
+
+    input.addEventListener('focus', () => {
+      if (acResults.length && input.value.trim().length >= 3) list.style.display = 'block';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.address-autocomplete')) list.style.display = 'none';
+    });
+  }
+
+  async function fetchAddressSuggestions(query, listEl) {
+    listEl.innerHTML = '<div class="ac-loading">Searching addresses…</div>';
+    listEl.style.display = 'block';
+    try {
+      acResults = await api.geocode.search(query, 6);
+      if (!acResults.length) {
+        listEl.innerHTML = '<div class="ac-empty">No results found</div>';
+        return;
+      }
+      listEl.innerHTML = acResults.map((r, i) => `
+        <button type="button" class="ac-item" onclick="selectAddress(${i})">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>
+          <div style="flex:1;overflow:hidden;">
+            <div class="ac-label">${r.name || r.label.split(',')[0]}</div>
+            <div class="ac-sub">${[r.city, r.state, r.country].filter(Boolean).join(', ')}</div>
+          </div>
+          <span class="ac-source">${r.source}</span>
+        </button>
+      `).join('');
+    } catch (err) {
+      listEl.innerHTML = '<div class="ac-empty">Search failed — try again</div>';
+    }
+  }
+
+  function selectAddress(index) {
+    const r = acResults[index];
+    if (!r) return;
+    document.getElementById('store-address-input').value = r.label;
+    document.getElementById('store-latitude').value = r.lat;
+    document.getElementById('store-longitude').value = r.lng;
     const status = document.getElementById('geocode-status');
-    const btn = document.getElementById('geocode-btn');
+    status.textContent = `✓ ${r.lat.toFixed(5)}, ${r.lng.toFixed(5)} — ${r.source}`;
+    status.style.color = 'var(--success)';
+    document.getElementById('store-address-suggestions').style.display = 'none';
+  }
+
+  async function geocodeStoreAddress() {
+    const input  = document.getElementById('store-address-input');
+    const status = document.getElementById('geocode-status');
+    const btn    = document.getElementById('geocode-btn');
     const address = input?.value?.trim();
     if (!address) { status.textContent = 'Enter an address first'; status.style.color = 'var(--error)'; return; }
     UI.setLoading(btn, true, 'Locating…');
@@ -487,10 +574,10 @@
       const coords = await api.geocode.address(address);
       document.getElementById('store-latitude').value = coords.latitude;
       document.getElementById('store-longitude').value = coords.longitude;
-      status.textContent = `Found: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
+      status.textContent = `✓ ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
       status.style.color = 'var(--success)';
     } catch (err) {
-      status.textContent = 'Address not found. Try a more specific address.';
+      status.textContent = 'Address not found — try picking from suggestions';
       status.style.color = 'var(--error)';
     }
     finally { UI.setLoading(btn, false, 'Locate'); }

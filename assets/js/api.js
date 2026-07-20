@@ -202,6 +202,56 @@ const api = (() => {
   // ======== GEOCODE ======== //
   const geocode = {
     address: (address) => get(`/stores?action=geocode&address=${encodeURIComponent(address)}`),
+
+    // Photon (Komoot) — free, OSM-based, no API key
+    photon: async (query, limit = 6) => {
+      const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=${limit}&lang=en`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error('Photon geocoding failed');
+      const data = await res.json();
+      return (data.features || []).map(f => ({
+        label: f.properties.label || f.properties.name || '',
+        name: f.properties.name || '',
+        city: f.properties.city || '',
+        state: f.properties.state || '',
+        country: f.properties.country || '',
+        postcode: f.properties.postcode || '',
+        lat: f.geometry.coordinates[1],
+        lng: f.geometry.coordinates[0],
+        source: 'photon'
+      }));
+    },
+
+    // Nominatim — free, OSM-based, 1 req/s rate limit
+    nominatim: async (query, limit = 6) => {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=${limit}&addressdetails=1`;
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(8000)
+      });
+      if (!res.ok) throw new Error('Nominatim geocoding failed');
+      const data = await res.json();
+      return data.map(r => ({
+        label: r.display_name || '',
+        name: r.name || '',
+        city: r.address?.city || r.address?.town || r.address?.village || '',
+        state: r.address?.state || '',
+        country: r.address?.country || '',
+        postcode: r.address?.postcode || '',
+        lat: parseFloat(r.lat),
+        lng: parseFloat(r.lon),
+        source: 'nominatim'
+      }));
+    },
+
+    // Combined search: try Photon first, fall back to Nominatim
+    search: async (query, limit = 6) => {
+      try {
+        const results = await geocode.photon(query, limit);
+        if (results.length) return results;
+      } catch (_) {}
+      return geocode.nominatim(query, limit);
+    },
   };
 
   // ======== DELIVERY ======== //

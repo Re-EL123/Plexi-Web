@@ -10,6 +10,25 @@
   <link rel="stylesheet" href="../assets/css/neomorphism.css">
   <link rel="stylesheet" href="../assets/css/components.css">
   <link rel="stylesheet" href="../assets/css/animations.css">
+  <style>
+    .address-suggestions {
+      position:absolute;top:100%;left:0;right:0;z-index:100;
+      background:var(--bg);border:1px solid var(--border);
+      border-radius:var(--radius-md);box-shadow:var(--neo-shadow-lg);
+      max-height:260px;overflow-y:auto;margin-top:4px;
+    }
+    .ac-item {
+      display:flex;align-items:flex-start;gap:var(--space-sm);
+      padding:var(--space-sm) var(--space-md);cursor:pointer;
+      border:none;background:none;width:100%;text-align:left;
+      font-size:13px;transition:background 0.15s;
+    }
+    .ac-item:hover,.ac-item:focus { background:var(--bg-alt);outline:none; }
+    .ac-label { font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px; }
+    .ac-sub   { font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;margin-top:1px; }
+    .ac-source { font-size:9px;color:var(--text-muted);background:var(--bg-alt);padding:1px 5px;border-radius:var(--radius-sm);flex-shrink:0;text-transform:uppercase;font-weight:700;letter-spacing:0.04em; }
+    .ac-loading,.ac-empty { padding:var(--space-sm) var(--space-md);font-size:12px;color:var(--text-muted);text-align:center; }
+  </style>
 
 </head>
 <body>
@@ -138,7 +157,10 @@
             <div id="cart-summary-lines"></div>
             <div style="margin:var(--space-md) 0;">
               <label class="form-label" style="font-size:13px;">Delivery Address</label>
-              <input type="text" id="delivery-address" class="form-control" placeholder="e.g. 45 Beach Rd, Durban" style="font-size:13px;">
+              <div class="address-autocomplete" id="delivery-address-ac" style="position:relative;">
+                <input type="text" id="delivery-address" class="form-control" placeholder="Start typing your address…" style="font-size:13px;" autocomplete="off">
+                <div id="delivery-address-suggestions" class="address-suggestions" style="display:none;"></div>
+              </div>
               <div id="delivery-status" style="font-size:11px;margin-top:4px;color:var(--text-muted);"></div>
             </div>
             <div id="delivery-fee-box" style="display:none;padding:var(--space-sm);background:var(--primary-alpha);border-radius:var(--radius-sm);margin-bottom:var(--space-md);font-size:13px;">
@@ -229,6 +251,7 @@
     await loadOverview();
     UI.hidePageLoader();
     UI.staggerReveal(document.body);
+    initDeliveryAutocomplete();
   });
 
   document.querySelectorAll('[data-section]').forEach(a => {
@@ -338,13 +361,65 @@
     } catch(e){ el.innerHTML = UI.empty('Error', e.message); }
   }
 
+  // ---- DELIVERY ADDRESS AUTOCOMPLETE ---- //
+  let delAcDebounce = null;
+  let delAcResults  = [];
+
+  function initDeliveryAutocomplete() {
+    const input = document.getElementById('delivery-address');
+    const list  = document.getElementById('delivery-address-suggestions');
+    if (!input || !list) return;
+
+    input.addEventListener('input', () => {
+      clearTimeout(delAcDebounce);
+      clearTimeout(deliveryTimer);
+      const q = input.value.trim();
+      if (q.length < 3) { list.style.display = 'none'; document.getElementById('delivery-fee-box').style.display = 'none'; return; }
+      delAcDebounce = setTimeout(() => fetchDeliverySuggestions(q, list), 350);
+    });
+
+    input.addEventListener('focus', () => {
+      if (delAcResults.length && input.value.trim().length >= 3) list.style.display = 'block';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#delivery-address-ac')) list.style.display = 'none';
+    });
+  }
+
+  async function fetchDeliverySuggestions(query, listEl) {
+    listEl.innerHTML = '<div class="ac-loading">Searching…</div>';
+    listEl.style.display = 'block';
+    try {
+      delAcResults = await api.geocode.search(query, 6);
+      if (!delAcResults.length) {
+        listEl.innerHTML = '<div class="ac-empty">No results</div>';
+        return;
+      }
+      listEl.innerHTML = delAcResults.map((r, i) => `
+        <button type="button" class="ac-item" onclick="selectDeliveryAddress(${i})">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>
+          <div style="flex:1;overflow:hidden;">
+            <div class="ac-label">${r.name || r.label.split(',')[0]}</div>
+            <div class="ac-sub">${[r.city, r.state, r.country].filter(Boolean).join(', ')}</div>
+          </div>
+          <span class="ac-source">${r.source}</span>
+        </button>
+      `).join('');
+    } catch (err) {
+      listEl.innerHTML = '<div class="ac-empty">Search failed</div>';
+    }
+  }
+
+  function selectDeliveryAddress(index) {
+    const r = delAcResults[index];
+    if (!r) return;
+    document.getElementById('delivery-address').value = r.label;
+    document.getElementById('delivery-address-suggestions').style.display = 'none';
+    updateDeliveryFee(r.label);
+  }
+
   let deliveryTimer = null;
-  document.getElementById('delivery-address')?.addEventListener('input', function() {
-    clearTimeout(deliveryTimer);
-    const val = this.value.trim();
-    if (val.length < 5) { document.getElementById('delivery-fee-box').style.display = 'none'; return; }
-    deliveryTimer = setTimeout(() => updateDeliveryFee(val), 800);
-  });
 
   async function updateDeliveryFee(address) {
     const status = document.getElementById('delivery-status');
