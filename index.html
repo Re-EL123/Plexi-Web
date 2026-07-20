@@ -18,6 +18,7 @@
       background:rgba(240,240,243,0.88);backdrop-filter:blur(16px);
       border-bottom:1px solid var(--border-light);
     }
+    .leaflet-popup { z-index:1001 !important; }
     .nav-inner {
       max-width:1280px;margin:0 auto;
       display:flex;align-items:center;justify-content:space-between;
@@ -173,7 +174,7 @@
       </div>
       <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;" id="map-legend"></div>
     </div>
-    <div id="leaflet-map" style="width:100%;height:480px;border-radius:var(--radius-xl);overflow:hidden;border:1px solid var(--border-light);box-shadow:var(--neo-shadow);"></div>
+    <div id="leaflet-map" style="width:100%;height:480px;border-radius:var(--radius-xl);overflow:visible;border:1px solid var(--border-light);box-shadow:var(--neo-shadow);position:relative;z-index:1;"></div>
   </div>
 </section>
 
@@ -388,7 +389,45 @@
   }
 
   let _st;
-  function handleSearch(q){clearTimeout(_st);if(!q){loadProducts(1,activeCat);return;}_st=setTimeout(async()=>{try{const d=await api.products.all({search:q,limit:12});const p=Array.isArray(d)?d:(d.products||[]);const grid=document.getElementById('products-grid');grid.innerHTML=p.map(pr=>`<a href="store/product.html?id=${pr.id}" style="text-decoration:none;"><div class="product-card"><div class="product-card-img">${pr.images?.[0]?`<img src="${pr.images[0]}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--bg);">📦</div>`}</div><div class="product-card-body"><div class="product-card-name">${pr.name}</div><div class="product-card-price">${UI.formatCurrency(pr.price)}</div></div></div></a>`).join('');if(!p.length)grid.innerHTML=UI.empty('No Results',`Nothing found for "${q}"`,'🔍');}catch(_){}},400);}
+  function handleSearch(q){
+    clearTimeout(_st);
+    if(!q.trim()){loadProducts(1,activeCat);loadFeaturedStores();return;}
+    _st=setTimeout(async()=>{
+      try{
+        const [prodRes, storeRes] = await Promise.allSettled([
+          api.products.all({search:q,limit:12}),
+          api.stores.list({search:q,status:'published',limit:8})
+        ]);
+        const products = prodRes.status==='fulfilled' ? (Array.isArray(prodRes.value)?prodRes.value:(prodRes.value.products||[])) : [];
+        const stores = storeRes.status==='fulfilled' ? (Array.isArray(storeRes.value)?storeRes.value:(storeRes.value.stores||[])) : [];
+
+        const grid = document.getElementById('products-grid');
+        const storeGrid = document.getElementById('featured-stores');
+
+        // Render matching stores
+        if(stores.length){
+          storeGrid.innerHTML=stores.map(s=>{
+            const oc=CONFIG.isOpen(s.trading_hours);
+            const ocBadge=oc===null?'':oc?'<span style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:3px;background:rgba(39,174,96,0.9);color:white;padding:2px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;">● Open</span>':'<span style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:3px;background:rgba(192,57,43,0.9);color:white;padding:2px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;">● Closed</span>';
+            return `<a href="store/store.html?id=${s.id}" class="store-card stagger-child" style="display:block;text-decoration:none;"><div class="store-card-banner">${s.banner?`<img src="${s.banner}" alt="">`:''}${ocBadge}<div class="store-card-logo">${s.logo?`<img src="${s.logo}" alt="">`:s.name.charAt(0)}</div></div><div class="store-card-body"><div class="store-card-name">${s.name}</div><div class="store-card-category">${s.category}</div></div></a>`;
+          }).join('');
+          setTimeout(()=>storeGrid.querySelectorAll('.stagger-child').forEach(el=>el.classList.add('visible')),80);
+        } else {
+          loadFeaturedStores();
+        }
+
+        // Render matching products
+        if(products.length){
+          grid.innerHTML=products.map(p=>`<a href="store/product.html?id=${p.id}" style="text-decoration:none;" class="stagger-child"><div class="product-card"><div class="product-card-img">${p.images?.[0]?`<img src="${p.images[0]}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--bg);">📦</div>`}</div><div class="product-card-body"><div class="product-card-name">${p.name}</div><div class="product-card-price">${UI.formatCurrency(p.price)}</div></div></div></a>`).join('');
+          setTimeout(()=>grid.querySelectorAll('.stagger-child').forEach(el=>el.classList.add('visible')),80);
+        } else if(!stores.length) {
+          grid.innerHTML=UI.empty('No Results',`Nothing found for "${q}"`,'🔍');
+        } else {
+          grid.innerHTML=UI.empty('No Products Found',`No products match "${q}"`,'📦');
+        }
+      }catch(_){}
+    },400);
+  }
 
   async function loadMoreStores(){
     const d=await api.stores.list({status:'published',limit:20}).catch(()=>({stores:[]}));
@@ -419,15 +458,41 @@
   }
 
   document.addEventListener('DOMContentLoaded',()=>{
+    UI.initDropdowns();
     UI.hidePageLoader();
     renderCategories();
     loadFeaturedStores();
     loadProducts(1,'all');
     loadStats();
+    loadMiniMap();
     initLeafletMap();
     document.querySelectorAll('.ripple-container').forEach(UI.addRipple);
     setTimeout(()=>UI.staggerReveal(document.body),600);
   });
+
+  async function loadMiniMap(){
+    const el = document.getElementById('mini-map-content');
+    if (!el) return;
+    try {
+      const data = await api.map.storeLocations();
+      const stores = (data.stores || []).filter(s => s.latitude && s.longitude);
+      if (!stores.length) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:13px;">No store locations yet</div>';
+        return;
+      }
+      const miniMap = L.map(el, { zoomControl: false, scrollWheelZoom: false, dragging: false, attributionControl: false }).setView([-33.9249, 18.4241], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 16 }).addTo(miniMap);
+      const bounds = [];
+      stores.forEach(s => {
+        const color = s.online ? catColor(s.category) : '#999';
+        L.circleMarker([s.latitude, s.longitude], { radius: 6, fillColor: color, color: '#fff', weight: 2, fillOpacity: 0.9 }).addTo(miniMap);
+        bounds.push([s.latitude, s.longitude]);
+      });
+      if (bounds.length) miniMap.fitBounds(bounds, { padding: [20, 20] });
+    } catch (_) {
+      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:13px;">Map unavailable</div>';
+    }
+  }
 
   const CATEGORY_COLORS = {
     fashion:'#E74C3C', electronics:'#3498DB', food:'#F39C12', beauty:'#9B59B6',
@@ -496,6 +561,7 @@
         bounds.push([s.latitude, s.longitude]);
       });
       if (bounds.length) leafletMap.fitBounds(bounds, { padding: [50, 50] });
+      setTimeout(() => leafletMap.invalidateSize(), 200);
     } catch (err) { console.error('Map load error:', err); }
   }
 </script>
