@@ -747,9 +747,10 @@
             <div class="form-group"><label class="form-label">Store Name</label><input type="text" class="form-control" name="name" value="${s.name||''}" required></div>
             <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="3">${s.description||''}</textarea></div>
             <div class="form-group"><label class="form-label">Category</label>
-              <select class="form-control" name="category">
-                ${['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys'].map(c=>`<option value="${c.toLowerCase()}${s.category===c.toLowerCase()?' selected':''}">${c}</option>`).join('')}
+              <select class="form-control" name="category" onchange="toggleCustomCategory(this,'custom-store-category')">
+                ${CONFIG.CATEGORIES.map(c=>`<option value="${c.toLowerCase()}"${s.category===c.toLowerCase()?' selected':''}>${c}</option>`).join('')}
               </select>
+              <input type="text" class="form-control" id="custom-store-category" name="custom_category" placeholder="Specify your category" style="margin-top:var(--space-sm);display:${s.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(s.category)?'block':'none'};" value="${s.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(s.category)?s.category:''}">
             </div>
             <div class="form-group"><label class="form-label">Store Address</label>
               <div class="address-autocomplete" id="store-address-ac" style="position:relative;">
@@ -793,6 +794,10 @@
     e.preventDefault();
     if (!currentStore) return;
     const data    = Object.fromEntries(new FormData(e.target).entries());
+    if (data.category === 'others' && data.custom_category) {
+      data.category = data.custom_category;
+    }
+    delete data.custom_category;
     const btn     = e.target.querySelector('[type=submit]');
     UI.setLoading(btn, true, 'Saving…');
     try {
@@ -1047,9 +1052,10 @@
           <div class="form-group"><label class="form-label">Inventory</label><input type="number" class="form-control" name="inventory" min="0" value="${pd?.inventory||0}" required></div>
         </div>
         <div class="form-group"><label class="form-label">Category</label>
-          <select class="form-control" name="category" required>
-            ${['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys'].map(c=>`<option value="${c.toLowerCase()}"${pd?.category===c.toLowerCase()?' selected':''}>${c}</option>`).join('')}
+          <select class="form-control" name="category" required onchange="toggleCustomCategory(this,'custom-product-category')">
+            ${CONFIG.CATEGORIES.map(c=>`<option value="${c.toLowerCase()}"${pd?.category===c.toLowerCase()?' selected':''}>${c}</option>`).join('')}
           </select>
+          <input type="text" class="form-control" id="custom-product-category" name="custom_category" placeholder="Specify your category" style="margin-top:var(--space-sm);display:${pd?.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(pd.category)?'block':'none'};" value="${pd?.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(pd.category)?pd.category:''}">
         </div>
         <div class="form-group"><label class="form-label">Product Image</label>
           <div class="file-upload-area" onclick="document.getElementById('product-img-input').click()">
@@ -1068,6 +1074,10 @@
     e.preventDefault();
     if (!currentStore) { UI.toast('Select a store first','warning'); return; }
     const data    = Object.fromEntries(new FormData(e.target).entries());
+    if (data.category === 'others' && data.custom_category) {
+      data.category = data.custom_category;
+    }
+    delete data.custom_category;
     const btn     = e.target.querySelector('[type=submit]');
     UI.setLoading(btn, true, 'Saving…');
     try {
@@ -1110,9 +1120,10 @@
         <div class="form-group"><label class="form-label">Store Name</label><input type="text" class="form-control" name="name" required placeholder="My Store"></div>
         <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2"></textarea></div>
         <div class="form-group"><label class="form-label">Category</label>
-          <select class="form-control" name="category" required>
-            ${['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys'].map(c=>`<option value="${c.toLowerCase()}">${c}</option>`).join('')}
+          <select class="form-control" name="category" required onchange="toggleCustomCategory(this,'custom-create-category')">
+            ${CONFIG.CATEGORIES.map(c=>`<option value="${c.toLowerCase()}">${c}</option>`).join('')}
           </select>
+          <input type="text" class="form-control" id="custom-create-category" name="custom_category" placeholder="Specify your category" style="margin-top:var(--space-sm);display:none;">
         </div>
         <div class="form-group"><label class="form-label">Store Logo</label>
           <div id="logo-upload-area" style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:24px;text-align:center;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('logo-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--primary)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="event.preventDefault();this.style.borderColor='var(--border)';handleLogoDrop(event)">
@@ -1158,9 +1169,26 @@
     reader.readAsDataURL(file);
   }
 
+  function toggleCustomCategory(select, inputId) {
+    const customInput = document.getElementById(inputId);
+    if (select.value === 'others') {
+      customInput.style.display = 'block';
+      customInput.required = true;
+      customInput.focus();
+    } else {
+      customInput.style.display = 'none';
+      customInput.required = false;
+      customInput.value = '';
+    }
+  }
+
   async function submitCreateStore(e) {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.target).entries());
+    if (data.category === 'others' && data.custom_category) {
+      data.category = data.custom_category;
+    }
+    delete data.custom_category;
     const btn = document.getElementById('create-store-btn');
     try {
       if (selectedLogoFile) {

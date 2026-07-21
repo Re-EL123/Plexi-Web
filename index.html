@@ -316,7 +316,7 @@
       </div>`;
   }
 
-  const CATS = ['All','Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys','Health'];
+  const CATS = ['All', ...CONFIG.CATEGORIES, 'Health'];
   let activeCat = 'all';
   const _wishlist = JSON.parse(localStorage.getItem('wishlist')||'[]');
 

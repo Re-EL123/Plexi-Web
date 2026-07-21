@@ -66,6 +66,8 @@ const CONFIG = {
   TRADING_DAYS: ['mon','tue','wed','thu','fri','sat','sun'],
   TRADING_DAY_LABELS: { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday', sat:'Saturday', sun:'Sunday' },
 
+  CATEGORIES: ['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys','Others'],
+
   isOpen(tradingHours) {
     if (!tradingHours || typeof tradingHours !== 'object') return null;
     const now = new Date();

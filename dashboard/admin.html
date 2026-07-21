@@ -95,7 +95,7 @@
           <div class="stat-card info stagger-child" style="cursor:pointer;" onclick="gotoSection('sec-reports')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-label">Revenue</div><div class="stat-value" id="stat-revenue">—</div></div>
         </div>
         <div class="grid-2 mt-lg">
-          <div class="card"><div class="card-header"><h4 style="font-family:var(--font-display);">Pending Approvals</h4><button class="btn btn-ghost btn-sm" onclick="gotoSection('sec-stores')">All Stores</button></div><div class="card-body" style="padding:0;"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Store</th><th>Category</th><th>Actions</th></tr></thead><tbody id="pending-stores-tbody"></tbody></table></div></div></div>
+           <div class="card"><div class="card-header"><h4 style="font-family:var(--font-display);">Pending Approvals</h4><button class="btn btn-ghost btn-sm" onclick="gotoSection('sec-stores')">All Stores</button></div><div class="card-body" style="padding:0;"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Store</th><th>Category</th><th>Banking</th><th>Actions</th></tr></thead><tbody id="pending-stores-tbody"></tbody></table></div></div></div>
           <div class="card"><div class="card-header"><h4 style="font-family:var(--font-display);">Recent Users</h4><button class="btn btn-ghost btn-sm" onclick="gotoSection('sec-users')">All Users</button></div><div class="card-body" style="padding:0;"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody id="recent-users-tbody"></tbody></table></div></div></div>
         </div>
       </div>
@@ -376,8 +376,40 @@ async function loadAdminStats(){
 }
 
 async function loadPendingStores(){
-  try{const d=await api.admin.stores({status:'draft',limit:5});const s=Array.isArray(d)?d:(d.stores||[]);
-  Dashboard.renderTable(document.getElementById('pending-stores-tbody'),s.map(st=>`<tr><td><strong>${st.name}</strong></td><td>${st.category}</td><td class="table-actions"><button class="btn btn-success btn-sm" onclick="approveStore('${st.id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectStore('${st.id}')">Reject</button></td></tr>`),'No pending stores');}catch(e){}
+  try{
+    const d=await api.admin.stores({status:'draft',limit:10});
+    const s=Array.isArray(d)?d:(d.stores||[]);
+    const ownerIds=[...new Set(s.map(st=>st.owner_id||st.owner?.id).filter(Boolean))];
+    let bankingMap={};
+    if(ownerIds.length){
+      try{
+        const bd=await api.admin.banking({limit:100});
+        const banks=Array.isArray(bd)?bd:(bd.banking||bd.data||[]);
+        banks.forEach(b=>{ bankingMap[b.user_id]=b; });
+      }catch(_){}
+    }
+    Dashboard.renderTable(document.getElementById('pending-stores-tbody'),s.map(st=>{
+      const ownerId=st.owner_id||st.owner?.id;
+      const bank=bankingMap[ownerId];
+      const ownerEmail=st.owner?.email||'';
+      let bankingBadge;
+      if(bank){
+        bankingBadge=bank.account_verified?'<span class="badge badge-success">Verified</span>':'<span class="badge badge-warning">Submitted</span>';
+      }else{
+        bankingBadge='<span class="badge badge-error" style="background:rgba(231,76,60,0.1);color:var(--error);">Missing</span>';
+      }
+      return `<tr>
+        <td><strong>${st.name}</strong><div style="font-size:11px;color:var(--text-muted);">${ownerEmail}</div></td>
+        <td>${st.category}</td>
+        <td>${bankingBadge}</td>
+        <td class="table-actions">
+          <button class="btn btn-ghost btn-sm" onclick="viewStoreDetails('${st.id}',${JSON.stringify(bank?{status:bank.account_verified?'Verified':'Submitted',holder:bank.account_holder,bank:bank.bank_name,account:bank.account_number}:null).replace(/"/g,'&quot;')})">Details</button>
+          <button class="btn btn-success btn-sm" onclick="approveStore('${st.id}')">Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectStore('${st.id}')">Reject</button>
+        </td>
+      </tr>`;
+    }),'No pending stores');
+  }catch(e){}
 }
 
 async function loadRecentUsers(){
@@ -410,15 +442,73 @@ async function submitBan(e, id){
 }
 async function unbanUser(id){try{await api.admin.unbanUser(id);UI.toast('User unbanned','success');loadUsers(1);}catch(e){UI.toast(e.message,'error');}}
 
+async function viewStoreDetails(storeId, bankInfo){
+  try{
+    const st=await api.stores.get(storeId);
+    const TH=st.trading_hours||{};
+    const dayLabels={mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun'};
+    const thRows=Object.entries(TH).map(([day,d])=>{
+      const enabled=d.enabled!==false;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;"><input type="checkbox" ${enabled?'checked':''} disabled style="accent-color:var(--primary);"><span style="width:36px;font-weight:600;">${dayLabels[day]||day}</span>${enabled?`<span style="color:var(--text-muted);">${d.open||'—'} – ${d.close||'—'}</span>`:'<span style="color:var(--text-muted);">Closed</span>'}</div>`;
+    }).join('');
+
+    let bankSection;
+    if(bankInfo){
+      const color=bankInfo.status==='Verified'?'var(--success)':'var(--warning)';
+      bankSection=`<div style="padding:var(--space-md);background:rgba(39,174,96,0.05);border-radius:var(--radius-sm);border-left:3px solid ${color};">
+        <div style="font-weight:600;font-size:13px;margin-bottom:6px;">Banking Details</div>
+        <div style="font-size:13px;color:var(--text-secondary);">Status: <span style="color:${color};font-weight:600;">${bankInfo.status}</span></div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Holder: ${bankInfo.holder} · Bank: ${bankInfo.bank} · Account: ****${bankInfo.account.slice(-4)}</div>
+      </div>`;
+    }else{
+      bankSection=`<div style="padding:var(--space-md);background:rgba(231,76,60,0.05);border-radius:var(--radius-sm);border-left:3px solid var(--error);">
+        <div style="font-weight:600;font-size:13px;color:var(--error);margin-bottom:4px;">⚠ No Banking Details Submitted</div>
+        <div style="font-size:12px;color:var(--text-muted);">This seller has not submitted banking details yet. You may want to request this before approval.</div>
+      </div>`;
+    }
+
+    UI.createModal({
+      id:'store-detail-modal', title:`Store: ${st.name}`,
+      content:`<div style="display:flex;flex-direction:column;gap:var(--space-md);">
+        ${st.logo?`<img src="${st.logo}" style="max-height:80px;max-width:200px;border-radius:var(--radius-sm);object-fit:cover;">`:''}
+        ${st.banner?`<img src="${st.banner}" style="max-height:120px;width:100%;border-radius:var(--radius-sm);object-fit:cover;">`:''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);font-size:13px;">
+          <div><strong>Name:</strong> ${st.name}</div>
+          <div><strong>Category:</strong> ${st.category}</div>
+          <div><strong>Status:</strong> ${UI.statusBadge(st.status,CONFIG.STORE_STATUSES)}</div>
+          <div><strong>Owner:</strong> ${st.owner?.email||'N/A'}</div>
+          ${st.address?`<div style="grid-column:1/-1;"><strong>Address:</strong> ${st.address}</div>`:''}
+          ${st.latitude&&st.longitude?`<div><strong>GPS:</strong> ${parseFloat(st.latitude).toFixed(5)}, ${parseFloat(st.longitude).toFixed(5)}</div>`:''}
+        </div>
+        ${st.description?`<div><strong>Description:</strong><p style="font-size:13px;color:var(--text-secondary);margin:4px 0 0;">${st.description}</p></div>`:''}
+        <div><strong>Trading Hours:</strong><div style="margin-top:4px;">${thRows||'<span style="color:var(--text-muted);font-size:13px;">Not set</span>'}</div></div>
+        ${bankSection}
+      </div>`,
+      footer:`<button class="btn btn-ghost" onclick="UI.closeModal('store-detail-modal')">Close</button>`
+    });
+  }catch(e){UI.toast('Error loading store details','error');}
+}
+
 async function loadAdminStores(page=1){
   const q=document.getElementById('stores-search')?.value||'';const status=document.getElementById('stores-status')?.value||'';
   try{const d=await api.admin.stores({page,limit:15,search:q,status});const s=Array.isArray(d)?d:(d.stores||[]);const tot=d.total||s.length;
+  const ownerIds=[...new Set(s.map(st=>st.owner_id||st.owner?.id).filter(Boolean))];
+  let bankingMap={};
+  if(ownerIds.length){
+    try{const bd=await api.admin.banking({limit:100});const banks=Array.isArray(bd)?bd:(bd.banking||bd.data||[]);banks.forEach(b=>{bankingMap[b.user_id]=b;});}catch(_){}
+  }
   Dashboard.renderTable(document.getElementById('stores-tbody'),s.map(st=>{
     let actions=`<a href="../store/store.html?id=${st.id}" class="btn btn-ghost btn-sm">View</a>`;
-    if(st.status==='draft')actions+=`<button class="btn btn-success btn-sm" onclick="approveStore('${st.id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectStore('${st.id}')">Reject</button>`;
+    const ownerId=st.owner_id||st.owner?.id;
+    const bank=bankingMap[ownerId];
+    if(st.status==='draft'){
+      const bankLabel=bank?(bank.account_verified?'✓ Bank':'? Bank'):'✗ No Bank';
+      const bankColor=bank?(bank.account_verified?'var(--success)':'var(--warning)'):'var(--error)';
+      actions+=`<button class="btn btn-ghost btn-sm" onclick="viewStoreDetails('${st.id}',${JSON.stringify(bank?{status:bank.account_verified?'Verified':'Submitted',holder:bank.account_holder,bank:bank.bank_name,account:bank.account_number}:null).replace(/"/g,'&quot;')})" style="font-size:11px;color:${bankColor};">${bankLabel}</button>`;
+      actions+=`<button class="btn btn-success btn-sm" onclick="approveStore('${st.id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectStore('${st.id}')">Reject</button>`;
+    }
     if(st.status==='published')actions+=`<button class="btn btn-danger btn-sm" onclick="suspendStore('${st.id}')">Suspend</button>`;
     if(st.status==='suspended'){
-      const until=st.suspended_until?` until ${new Date(st.suspended_until).toLocaleDateString()}`:' (indefinite)';
       actions+=`<button class="btn btn-success btn-sm" onclick="unsuspendStore('${st.id}')">Unsuspend</button>`;
     }
     actions+=`<button class="btn btn-ghost btn-sm" onclick="toggleFeature('${st.id}')" style="font-size:11px;">${st.featured?'Unfeature':'⭐ Feature'}</button>`;
@@ -429,7 +519,17 @@ async function loadAdminStores(page=1){
     return `<tr><td><strong>${st.name}</strong>${suspensionInfo}</td><td>${st.category}</td><td>${UI.statusBadge(st.status,CONFIG.STORE_STATUSES)}</td><td>${st.featured?'⭐':'—'}</td><td>${UI.formatDate(st.created_at)}</td><td class="table-actions">${actions}</td></tr>`;}),'No stores found');
   Dashboard.renderPagination('stores-pagination',page,Math.ceil(tot/15),`(p)=>loadAdminStores(p)`);}catch(e){UI.toast(e.message,'error');}
 }
-async function approveStore(id){try{await api.admin.approveStore(id);UI.toast('Store approved!','success');loadAdminStores(1);loadPendingStores();loadAdminStats();}catch(e){UI.toast(e.message,'error');}}
+async function approveStore(id){
+  UI.confirmDialog({title:'Approve Store',message:'Are you sure you want to approve this store?',confirmText:'Approve',
+    onConfirm:async()=>{
+      try{
+        await api.admin.approveStore(id);
+        UI.toast('Store approved!','success');
+        loadAdminStores(1);loadPendingStores();loadAdminStats();
+      }catch(e){UI.toast(e.message,'error');}
+    }
+  });
+}
 async function rejectStore(id){UI.confirmDialog({title:'Reject Store',message:'Reject this store application?',confirmText:'Reject',danger:true,onConfirm:async()=>{try{await api.admin.rejectStore(id,'Does not meet requirements');UI.toast('Store rejected','info');loadAdminStores(1);loadPendingStores();}catch(e){UI.toast(e.message,'error');}}});}
 function suspendStore(id){
   UI.createModal({
