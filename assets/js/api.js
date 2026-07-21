@@ -196,6 +196,10 @@ const api = (() => {
     reports: (params = {})  => get(`/admin?action=reports&${new URLSearchParams(params)}`),
     banking:  (params = {})  => get(`/admin?action=banking&${new URLSearchParams(params)}`),
     verifyBanking: (id, verified, notes) => post('/admin?action=banking-verify', { banking_id: id, verified, admin_notes: notes }),
+    updateUser:  (userId, data) => put(`/admin?action=manage-user&user_id=${userId}`, data),
+    deleteUser:  (userId)       => del(`/admin?action=manage-user&user_id=${userId}`),
+    deleteStore: (storeId)      => post('/admin?action=delete-store', { store_id: storeId }),
+    updateStore: (storeId, data) => put(`/admin?action=manage-store`, { store_id: storeId, ...data }),
   };
 
   // ======== MAP ======== //

@@ -420,7 +420,10 @@ async function loadRecentUsers(){
 async function loadUsers(page=1){
   const q=document.getElementById('users-search')?.value||'';const role=document.getElementById('users-role')?.value||'';
   try{const d=await api.admin.users({page,limit:15,search:q,role});const u=Array.isArray(d)?d:(d.users||[]);const tot=d.total||u.length;
-  Dashboard.renderTable(document.getElementById('users-tbody'),u.map(usr=>`<tr><td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">${usr.email.charAt(0).toUpperCase()}</div><div><div style="font-weight:600;font-size:13px;">${usr.email}</div><div style="font-size:11px;color:var(--text-muted);">${usr.id?.slice(0,12)}…</div></div></div></td><td>${UI.badge(usr.role,usr.role==='admin'?'error':usr.role==='seller'?'secondary':'info')}</td><td>${usr.banned?UI.badge('Banned','error'):UI.badge('Active','success')}</td><td>${UI.formatDate(usr.created_at)}</td><td class="table-actions">${usr.banned?`<button class="btn btn-ghost btn-sm" onclick="unbanUser('${usr.id}')">Unban</button>`:`<button class="btn btn-danger btn-sm" onclick="banUser('${usr.id}')">Ban</button>`}</td></tr>`),'No users found');
+  Dashboard.renderTable(document.getElementById('users-tbody'),u.map(usr=>{
+    const name=usr.metadata?.name||usr.name||'';
+    return `<tr><td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">${usr.email.charAt(0).toUpperCase()}</div><div><div style="font-weight:600;font-size:13px;">${usr.email}</div><div style="font-size:11px;color:var(--text-muted);">${name?name+' · ':''}${usr.id?.slice(0,12)}…</div></div></div></td><td>${UI.badge(usr.role,usr.role==='admin'?'error':usr.role==='seller'?'secondary':'info')}</td><td>${usr.banned?UI.badge('Banned','error'):UI.badge('Active','success')}</td><td>${UI.formatDate(usr.created_at)}</td><td class="table-actions"><button class="btn btn-ghost btn-sm" onclick='openEditUser(${JSON.stringify({id:usr.id,email:usr.email,role:usr.role,banned:!!usr.banned,name}).replace(/'/g,"&#39;")})'>Edit</button>${usr.banned?`<button class="btn btn-ghost btn-sm" onclick="unbanUser('${usr.id}')">Unban</button>`:`<button class="btn btn-danger btn-sm" onclick="banUser('${usr.id}')">Ban</button>`}<button class="btn btn-danger btn-sm" onclick="confirmDeleteUser('${usr.id}','${usr.email}')" title="Delete user"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></td></tr>`;
+  }),'No users found');
   Dashboard.renderPagination('users-pagination',page,Math.ceil(tot/15),`(p)=>loadUsers(p)`);}catch(e){UI.toast(e.message,'error');}
 }
 function banUser(id){
@@ -441,6 +444,65 @@ async function submitBan(e, id){
   catch(err){UI.toast(err.message,'error');}
 }
 async function unbanUser(id){try{await api.admin.unbanUser(id);UI.toast('User unbanned','success');loadUsers(1);}catch(e){UI.toast(e.message,'error');}}
+
+function openEditUser(usr){
+  UI.createModal({
+    id:'edit-user-modal', title:'Edit User',
+    content:`<form id="edit-user-form" onsubmit="submitEditUser(event,'${usr.id}')">
+      <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" value="${usr.email}" disabled style="opacity:0.6;"></div>
+      <div class="form-group"><label class="form-label">Display Name</label><input type="text" class="form-control" name="name" value="${usr.name||''}" placeholder="Full name"></div>
+      <div class="form-group"><label class="form-label">Role</label>
+        <select class="form-control" name="role">
+          <option value="shopper"${usr.role==='shopper'?' selected':''}>Shopper</option>
+          <option value="seller"${usr.role==='seller'?' selected':''}>Seller</option>
+          <option value="admin"${usr.role==='admin'?' selected':''}>Admin</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Banned</label>
+        <select class="form-control" name="banned">
+          <option value="false"${!usr.banned?' selected':''}>Active</option>
+          <option value="true"${usr.banned?' selected':''}>Banned</option>
+        </select>
+      </div>
+    </form>`,
+    footer:`<button class="btn btn-ghost" onclick="UI.closeModal('edit-user-modal')">Cancel</button>
+            <button class="btn btn-primary" onclick="document.getElementById('edit-user-form').requestSubmit()">Save Changes</button>`
+  });
+}
+
+async function submitEditUser(e, userId){
+  e.preventDefault();
+  const fd=new FormData(e.target);
+  const data={ role:fd.get('role'), banned:fd.get('banned')==='true' };
+  const name=fd.get('name');
+  if(name) data.name=name;
+  try{
+    await api.admin.updateUser(userId,data);
+    UI.toast('User updated!','success');
+    UI.closeModal('edit-user-modal');
+    loadUsers(1);
+    loadRecentUsers();
+  }catch(err){UI.toast(err.message,'error');}
+}
+
+function confirmDeleteUser(userId, email){
+  UI.confirmDialog({
+    title:'Delete User',
+    message:`Permanently delete <strong>${email}</strong>? This will remove all their stores, products, orders, and data. This action cannot be undone.`,
+    confirmText:'Delete User',
+    danger:true,
+    onConfirm:async()=>{
+      try{
+        await api.admin.deleteUser(userId);
+        UI.toast('User deleted','success');
+        loadUsers(1);
+        loadRecentUsers();
+        loadAdminStores(1);
+        loadAdminStats();
+      }catch(e){UI.toast(e.message,'error');}
+    }
+  });
+}
 
 async function viewStoreDetails(storeId, bankInfo){
   try{
@@ -484,7 +546,8 @@ async function viewStoreDetails(storeId, bankInfo){
         <div><strong>Trading Hours:</strong><div style="margin-top:4px;">${thRows||'<span style="color:var(--text-muted);font-size:13px;">Not set</span>'}</div></div>
         ${bankSection}
       </div>`,
-      footer:`<button class="btn btn-ghost" onclick="UI.closeModal('store-detail-modal')">Close</button>`
+      footer:`<button class="btn btn-ghost" onclick="UI.closeModal('store-detail-modal')">Close</button>
+              <button class="btn btn-primary" onclick="UI.closeModal('store-detail-modal');openEditStoreAdmin(${JSON.stringify({id:st.id,name:st.name,description:st.description||'',category:st.category,address:st.address||''}).replace(/"/g,'&quot;')})">Edit Store</button>`
     });
   }catch(e){UI.toast('Error loading store details','error');}
 }
@@ -512,6 +575,8 @@ async function loadAdminStores(page=1){
       actions+=`<button class="btn btn-success btn-sm" onclick="unsuspendStore('${st.id}')">Unsuspend</button>`;
     }
     actions+=`<button class="btn btn-ghost btn-sm" onclick="toggleFeature('${st.id}')" style="font-size:11px;">${st.featured?'Unfeature':'⭐ Feature'}</button>`;
+    actions+=`<button class="btn btn-ghost btn-sm" onclick="openEditStoreAdmin(${JSON.stringify({id:st.id,name:st.name,description:st.description||'',category:st.category,address:st.address||''}).replace(/"/g,'&quot;')})" title="Edit store"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+    actions+=`<button class="btn btn-danger btn-sm" onclick="confirmDeleteStore('${st.id}','${st.name}')" title="Delete store"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`;
     let suspensionInfo='';
     if(st.status==='suspended'){
       suspensionInfo=`<div style="font-size:11px;color:var(--error);margin-top:4px;">${st.suspension_reason?st.suspension_reason:'No reason given'}${st.suspended_until?' — until '+new Date(st.suspended_until).toLocaleDateString():' — indefinite'}</div>`;
@@ -561,6 +626,63 @@ async function submitSuspend(e, id){
 }
 async function unsuspendStore(id){try{await api.admin.unsuspendStore(id);UI.toast('Store restored!','success');loadAdminStores(1);}catch(e){UI.toast(e.message,'error');}}
 async function toggleFeature(id){try{await api.admin.featureStore(id);UI.toast('Updated!','success');loadAdminStores(1);}catch(e){UI.toast(e.message,'error');}}
+
+function openEditStoreAdmin(st){
+  const CATS=CONFIG.CATEGORIES||['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys','Others'];
+  UI.createModal({
+    id:'edit-store-admin-modal', title:'Edit Store',
+    content:`<form id="edit-store-admin-form" onsubmit="submitEditStoreAdmin(event,'${st.id}')">
+      <div class="form-group"><label class="form-label">Store Name</label><input type="text" class="form-control" name="name" value="${st.name}" required></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="3">${st.description||''}</textarea></div>
+      <div class="form-group"><label class="form-label">Category</label>
+        <select class="form-control" name="category" onchange="toggleCustomCategory(this,'custom-admin-store-category')">
+          ${CATS.map(c=>`<option value="${c.toLowerCase()}"${st.category===c.toLowerCase()?' selected':''}>${c}</option>`).join('')}
+        </select>
+        <input type="text" class="form-control" id="custom-admin-store-category" name="custom_category" placeholder="Specify your category" style="margin-top:var(--space-sm);display:${st.category&&!CATS.map(c=>c.toLowerCase()).includes(st.category)?'block':'none'};" value="${st.category&&!CATS.map(c=>c.toLowerCase()).includes(st.category)?st.category:''}">
+      </div>
+      <div class="form-group"><label class="form-label">Address</label><input type="text" class="form-control" name="address" value="${st.address||''}" placeholder="Store address"></div>
+    </form>`,
+    footer:`<button class="btn btn-ghost" onclick="UI.closeModal('edit-store-admin-modal')">Cancel</button>
+            <button class="btn btn-primary" onclick="document.getElementById('edit-store-admin-form').requestSubmit()">Save Changes</button>`
+  });
+}
+
+async function submitEditStoreAdmin(e, storeId){
+  e.preventDefault();
+  const fd=new FormData(e.target);
+  const data={};
+  data.name=fd.get('name');
+  data.description=fd.get('description');
+  let category=fd.get('category');
+  if(category==='others'&&fd.get('custom_category')) category=fd.get('custom_category');
+  data.category=category;
+  data.address=fd.get('address');
+  try{
+    await api.admin.updateStore(storeId,data);
+    UI.toast('Store updated!','success');
+    UI.closeModal('edit-store-admin-modal');
+    loadAdminStores(1);
+    loadPendingStores();
+  }catch(err){UI.toast(err.message,'error');}
+}
+
+function confirmDeleteStore(storeId, name){
+  UI.confirmDialog({
+    title:'Delete Store',
+    message:`Permanently delete <strong>${name}</strong> and all its products, reviews, and data? This action cannot be undone.`,
+    confirmText:'Delete Store',
+    danger:true,
+    onConfirm:async()=>{
+      try{
+        await api.admin.deleteStore(storeId);
+        UI.toast('Store deleted','success');
+        loadAdminStores(1);
+        loadPendingStores();
+        loadAdminStats();
+      }catch(e){UI.toast(e.message,'error');}
+    }
+  });
+}
 
 async function loadAdminOrders(page=1){
   const status=document.getElementById('orders-status')?.value||'';
