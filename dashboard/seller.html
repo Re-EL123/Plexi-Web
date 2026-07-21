@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/jpeg" href="../assets/icons/logo.jpg">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#4361ee">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Seller Dashboard — Plexi Digital Mall</title>
   <link rel="stylesheet" href="../assets/css/variables.css">
@@ -556,6 +558,7 @@
 
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/sounds.js"></script>
+<script src="../assets/js/push.js"></script>
 <script src="../assets/js/ui.js"></script>
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/auth.js"></script>
@@ -1717,6 +1720,11 @@
       btn.disabled = false;
       btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Submit Verification Application — R29/month';
     }
+  }
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('../sw.js').catch(() => {});
   }
 </script>
 </body>

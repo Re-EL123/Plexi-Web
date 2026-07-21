@@ -251,6 +251,7 @@ const Dashboard = (() => {
     UI.initDropdowns();
     UI.initSidebarToggle();
     if (window.SoundManager) SoundManager.init();
+    if (window.PushManager) PushManager.init().then(() => { if (PushManager.shouldPrompt()) setTimeout(() => PushManager.showPermissionPrompt(), 3000); });
     loadNotifications();
     setInterval(loadNotifications, 60000);
 

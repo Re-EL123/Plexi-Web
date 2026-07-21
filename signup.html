@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/jpeg" href="assets/icons/logo.jpg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4361ee">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Create Account — Plexi Digital Mall</title>
   <link rel="stylesheet" href="assets/css/variables.css">
@@ -223,6 +225,7 @@
 
   <script src="assets/js/config.js"></script>
   <script src="assets/js/sounds.js"></script>
+  <script src="assets/js/push.js"></script>
   <script src="assets/js/ui.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/auth.js"></script>
@@ -288,5 +291,10 @@
       }
     }
   </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+</script>
 </body>
 </html>

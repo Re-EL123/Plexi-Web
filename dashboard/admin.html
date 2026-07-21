@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/jpeg" href="../assets/icons/logo.jpg">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#4361ee">
   <title>Admin Dashboard — Plexi Digital Mall</title>
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/base.css">
@@ -340,6 +342,7 @@
 <div id="toast-container"></div>
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
+<script src="../assets/js/push.js"></script>
 <script src="../assets/js/ui.js?v=2"></script>
 <script src="../assets/js/api.js?v=2"></script>
 <script src="../assets/js/auth.js?v=2"></script>
@@ -1245,6 +1248,11 @@ setInterval(loadGPSData, 30000);
     } catch (err) {
       UI.toast(err.message, 'error');
     }
+  }
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('../sw.js').catch(() => {});
   }
 </script>
 </body>
