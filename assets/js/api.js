@@ -202,6 +202,12 @@ const api = (() => {
     updateStore: (storeId, data) => put(`/admin?action=manage-store`, { store_id: storeId, ...data }),
   };
 
+  // ======== DRIVER COMPLIANCE (KYC) ======== //
+  const driverCompliance = {
+    list:   (status='submitted') => get(`/admin?action=driver-compliance-list&status=${status}`),
+    review: (id, action, reason, notes) => post('/admin?action=driver-compliance-review', { compliance_id: id, action, rejection_reason: reason, rejection_notes: notes }),
+  };
+
   // ======== MAP ======== //
   const map = {
     stores:  (params = {})  => get(`/map?action=stores&${new URLSearchParams(params)}`),
@@ -320,7 +326,7 @@ const api = (() => {
   };
 
   return { auth, users, stores, products, orders, cart, reviews,
-           notifications, support, subscriptions, admin, map, geocode, delivery, wishlist, upload, banking, verification };
+           notifications, support, subscriptions, admin, map, geocode, delivery, wishlist, upload, banking, verification, driverCompliance };
 })();
 
 window.api = api;
