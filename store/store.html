@@ -319,6 +319,7 @@
 <div id="toast-container"></div>
 
 <script src="../assets/js/config.js"></script>
+<script src="../assets/js/sounds.js"></script>
 <script src="../assets/js/ui.js"></script>
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/auth.js"></script>
@@ -728,6 +729,7 @@
         UI.toast('Unfollowed store', 'info');
       } else {
         await api.stores.follow(storeId);
+        if (window.SoundManager) SoundManager.play('follow');
         btn.dataset.following = 'true';
         document.getElementById('follow-btn-text').textContent = 'Following';
         btn.querySelector('svg').setAttribute('fill', 'var(--primary)');

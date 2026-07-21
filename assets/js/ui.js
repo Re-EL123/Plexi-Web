@@ -35,6 +35,7 @@ const UI = (() => {
       <div class="toast-progress"></div>
     `;
     container.appendChild(el);
+    if (window.SoundManager) SoundManager.play(type);
     const timer = setTimeout(() => {
       el.classList.add('removing');
       setTimeout(() => el.remove(), 300);
@@ -93,6 +94,7 @@ const UI = (() => {
       `
     });
     document.getElementById('confirm-btn').addEventListener('click', () => {
+      if (window.SoundManager) SoundManager.play('click');
       closeModal('confirm-dialog');
       if (onConfirm) onConfirm();
     });

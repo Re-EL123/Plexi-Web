@@ -5,11 +5,18 @@
 const Dashboard = (() => {
 
   // ======== NOTIFICATIONS BELL ======== //
+  let prevUnreadCount = 0;
+
   async function loadNotifications() {
     try {
       const data = await api.notifications.list();
       const notifs = Array.isArray(data) ? data : (data.notifications || []);
       const unread = notifs.filter(n => !n.read).length;
+
+      if (unread > prevUnreadCount && prevUnreadCount > 0) {
+        if (window.SoundManager) SoundManager.play('notification');
+      }
+      prevUnreadCount = unread;
 
       const badge = document.getElementById('notif-badge');
       if (badge) {
@@ -243,6 +250,7 @@ const Dashboard = (() => {
     Auth.populateUserUI();
     UI.initDropdowns();
     UI.initSidebarToggle();
+    if (window.SoundManager) SoundManager.init();
     loadNotifications();
     setInterval(loadNotifications, 60000);
 

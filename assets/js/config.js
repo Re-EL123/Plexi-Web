@@ -68,6 +68,33 @@ const CONFIG = {
 
   CATEGORIES: ['Fashion','Electronics','Food','Beauty','Sports','Home','Books','Toys','Others'],
 
+  SOUNDS: {
+    enabled: true,
+    freesoundApiKey: '',
+    cacheKey: 'plexi_sounds_cache',
+    queries: {
+      notification: 'notification ping short',
+      success:      'success chime short',
+      error:        'error buzz short',
+      warning:      'alert beep short',
+      click:        'click pop short',
+      message:      'message receive short',
+      follow:       'follow whoosh short',
+      order:        'cash register cha-ching'
+    },
+    fallbackTones: {
+      notification: [880, 0.08],
+      success:      [523, 0.1, 659, 0.1, 784, 0.15],
+      error:        [200, 0.15, 150, 0.2],
+      warning:      [660, 0.08, 660, 0.08, 660, 0.12],
+      click:        [1200, 0.03],
+      message:      [660, 0.06, 880, 0.1],
+      follow:       [440, 0.06, 550, 0.06, 660, 0.1],
+      order:        [880, 0.08, 1100, 0.08, 1320, 0.12]
+    },
+    volume: 0.5
+  },
+
   isOpen(tradingHours) {
     if (!tradingHours || typeof tradingHours !== 'object') return null;
     const now = new Date();

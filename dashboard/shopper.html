@@ -108,6 +108,9 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
         Shop Now
       </a>
+      <button class="btn btn-ghost btn-icon-sm" onclick="toggleSound()" id="sound-toggle-btn" title="Toggle sounds">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      </button>
       <button class="btn btn-ghost btn-icon-sm" data-logout title="Log Out">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       </button>
@@ -316,12 +319,19 @@
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
 <script src="../assets/js/config.js"></script>
+<script src="../assets/js/sounds.js"></script>
 <script src="../assets/js/ui.js"></script>
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/auth.js"></script>
 <script src="../assets/js/state.js"></script>
 <script src="../assets/js/dashboard.js"></script>
 <script>
+  function toggleSound(){
+    const on=SoundManager.toggle();
+    const btn=document.getElementById('sound-toggle-btn');
+    if(btn)btn.innerHTML=on?'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>':'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+    UI.toast(on?'Sounds enabled':'Sounds muted','info');
+  }
   Auth.requireRole('shopper');
 
   document.addEventListener('DOMContentLoaded', async () => {
