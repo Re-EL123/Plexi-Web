@@ -98,7 +98,7 @@ const CONFIG = {
   // VAPID public key for push notifications
   // Generate keys: cd plexi-digital-mall-backend && node scripts/generate-vapid.js
   // Then paste the VAPID_PUBLIC_KEY here
-  VAPID_PUBLIC_KEY: '',
+  VAPID_PUBLIC_KEY: 'BNT9PagTLb1F2GoxlX54q6gPfYgmvEpsr2nw6CWq4QLamMenf8AABkZM6EC8Rj9ps38q8fH6AEjT7RPuc4GK3L8',
 
   isOpen(tradingHours) {
     if (!tradingHours || typeof tradingHours !== 'object') return null;
