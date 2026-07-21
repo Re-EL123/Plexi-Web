@@ -208,6 +208,14 @@ const api = (() => {
     review: (id, action, reason, notes) => post('/admin?action=driver-compliance-review', { compliance_id: id, action, rejection_reason: reason, rejection_notes: notes }),
   };
 
+  // ======== DRIVER PAYMENTS / PAYROLL ======== //
+  const driverPayments = {
+    list:     (params={}) => get(`/admin?action=driver-payments&${new URLSearchParams(params)}`),
+    generate: (start, end) => post('/admin?action=driver-payments-generate', { period_start: start, period_end: end }),
+    process:  (paymentId, action, data={}) => post('/admin?action=driver-payments-process', { payment_id: paymentId, action, ...data }),
+    summary:  (params={}) => get(`/admin?action=driver-earnings-summary&${new URLSearchParams(params)}`),
+  };
+
   // ======== MAP ======== //
   const map = {
     stores:  (params = {})  => get(`/map?action=stores&${new URLSearchParams(params)}`),
@@ -326,7 +334,7 @@ const api = (() => {
   };
 
   return { auth, users, stores, products, orders, cart, reviews,
-           notifications, support, subscriptions, admin, map, geocode, delivery, wishlist, upload, banking, verification, driverCompliance };
+           notifications, support, subscriptions, admin, map, geocode, delivery, wishlist, upload, banking, verification, driverCompliance, driverPayments };
 })();
 
 window.api = api;
