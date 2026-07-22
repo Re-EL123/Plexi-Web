@@ -18,6 +18,25 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    .dash-responsive-grid { display:grid;grid-template-columns:1fr 360px;gap:var(--space-lg);align-items:start; }
+    .dash-charts-grid { display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg); }
+    @media(max-width:1024px){
+      .dash-responsive-grid{grid-template-columns:1fr;gap:var(--space-md);}
+      .dash-charts-grid{grid-template-columns:1fr;}
+      .section-header.flex-responsive{flex-direction:column;align-items:flex-start;}
+    }
+    @media(max-width:768px){
+      .dash-charts-grid{grid-template-columns:1fr;}
+      .section-header>div{flex-wrap:wrap;}
+      .section-header .search-bar{width:100% !important;}
+      .topbar>div[style*="max-width:300px"]{max-width:none !important;flex:1;}
+      .topbar>div[style*="max-width:300px"] .search-bar{width:100%;}
+    }
+    @media(max-width:640px){
+      .section-header{flex-direction:column;align-items:flex-start;gap:var(--space-sm);}
+    }
+  </style>
 </head>
 <body>
 <div id="page-loader" class="page-loader"><div class="loader-logo">Admin<span>Panel</span></div><div class="loader-bar"><div class="loader-bar-fill"></div></div></div>
@@ -166,7 +185,7 @@
             Refresh
           </button>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 360px;gap:var(--space-lg);align-items:start;">
+        <div class="dash-responsive-grid">
           <div class="card" style="min-height:500px;">
             <div id="gps-map" style="width:100%;height:500px;border-radius:var(--radius-lg);overflow:hidden;background:var(--bg);"></div>
           </div>
@@ -279,7 +298,7 @@
           </div>
         </div>
         <div class="stats-grid" style="margin-bottom:var(--space-xl);" id="admin-report-stats"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);margin-bottom:var(--space-xl);">
+        <div class="dash-charts-grid" style="margin-bottom:var(--space-xl);">
           <div class="card">
             <div class="card-header"><h4>Revenue Over Time</h4></div>
             <div class="card-body" style="height:280px;"><canvas id="admin-chart-revenue"></canvas></div>
@@ -289,7 +308,7 @@
             <div class="card-body" style="height:280px;display:flex;align-items:center;justify-content:center;"><canvas id="admin-chart-orders"></canvas></div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);margin-bottom:var(--space-xl);">
+        <div class="dash-charts-grid" style="margin-bottom:var(--space-xl);">
           <div class="card">
             <div class="card-header"><h4>User Signups (Monthly)</h4></div>
             <div class="card-body" style="height:280px;"><canvas id="admin-chart-users"></canvas></div>

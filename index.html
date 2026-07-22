@@ -88,8 +88,51 @@
     .footer-col a:hover{color:white;}
     .footer-bottom{border-top:1px solid rgba(255,255,255,0.08);margin-top:var(--space-xl);padding-top:var(--space-md);text-align:center;font-size:12px;}
 
-    @media(max-width:900px){.hero-inner{grid-template-columns:1fr;}.hero-visual{display:none;}.footer-inner{grid-template-columns:1fr 1fr;}}
-    @media(max-width:600px){.footer-inner{grid-template-columns:1fr;}}
+    @media(max-width:1024px){
+      .nav-inner{padding:0 var(--space-md);}
+      .hero-inner{grid-template-columns:1fr;gap:var(--space-xl);}
+      .hero-visual{display:none;}
+      .footer-inner{grid-template-columns:1fr 1fr;}
+      .section{padding:var(--space-2xl) 0;}
+    }
+    @media(max-width:768px){
+      .hero-section{padding:var(--space-2xl) 0 var(--space-xl);}
+      .hero-title{font-size:clamp(26px,6vw,40px);}
+      .hero-subtitle{font-size:15px;max-width:100%;}
+      .hero-actions{flex-direction:column;}
+      .hero-actions .btn{width:100%;}
+      .hero-stats{gap:var(--space-sm);}
+      .hero-stat{padding:var(--space-sm);}
+      .hero-stat-val{font-size:22px;}
+      .hero-stat-label{font-size:11px;}
+      .footer-inner{gap:var(--space-md);}
+      .footer-brand p{font-size:13px;}
+      .section{padding:var(--space-xl) 0;}
+      .section-inner{padding:0 var(--space-md);}
+    }
+    @media(max-width:600px){
+      .nav-inner{padding:0 var(--space-sm);gap:var(--space-xs);height:52px;}
+      .logo{font-size:18px;gap:6px;}
+      .logo img{width:30px;height:30px;}
+      #search-wrap{max-width:none;}
+      .hero-section{padding:var(--space-xl) 0 var(--space-lg);}
+      .hero-title{font-size:clamp(22px,7vw,32px);}
+      .hero-subtitle{font-size:14px;}
+      .hero-eyebrow{font-size:11px;padding:4px 12px;}
+      .hero-stats{grid-template-columns:1fr 1fr 1fr;gap:6px;}
+      .hero-stat{padding:8px 4px;}
+      .hero-stat-val{font-size:18px;}
+      .hero-stat-label{font-size:10px;margin-top:2px;}
+      .cta-banner-inner{padding:var(--space-xl) var(--space-md) !important;}
+      footer{padding:var(--space-xl) 0;}
+      .footer-inner{grid-template-columns:1fr;gap:var(--space-lg);padding:0 var(--space-md);}
+      .footer-brand h3{font-size:18px;}
+      .section-inner{padding:0 var(--space-sm);}
+    }
+    @media(max-width:480px){
+      .nav-inner{height:48px;}
+      .hero-stats{grid-template-columns:1fr 1fr 1fr;}
+    }
   </style>
 </head>
 <body>

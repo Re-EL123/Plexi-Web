@@ -30,6 +30,21 @@
     .ac-sub   { font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;margin-top:1px; }
     .ac-source { font-size:9px;color:var(--text-muted);background:var(--bg-alt);padding:1px 5px;border-radius:var(--radius-sm);flex-shrink:0;text-transform:uppercase;font-weight:700;letter-spacing:0.04em; }
     .ac-loading,.ac-empty { padding:var(--space-sm) var(--space-md);font-size:12px;color:var(--text-muted);text-align:center; }
+    .dash-responsive-grid { display:grid;grid-template-columns:1fr 360px;gap:var(--space-lg);align-items:start; }
+    .dash-charts-grid { display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg); }
+    @media(max-width:1024px){
+      .dash-responsive-grid{grid-template-columns:1fr;gap:var(--space-md);}
+      .dash-charts-grid{grid-template-columns:1fr;}
+      .section-header{flex-direction:column;align-items:flex-start;gap:var(--space-sm);}
+    }
+    @media(max-width:768px){
+      .dash-charts-grid{grid-template-columns:1fr;}
+      .section-header>div{flex-wrap:wrap;}
+    }
+    @media(max-width:640px){
+      .section-header{flex-direction:column;align-items:flex-start;}
+      .flex-between{flex-direction:column;align-items:flex-start;gap:var(--space-sm);}
+    }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
