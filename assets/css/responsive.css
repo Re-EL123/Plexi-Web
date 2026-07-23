@@ -667,6 +667,79 @@
   #cart-summary {
     position: static !important;
   }
+
+  /* ---- Admin & Seller Dashboard — 768px ---- */
+
+  /* Topbar: hide search bar and text labels */
+  .topbar > div[style*="max-width:300px"] {
+    display: none !important;
+  }
+
+  .topbar .btn span,
+  .topbar a.btn {
+    font-size: 0 !important;
+  }
+
+  .topbar .btn svg {
+    margin: 0 !important;
+  }
+
+  /* Section headers: stack and full-width controls */
+  .section-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: var(--space-sm) !important;
+  }
+
+  .section-header > div {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+  }
+
+  .section-header .search-bar {
+    width: 100% !important;
+  }
+
+  .section-header .form-control {
+    width: 100% !important;
+  }
+
+  /* Seller overview: 2-col stacks */
+  [style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Admin/seller report charts: stack */
+  .dash-charts-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Admin/seller dash grid: single column */
+  .dash-responsive-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Form rows: stack */
+  .form-row[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Admin payroll date inputs */
+  [style*="display:flex"][style*="gap"][style*="align-items:center"] {
+    flex-wrap: wrap;
+  }
+
+  /* Notification dropdown: smaller */
+  .dropdown-menu[style*="min-width:300px"] {
+    min-width: 260px !important;
+    max-width: 90vw !important;
+    right: -20px !important;
+  }
+
+  /* GPS map */
+  #gps-map {
+    height: 300px !important;
+  }
 }
 
 @media (max-width: 640px) {
@@ -770,6 +843,104 @@
   .filter-chips .chip {
     white-space: nowrap !important;
     flex-shrink: 0 !important;
+  }
+
+  /* Flex-between stacks on mobile */
+  .flex-between {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: var(--space-sm) !important;
+  }
+
+  /* ---- Admin & Seller Dashboard — 640px ---- */
+
+  /* Topbar: even more compact */
+  .topbar {
+    padding: 0 var(--space-xs) !important;
+    gap: 4px !important;
+  }
+
+  .topbar .btn-icon,
+  .topbar .btn-icon-sm {
+    padding: 6px !important;
+  }
+
+  /* Hide "View Site" and "Add Product" text — icon only */
+  .topbar a[href*="index"] {
+    font-size: 0 !important;
+    padding: 6px 8px !important;
+  }
+
+  .topbar a[href*="index"] svg {
+    margin: 0 !important;
+  }
+
+  .topbar .btn-primary span,
+  .topbar .btn-primary svg + * {
+    display: none;
+  }
+
+  /* Sidebar nav links: tighter */
+  .sidebar-nav a {
+    padding: 8px var(--space-xs) !important;
+    font-size: 12px !important;
+  }
+
+  .sidebar-logo {
+    font-size: 16px !important;
+    padding: var(--space-xs) var(--space-sm) !important;
+  }
+
+  .sidebar-logo img {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .sidebar-section-label {
+    font-size: 9px !important;
+  }
+
+  /* Table actions: wrap */
+  .table-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+
+  .table-actions .btn {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+
+  /* Admin sidebar overlay close on tap */
+  .sidebar-overlay.show {
+    display: block !important;
+  }
+
+  /* Notification panel */
+  .dropdown-menu[style*="min-width:300px"],
+  .dropdown-menu[style*="min-width:200px"] {
+    max-width: 85vw !important;
+  }
+
+  /* Admin topbar buttons: icon only */
+  .topbar .btn-ghost:not(.btn-icon):not(.btn-icon-sm) {
+    font-size: 0 !important;
+    padding: 6px 8px !important;
+  }
+
+  .topbar .btn-ghost:not(.btn-icon):not(.btn-icon-sm) svg {
+    margin: 0 !important;
+  }
+
+  /* Seller topbar add product: icon only */
+  .topbar .btn-primary:not(.btn-sm) {
+    padding: 6px 10px !important;
+    font-size: 0 !important;
+  }
+
+  .topbar .btn-primary:not(.btn-sm) svg {
+    margin: 0 !important;
   }
 }
 

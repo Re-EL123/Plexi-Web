@@ -33,19 +33,6 @@
     .ac-loading,.ac-empty { padding:var(--space-sm) var(--space-md);font-size:12px;color:var(--text-muted);text-align:center; }
     .dash-responsive-grid { display:grid;grid-template-columns:1fr 360px;gap:var(--space-lg);align-items:start; }
     .dash-charts-grid { display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg); }
-    @media(max-width:1024px){
-      .dash-responsive-grid{grid-template-columns:1fr;gap:var(--space-md);}
-      .dash-charts-grid{grid-template-columns:1fr;}
-      .section-header{flex-direction:column;align-items:flex-start;gap:var(--space-sm);}
-    }
-    @media(max-width:768px){
-      .dash-charts-grid{grid-template-columns:1fr;}
-      .section-header>div{flex-wrap:wrap;}
-    }
-    @media(max-width:640px){
-      .section-header{flex-direction:column;align-items:flex-start;}
-      .flex-between{flex-direction:column;align-items:flex-start;gap:var(--space-sm);}
-    }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -62,6 +49,7 @@
 </div>
 
 <div class="app-shell">
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <img src="../assets/icons/logo.jpg" alt="Plexi" style="width:34px;height:34px;border-radius:8px;object-fit:cover;">
@@ -570,7 +558,6 @@
 </div>
 
 <div id="toast-container"></div>
-<div id="sidebar-overlay" class="sidebar-overlay"></div>
 
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/sounds.js"></script>
