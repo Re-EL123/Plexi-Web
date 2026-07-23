@@ -89,6 +89,16 @@
     font-size: 12px !important;
   }
 
+  /* Hide "Home" text but keep icon */
+  .nav-auth-area .btn-ghost {
+    font-size: 0 !important;
+  }
+
+  .nav-auth-area .btn-ghost svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
   .nav-auth-area .dropdown .btn span {
     display: none;
   }
