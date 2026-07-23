@@ -865,7 +865,6 @@ a.link-underline:hover::after { transform: scaleX(1); }
   inset: 0;
   background: var(--overlay);
   z-index: var(--z-overlay);
-  backdrop-filter: blur(4px);
 }
 .sidebar-overlay.show { display: block; }
 
