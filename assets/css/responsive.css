@@ -17,6 +17,11 @@
   z-index: 10;
 }
 
+/* Dashboard search toggle: hidden on desktop, shown on mobile */
+.dashboard-search-toggle {
+  display: none !important;
+}
+
 @media (max-width: 640px) {
   .nav-hamburger {
     display: inline-flex;
@@ -557,6 +562,54 @@
 
   /* Hide topbar search on tablet */
   .topbar > div[style*="max-width:300px"] {
+    display: none !important;
+  }
+
+  /* Dashboard search: collapse to icon on tablet */
+  .dashboard-search-wrap {
+    position: static !important;
+    max-width: none !important;
+    flex: 0 !important;
+    width: 0 !important;
+    overflow: visible !important;
+  }
+
+  .dashboard-search-wrap .search-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    border-radius: 0;
+    padding: 10px var(--space-md);
+    box-shadow: var(--neo-shadow-lg);
+    background: var(--bg);
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .dashboard-search-wrap.open .search-bar {
+    transform: translateY(0);
+  }
+
+  .dashboard-search-wrap .search-bar input {
+    font-size: 16px !important;
+    padding: 12px 0 !important;
+  }
+
+  .dashboard-search-wrap .input-icon-right {
+    display: inline-flex !important;
+  }
+
+  /* Show search toggle icon on tablet */
+  .dashboard-search-toggle {
+    display: inline-flex !important;
+  }
+
+  /* Hide individual section search bars on tablet — replaced by topbar search */
+  .section-header .search-bar,
+  .section-header input[placeholder*="Search"],
+  .section-header input[placeholder*="search"] {
     display: none !important;
   }
 

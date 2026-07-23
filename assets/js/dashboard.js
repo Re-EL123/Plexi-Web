@@ -94,6 +94,7 @@ const Dashboard = (() => {
 
   // ======== PAGE SECTIONS ======== //
   function showSection(id) {
+    closeDashboardSearch();
     document.querySelectorAll('.dash-section').forEach(el => {
       el.classList.remove('active');
       el.style.display = 'none';
@@ -281,3 +282,30 @@ const Dashboard = (() => {
 })();
 
 window.Dashboard = Dashboard;
+
+// ======== DASHBOARD SEARCH (icon toggle → fixed overlay) ======== //
+function openDashboardSearch() {
+  const wrap = document.getElementById('topbar-search-wrap');
+  if (!wrap) return;
+  wrap.classList.add('open');
+  const input = document.getElementById('topbar-search-input');
+  if (input) { input.focus(); input.value = ''; }
+}
+
+function closeDashboardSearch() {
+  const wrap = document.getElementById('topbar-search-wrap');
+  if (!wrap) return;
+  wrap.classList.remove('open');
+  const input = document.getElementById('topbar-search-input');
+  if (input) { input.value = ''; }
+}
+
+function dashboardSearch(query) {
+  const active = document.querySelector('.dash-section[style*="display: block"], .dash-section[style*="display:block"], .dash-section.active');
+  if (!active) return;
+  const searchInput = active.querySelector('.search-bar input[type="text"], input[placeholder*="Search"], input[placeholder*="search"]');
+  if (searchInput) {
+    searchInput.value = query;
+    searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+}
