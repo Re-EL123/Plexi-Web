@@ -585,8 +585,45 @@
     width: 100% !important;
   }
 
+  .section-header .search-bar[style*="width"] {
+    width: 100% !important;
+  }
+
   .section-header .form-control {
     width: 100% !important;
+  }
+
+  .section-header .form-control[style*="width"] {
+    width: 100% !important;
+  }
+
+  .section-header select[style*="width"] {
+    width: 100% !important;
+  }
+
+  .section-header input[style*="width"] {
+    width: 100% !important;
+  }
+
+  /* Dropdowns inside section-header: full width */
+  .section-header .dropdown {
+    flex: 1 1 100% !important;
+  }
+
+  .section-header .dropdown .btn {
+    width: 100% !important;
+  }
+
+  /* Section headers that are NOT using .section-header class (flex-between) */
+  .flex-between[style*="margin-bottom"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: var(--space-sm) !important;
+  }
+
+  .flex-between[style*="margin-bottom"] > .btn {
+    width: 100% !important;
+    justify-content: center !important;
   }
 
   /* All inline 2-col grids stack */
@@ -630,6 +667,13 @@
     flex-wrap: wrap;
   }
 
+  /* Map containers: allow scroll */
+  #admin-map,
+  #placement-map {
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
   /* Notification dropdown */
   .dropdown-menu[style*="min-width:300px"] {
     min-width: 260px !important;
@@ -663,6 +707,53 @@
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: var(--space-sm) !important;
+  }
+
+  /* Flex-between buttons: full width */
+  .flex-between > .btn,
+  .flex-between > a.btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Mall map grid: smaller cells */
+  .mall-grid {
+    grid-template-columns: repeat(10, 36px) !important;
+    grid-template-rows: repeat(10, 36px) !important;
+    width: 360px !important;
+    height: 360px !important;
+  }
+
+  /* Section header child div with inline display:flex: full width, wrap */
+  .section-header > div[style*="display:flex"][style*="gap"] {
+    flex-wrap: wrap !important;
+    gap: var(--space-xs) !important;
+  }
+
+  /* Section header child div with inline display:flex: make children full width */
+  .section-header > div[style*="display:flex"][style*="gap"] > * {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Driver payroll: date inputs + buttons wrap */
+  .section-header > div[style*="display:flex"][style*="align-items:center"] > .form-control[type="date"] {
+    width: 100% !important;
+  }
+
+  .section-header > div[style*="display:flex"][style*="align-items:center"] > span {
+    display: none !important;
+  }
+
+  /* Card header flex: stack on mobile */
+  .card-header[style*="display:flex"][style*="justify-content:space-between"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: var(--space-sm) !important;
+  }
+
+  .card-header[style*="display:flex"][style*="justify-content:space-between"] > .form-control {
+    width: 100% !important;
   }
 }
 
