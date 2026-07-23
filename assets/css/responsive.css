@@ -26,6 +26,18 @@
   .nav-inner {
     flex-wrap: nowrap;
     gap: var(--space-xs);
+    height: 48px !important;
+    padding: 0 var(--space-sm) !important;
+  }
+
+  .logo {
+    font-size: 16px !important;
+    gap: 6px !important;
+  }
+
+  .logo img {
+    width: 28px !important;
+    height: 28px !important;
   }
 
   /* Collapse search into icon on mobile */
@@ -84,6 +96,11 @@
     width: 28px !important;
     height: 28px !important;
     font-size: 11px !important;
+  }
+
+  /* Hide username text next to avatar in nav */
+  .nav-auth-area span[style*="max-width"] {
+    display: none !important;
   }
 }
 
@@ -798,6 +815,16 @@
     height: 48px !important;
   }
 
+  .navbar-logo {
+    font-size: 15px !important;
+    gap: 5px !important;
+  }
+
+  .navbar-logo img {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
   .navbar-search {
     max-width: none !important;
     flex: 1 !important;
@@ -808,19 +835,22 @@
     padding: 7px 8px !important;
   }
 
+  .navbar-nav {
+    gap: 4px !important;
+  }
+
   .navbar-nav a {
-    font-size: 12px !important;
+    font-size: 0 !important;
     padding: 4px 6px !important;
   }
 
-  .navbar-logo {
-    font-size: 18px !important;
-    gap: 6px !important;
+  .navbar-nav a svg {
+    width: 18px !important;
+    height: 18px !important;
   }
 
-  .navbar-logo img {
-    width: 28px !important;
-    height: 28px !important;
+  .navbar-nav .btn {
+    font-size: 11px !important;
   }
 
   .navbar-nav .avatar {
@@ -831,6 +861,11 @@
 
   .navbar-nav span[style*="max-width"] {
     display: none !important;
+  }
+
+  #nav-guest .btn {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
   }
 }
 
