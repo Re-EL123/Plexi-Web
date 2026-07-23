@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="../assets/css/neomorphism.css">
   <link rel="stylesheet" href="../assets/css/components.css">
   <link rel="stylesheet" href="../assets/css/animations.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
   <style>
     .product-gallery {
       position: sticky;
@@ -754,8 +755,14 @@
 
 <style>
   @media (max-width: 768px) {
-    #product-layout { grid-template-columns: 1fr !important; }
-    .product-price-tag { font-size: 30px; }
+    #product-layout { grid-template-columns: 1fr !important; gap: var(--space-lg) !important; }
+    .product-gallery { position: static !important; }
+    .product-price-tag { font-size: 30px !important; }
+  }
+  @media (max-width: 480px) {
+    .product-main-img { aspect-ratio: 1 !important; font-size: 48px !important; }
+    .product-price-tag { font-size: 26px !important; }
+    #related-grid.grid-auto { grid-template-columns: 1fr !important; }
   }
 </style>
 <script>

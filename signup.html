@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="assets/css/neomorphism.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link rel="stylesheet" href="assets/css/animations.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
   <style>
     body { display:flex; min-height:100vh; align-items:stretch; }
     .auth-layout { display:flex; width:100%; }
@@ -101,7 +102,14 @@
     .role-name { font-size:14px;font-weight:700;color:var(--text-primary); }
     .role-desc { font-size:11px;color:var(--text-muted);margin-top:2px; }
 
-    @media (max-width:768px) { .auth-visual { display:none; } }
+    @media (max-width:768px) {
+      .auth-panel { padding: var(--space-md); }
+      .auth-card { max-width: 100%; }
+    }
+    @media (max-width:480px) {
+      .auth-panel { padding: var(--space-sm); }
+      .auth-card { padding: var(--space-md); border-radius: var(--radius-md); }
+    }
   </style>
 </head>
 <body>

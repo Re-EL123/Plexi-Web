@@ -1,0 +1,1023 @@
+/* ============================================================
+   PLEXI DIGITAL MALL — Responsive Overhaul
+   All mobile-first breakpoints for every page
+   ============================================================ */
+
+/* ============================================================
+   MOBILE NAV — Hamburger menu for index.html
+   ============================================================ */
+.nav-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  z-index: 10;
+}
+
+@media (max-width: 640px) {
+  .nav-hamburger {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .nav-inner {
+    flex-wrap: nowrap;
+    gap: var(--space-xs);
+  }
+
+  /* Collapse search into icon on mobile */
+  .nav-search-wrap {
+    position: static !important;
+    max-width: none !important;
+    flex: 0 !important;
+  }
+
+  .nav-search-wrap .search-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    border-radius: 0;
+    padding: 10px var(--space-md);
+    box-shadow: var(--neo-shadow-lg);
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .nav-search-wrap.open .search-bar {
+    transform: translateY(0);
+  }
+
+  .nav-search-wrap .search-bar input {
+    font-size: 16px !important;
+    padding: 12px 0 !important;
+  }
+
+  .search-suggestions {
+    position: fixed !important;
+    top: 52px !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-radius: 0 !important;
+    max-height: 60vh !important;
+  }
+
+  /* Auth buttons collapse */
+  .nav-auth-area {
+    gap: 4px !important;
+  }
+
+  .nav-auth-area .btn {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .nav-auth-area .dropdown .btn span {
+    display: none;
+  }
+
+  .nav-auth-area .avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 11px !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .nav-search-wrap {
+    max-width: 240px !important;
+  }
+}
+
+/* ============================================================
+   INDEX.HTML — Hero, Sections, Footer
+   ============================================================ */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: var(--space-xl) 0 var(--space-lg) !important;
+  }
+
+  .hero-inner {
+    gap: var(--space-lg) !important;
+  }
+
+  .hero-visual {
+    display: none !important;
+  }
+
+  .hero-title {
+    font-size: clamp(24px, 6vw, 36px) !important;
+  }
+
+  .hero-subtitle {
+    font-size: 14px !important;
+    max-width: 100% !important;
+  }
+
+  .hero-actions {
+    flex-direction: column !important;
+  }
+
+  .hero-actions .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .hero-stats {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: var(--space-sm) !important;
+  }
+
+  .hero-stat {
+    padding: var(--space-sm) !important;
+  }
+
+  .hero-stat-val {
+    font-size: 22px !important;
+  }
+
+  .hero-stat-label {
+    font-size: 11px !important;
+  }
+
+  /* Sections */
+  .section {
+    padding: var(--space-xl) 0 !important;
+  }
+
+  .section-inner {
+    padding: 0 var(--space-md) !important;
+  }
+
+  .section-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: var(--space-sm) !important;
+  }
+
+  /* Category scroll */
+  .cat-scroll {
+    gap: 6px !important;
+    padding-bottom: 8px !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cat-scroll .chip {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* CTA Banner */
+  #cta-banner {
+    padding: var(--space-xl) var(--space-md) !important;
+  }
+
+  #cta-banner h2 {
+    font-size: clamp(20px, 4vw, 28px) !important;
+  }
+
+  #cta-banner p {
+    font-size: 14px !important;
+  }
+
+  /* Footer */
+  .footer-inner {
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--space-lg) !important;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1 !important;
+  }
+
+  .footer-col a {
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-stats {
+    gap: 6px !important;
+  }
+
+  .hero-stat-val {
+    font-size: 18px !important;
+  }
+
+  .hero-stat-label {
+    font-size: 10px !important;
+  }
+
+  .footer-inner {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-md) !important;
+    padding: 0 var(--space-md) !important;
+  }
+
+  .footer-brand h3 {
+    font-size: 18px !important;
+  }
+
+  .footer-col h5 {
+    font-size: 12px !important;
+  }
+
+  .footer-bottom {
+    font-size: 11px !important;
+  }
+}
+
+/* ============================================================
+   AUTH PAGES — Login & Signup
+   ============================================================ */
+@media (max-width: 768px) {
+  .auth-visual {
+    display: none !important;
+  }
+
+  .auth-panel {
+    padding: var(--space-md) !important;
+    min-height: 100vh;
+  }
+
+  .auth-card {
+    padding: var(--space-lg) !important;
+    max-width: 100% !important;
+    border-radius: var(--radius-lg) !important;
+  }
+
+  .auth-header h2 {
+    font-size: 24px !important;
+  }
+
+  .auth-header p {
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-panel {
+    padding: var(--space-sm) !important;
+  }
+
+  .auth-card {
+    padding: var(--space-md) !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .auth-header h2 {
+    font-size: 22px !important;
+  }
+
+  .role-cards {
+    gap: var(--space-xs) !important;
+  }
+
+  .role-card {
+    padding: var(--space-sm) !important;
+  }
+
+  .role-emoji {
+    font-size: 22px !important;
+  }
+
+  .role-name {
+    font-size: 13px !important;
+  }
+}
+
+/* ============================================================
+   STORE PAGE — store.html
+   ============================================================ */
+@media (max-width: 768px) {
+  .store-hero {
+    height: 160px !important;
+  }
+
+  .store-info-inner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: var(--space-md) !important;
+    padding: 0 var(--space-md) var(--space-md) !important;
+    margin-top: -32px !important;
+  }
+
+  .store-logo-large {
+    width: 64px !important;
+    height: 64px !important;
+    font-size: 28px !important;
+  }
+
+  .store-meta {
+    padding-top: 0 !important;
+  }
+
+  .store-name-large {
+    font-size: 22px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .store-tabs-bar {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    padding: var(--space-xs) 0 !important;
+  }
+
+  .store-tab {
+    white-space: nowrap !important;
+    font-size: 13px !important;
+    padding: 6px var(--space-sm) !important;
+  }
+
+  /* Filter chips in store */
+  #tab-products > div:first-child {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  #sort-sel {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .store-hero {
+    height: 120px !important;
+  }
+
+  .store-logo-large {
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 24px !important;
+  }
+
+  .store-name-large {
+    font-size: 18px !important;
+  }
+
+  .store-sub span {
+    font-size: 11px !important;
+  }
+
+  .store-info-inner > div:last-child {
+    padding-top: 0 !important;
+    width: 100% !important;
+  }
+
+  .store-info-inner > div:last-child .btn {
+    flex: 1 !important;
+  }
+
+  /* Reviews grid */
+  #reviews-grid.grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ============================================================
+   PRODUCT PAGE — product.html
+   ============================================================ */
+@media (max-width: 768px) {
+  #product-layout {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-lg) !important;
+  }
+
+  .product-gallery {
+    position: static !important;
+  }
+
+  .product-main-img {
+    aspect-ratio: 4/3 !important;
+    font-size: 60px !important;
+  }
+
+  .product-price-tag {
+    font-size: 30px !important;
+  }
+
+  #product-title {
+    font-size: clamp(20px, 4vw, 28px) !important;
+  }
+
+  .product-thumbs {
+    gap: 6px !important;
+  }
+
+  .product-thumb {
+    width: 56px !important;
+    height: 56px !important;
+  }
+
+  .qty-btn {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 16px !important;
+  }
+
+  .qty-display {
+    width: 44px !important;
+    height: 36px !important;
+    font-size: 14px !important;
+  }
+
+  .feature-pill {
+    font-size: 11px !important;
+    padding: 6px 10px !important;
+  }
+
+  #store-mini-inner {
+    padding: var(--space-sm) !important;
+  }
+
+  #store-mini-logo {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  /* Tabs */
+  .tabs {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-btn {
+    white-space: nowrap !important;
+    font-size: 13px !important;
+    padding: 8px var(--space-sm) !important;
+  }
+
+  /* Related products grid */
+  #related-grid.grid-auto {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-sm) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-main-img {
+    aspect-ratio: 1 !important;
+    font-size: 48px !important;
+  }
+
+  .product-price-tag {
+    font-size: 26px !important;
+  }
+
+  #product-title {
+    font-size: 20px !important;
+  }
+
+  .product-thumb {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  #related-grid.grid-auto {
+    grid-template-columns: 1fr !important;
+  }
+
+  .product-card-footer .btn {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* ============================================================
+   DASHBOARD PAGES — Mobile sidebar & content
+   ============================================================ */
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%) !important;
+  }
+
+  .sidebar.open {
+    transform: translateX(0) !important;
+  }
+
+  .main-area {
+    margin-left: 0 !important;
+  }
+
+  .topbar {
+    padding: 0 var(--space-md) !important;
+  }
+
+  .topbar-menu-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  .sidebar-overlay.show {
+    display: block !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    min-height: 48px !important;
+    padding: 0 var(--space-sm) !important;
+    gap: var(--space-xs) !important;
+  }
+
+  .page-content {
+    padding: var(--space-md) !important;
+  }
+
+  /* Stats grid */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-md) !important;
+  }
+
+  .stat-card {
+    padding: var(--space-md) !important;
+  }
+
+  .stat-value {
+    font-size: 20px !important;
+  }
+
+  .stat-icon {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .stat-label {
+    font-size: 11px !important;
+  }
+
+  /* Cards */
+  .card-header {
+    padding: var(--space-sm) var(--space-md) !important;
+  }
+
+  .card-body {
+    padding: var(--space-md) !important;
+  }
+
+  .card-footer {
+    padding: var(--space-sm) var(--space-md) !important;
+  }
+
+  .card-header h4 {
+    font-size: 15px !important;
+  }
+
+  /* Tables */
+  .table-wrap {
+    font-size: 13px !important;
+  }
+
+  .table-wrap th {
+    font-size: 10px !important;
+    padding: 10px var(--space-sm) !important;
+  }
+
+  .table-wrap td {
+    padding: 10px var(--space-sm) !important;
+  }
+
+  /* Modals */
+  .modal {
+    max-width: 96vw !important;
+    border-radius: var(--radius-lg) !important;
+  }
+
+  .modal-header {
+    padding: var(--space-md) !important;
+  }
+
+  .modal-body {
+    padding: var(--space-md) !important;
+  }
+
+  .modal-footer {
+    padding: var(--space-sm) var(--space-md) !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* Toasts */
+  .toast {
+    min-width: 200px !important;
+    max-width: 90vw !important;
+  }
+
+  #toast-container {
+    right: var(--space-sm) !important;
+    top: var(--space-sm) !important;
+  }
+
+  /* Sidebar nav */
+  .sidebar-nav a {
+    padding: 8px var(--space-sm) !important;
+    font-size: 13px !important;
+  }
+
+  .sidebar-logo {
+    padding: var(--space-sm) var(--space-md) !important;
+    font-size: 18px !important;
+  }
+
+  /* Search bar in dashboard */
+  .search-bar input {
+    font-size: 13px !important;
+    padding: 8px 0 !important;
+  }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--space-sm) !important;
+  }
+
+  .stat-card {
+    padding: var(--space-sm) !important;
+    gap: 4px !important;
+  }
+
+  .stat-label {
+    font-size: 11px !important;
+  }
+
+  .stat-value {
+    font-size: 18px !important;
+  }
+
+  .stat-icon {
+    width: 32px !important;
+    height: 32px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .card {
+    padding: var(--space-md) !important;
+    border-radius: var(--radius-lg) !important;
+  }
+
+  .card-header {
+    padding: var(--space-sm) !important;
+  }
+
+  .card-body {
+    padding: var(--space-sm) !important;
+  }
+
+  .table-wrap {
+    font-size: 12px !important;
+  }
+
+  .table-wrap th,
+  .table-wrap td {
+    padding: 8px 6px !important;
+    white-space: nowrap !important;
+  }
+
+  .btn {
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+  }
+
+  .btn-sm {
+    padding: 7px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .modal {
+    max-width: 100vw !important;
+    border-radius: var(--radius-md) !important;
+    margin: 0 !important;
+  }
+
+  .form-control {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+  }
+
+  .empty-state {
+    padding: var(--space-lg) var(--space-sm) !important;
+  }
+
+  .empty-state-icon {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 22px !important;
+  }
+
+  /* Form rows that are 2-col become 1-col */
+  .form-row[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Section header buttons */
+  .section-header .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Filter chips scroll horizontally */
+  .filter-chips {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px !important;
+  }
+
+  .filter-chips .chip {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+  }
+
+  .stat-card {
+    padding: 8px !important;
+  }
+
+  .stat-value {
+    font-size: 16px !important;
+  }
+
+  .stat-label {
+    font-size: 10px !important;
+  }
+
+  .table-wrap th,
+  .table-wrap td {
+    padding: 6px 4px !important;
+    font-size: 11px !important;
+  }
+
+  .navbar-nav {
+    gap: 2px !important;
+  }
+
+  .page-content {
+    padding: var(--space-sm) !important;
+  }
+}
+
+/* ============================================================
+   NAVBAR (store & product pages) — Mobile
+   ============================================================ */
+@media (max-width: 640px) {
+  .navbar-inner {
+    padding: 0 var(--space-sm) !important;
+    gap: var(--space-xs) !important;
+    height: 48px !important;
+  }
+
+  .navbar-search {
+    max-width: none !important;
+    flex: 1 !important;
+  }
+
+  .navbar-search .search-bar input {
+    font-size: 13px !important;
+    padding: 7px 8px !important;
+  }
+
+  .navbar-nav a {
+    font-size: 12px !important;
+    padding: 4px 6px !important;
+  }
+
+  .navbar-logo {
+    font-size: 18px !important;
+    gap: 6px !important;
+  }
+
+  .navbar-logo img {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .navbar-nav .avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 11px !important;
+  }
+
+  .navbar-nav span[style*="max-width"] {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   PRODUCT CARDS — Better mobile grid
+   ============================================================ */
+@media (max-width: 640px) {
+  .grid-auto {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-sm) !important;
+  }
+
+  .product-card-img {
+    height: 130px !important;
+  }
+
+  .product-card-body {
+    padding: var(--space-sm) !important;
+  }
+
+  .product-card-name {
+    font-size: 13px !important;
+  }
+
+  .product-card-price {
+    font-size: 14px !important;
+  }
+
+  .product-card-footer {
+    padding: var(--space-xs) var(--space-sm) var(--space-sm) !important;
+    gap: var(--space-xs) !important;
+  }
+
+  .product-card-footer .btn {
+    padding: 8px !important;
+    font-size: 12px !important;
+  }
+
+  .product-card-wish {
+    width: 28px !important;
+    height: 28px !important;
+    top: 6px !important;
+    right: 6px !important;
+  }
+
+  .product-card-wish svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .product-card-badge .badge {
+    font-size: 9px !important;
+    padding: 2px 6px !important;
+  }
+
+  .store-card-banner {
+    height: 100px !important;
+  }
+
+  .store-card-body {
+    padding: var(--space-xs) var(--space-sm) !important;
+  }
+
+  .store-card-name {
+    font-size: 13px !important;
+  }
+
+  .store-card-desc {
+    font-size: 11px !important;
+    -webkit-line-clamp: 2 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid-auto {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  .product-card-img {
+    height: 110px !important;
+  }
+
+  .store-card-banner {
+    height: 80px !important;
+  }
+}
+
+/* ============================================================
+   TOUCH-friendly tap targets
+   ============================================================ */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px !important;
+  }
+
+  .chip {
+    min-height: 36px !important;
+  }
+
+  .tab-btn {
+    min-height: 44px !important;
+  }
+
+  .store-tab {
+    min-height: 44px !important;
+  }
+
+  .sidebar-nav a {
+    min-height: 44px !important;
+  }
+
+  .dropdown-item {
+    min-height: 44px !important;
+  }
+
+  .page-btn {
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+
+  .product-card-wish {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .checkbox {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
+
+/* ============================================================
+   SAFE AREA — iPhone notch / rounded corners
+   ============================================================ */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .navbar,
+  .nav-sticky {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  footer {
+    padding-bottom: calc(var(--space-2xl) + env(safe-area-inset-bottom));
+  }
+}
+
+/* ============================================================
+   UTILITY — Hide on mobile / desktop
+   ============================================================ */
+@media (max-width: 640px) {
+  .hide-mobile { display: none !important; }
+}
+
+@media (min-width: 641px) {
+  .show-mobile-only { display: none !important; }
+}
+
+@media (max-width: 1024px) {
+  .hide-tablet { display: none !important; }
+}
+
+/* ============================================================
+   LANDSCAPE — Short screens
+   ============================================================ */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero-section {
+    padding: var(--space-md) 0 !important;
+  }
+
+  .hero-title {
+    font-size: clamp(20px, 4vw, 28px) !important;
+  }
+
+  .auth-visual {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+@media print {
+  .sidebar,
+  .topbar,
+  .navbar,
+  .nav-sticky,
+  .toast,
+  .modal-overlay {
+    display: none !important;
+  }
+
+  .main-area {
+    margin-left: 0 !important;
+  }
+}
