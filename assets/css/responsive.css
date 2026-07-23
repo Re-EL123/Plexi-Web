@@ -497,6 +497,7 @@
 @media (max-width: 1024px) {
   .sidebar {
     transform: translateX(-100%) !important;
+    z-index: calc(var(--z-overlay) + 1) !important;
   }
 
   .sidebar.open {
