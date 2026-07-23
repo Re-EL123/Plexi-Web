@@ -1324,6 +1324,11 @@ setInterval(loadGPSData, 30000);
   }
 
   // ======== DRIVER KYC COMPLIANCE ======== //
+  function kycDocThumb(url, label) {
+    if (!url) return '';
+    return `<a href="${url}" target="_blank" title="${label}" style="display:inline-block;position:relative;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border-light);flex-shrink:0;width:80px;height:60px;background:var(--bg-alt);"><img src="${url}" alt="${label}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:10px;color:var(--text-muted);\\'>📄</div>'"><div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:#fff;font-size:8px;padding:1px 3px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</div></a>`;
+  }
+
   async function loadDriverCompliance() {
     const status = document.getElementById('kyc-filter').value;
     const list = document.getElementById('driver-compliance-list');
@@ -1339,55 +1344,79 @@ setInterval(loadGPSData, 30000);
 
       list.innerHTML = data.map(c => {
         const driver = c.driver || {};
-        const statusBadge = c.status === 'approved' ? 'badge-success'
-          : c.status === 'rejected' ? 'badge-error'
-          : 'badge-warning';
+        const statusColor = c.status === 'approved' ? 'var(--success)' : c.status === 'rejected' ? 'var(--error)' : 'var(--secondary)';
+        const statusLabel = c.status === 'approved' ? 'Approved' : c.status === 'rejected' ? 'Rejected' : 'Pending Review';
 
-        const docs = [
-          { label: 'ID Front', url: c.id_front_url, required: true },
-          { label: 'ID Back', url: c.id_back_url, required: true },
-          { label: 'Driver\'s License', url: c.license_url, required: true },
-          { label: 'License #', value: c.license_number },
-          { label: 'License Expiry', value: c.license_expiry },
-          { label: 'PrDP', url: c.prdp_url, required: true },
-          { label: 'PrDP Expiry', value: c.prdp_expiry },
-          { label: 'Vehicle Reg', url: c.vehicle_reg_url, required: true },
-          { label: 'Reg Number', value: c.vehicle_reg_number },
-          { label: 'DEKRA Roadworthy', url: c.dekra_url, required: true },
-          { label: 'DEKRA Expiry', value: c.dekra_expiry },
-          { label: 'Insurance', url: c.insurance_url, required: true },
-          { label: 'Insurance Expiry', value: c.insurance_expiry },
-          { label: 'Proof of Address', url: c.proof_of_address_url, required: true },
-          { label: 'Address Type', value: c.proof_of_address_type },
-          { label: 'Profile Photo', url: c.profile_photo_url, required: true },
+        const docGroups = [
+          { heading: 'Identity', items: [
+            { label: 'ID Front', url: c.id_front_url },
+            { label: 'ID Back', url: c.id_back_url },
+          ]},
+          { heading: 'Driving', items: [
+            { label: 'License', url: c.license_url },
+            { label: 'PrDP', url: c.prdp_url },
+            { label: 'Profile Photo', url: c.profile_photo_url },
+          ], meta: [
+            c.license_number ? `Lic #${c.license_number}` : null,
+            c.license_expiry ? `Exp ${c.license_expiry}` : null,
+            c.prdp_expiry ? `PrDP ${c.prdp_expiry}` : null,
+          ]},
+          { heading: 'Vehicle', items: [
+            { label: 'Vehicle Reg', url: c.vehicle_reg_url },
+            { label: 'DEKRA', url: c.dekra_url },
+            { label: 'Insurance', url: c.insurance_url },
+          ], meta: [
+            c.vehicle_reg_number ? `Reg ${c.vehicle_reg_number}` : null,
+            c.dekra_expiry ? `DEKRA ${c.dekra_expiry}` : null,
+            c.insurance_expiry ? `Ins ${c.insurance_expiry}` : null,
+          ]},
+          { heading: 'FICA', items: [
+            { label: 'Proof of Address', url: c.proof_of_address_url },
+          ], meta: [
+            c.proof_of_address_type ? c.proof_of_address_type.replace('_', ' ') : null,
+          ]},
         ];
 
-        const docsHtml = docs.map(d => {
-          if (d.url) return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span style="color:var(--success);">✓</span> ${d.label} <a href="${d.url}" target="_blank" style="color:var(--primary);text-decoration:underline;">View</a></div>`;
-          if (d.value) return `<div style="font-size:12px;"><strong>${d.label}:</strong> ${d.value}</div>`;
-          if (d.required) return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span style="color:var(--error);">✗</span> ${d.label} <span style="color:var(--error);font-weight:600;">Missing</span></div>`;
-          return '';
-        }).filter(Boolean).join('');
+        const docGroupsHtml = docGroups.map(g => {
+          const thumbs = g.items.map(i => kycDocThumb(i.url, i.label)).join('');
+          const metas = (g.meta || []).filter(Boolean).map(m => `<span style="font-size:11px;color:var(--text-muted);background:var(--bg-alt);padding:1px 6px;border-radius:3px;">${m}</span>`).join(' ');
+          const hasAll = g.items.every(i => i.url);
+          const anyMissing = g.items.some(i => !i.url);
+          const headingColor = hasAll ? 'var(--success)' : anyMissing ? 'var(--error)' : 'var(--text-muted)';
+          return `<div style="margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+              <span style="width:6px;height:6px;border-radius:50%;background:${headingColor};flex-shrink:0;"></span>
+              <strong style="font-size:11px;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">${g.heading}</strong>
+              ${metas ? `<span style="font-size:11px;color:var(--text-muted);">${metas}</span>` : ''}
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">${thumbs || '<span style="font-size:11px;color:var(--error);">No documents uploaded</span>'}</div>
+          </div>`;
+        }).join('');
+
+        const totalDocs = [c.id_front_url, c.id_back_url, c.license_url, c.prdp_url, c.vehicle_reg_url, c.dekra_url, c.insurance_url, c.proof_of_address_url, c.profile_photo_url].filter(Boolean).length;
 
         return `
-          <div class="card" style="margin-bottom:var(--space-md);">
+          <div class="card" style="margin-bottom:var(--space-md);border-left:3px solid ${statusColor};">
             <div class="card-body">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:var(--space-md);">
-                <div style="flex:1;min-width:280px;">
+                <div style="flex:1;min-width:300px;">
                   <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-sm);flex-wrap:wrap;">
-                    <strong style="font-size:15px;">${driver.full_name || 'Unknown Driver'}</strong>
-                    <span class="badge ${statusBadge}" style="font-size:11px;">${c.status}</span>
-                    <span class="badge badge-gray" style="font-size:10px;">${driver.vehicle_type || 'N/A'}</span>
-                    ${driver.vehicle_make ? `<span class="badge badge-gray" style="font-size:10px;">${driver.vehicle_make} ${driver.vehicle_model || ''}</span>` : ''}
+                    ${driver.full_name ? `<strong style="font-size:15px;">${driver.full_name}</strong>` : `<strong style="font-size:15px;color:var(--text-muted);">Driver #${c.driver_id?.slice(0,8) || 'Unknown'}</strong>`}
+                    <span style="font-size:11px;font-weight:600;color:${statusColor};background:${statusColor}15;padding:2px 8px;border-radius:10px;">${statusLabel}</span>
+                    ${driver.vehicle_type ? `<span style="font-size:11px;color:var(--text-muted);background:var(--bg-alt);padding:2px 8px;border-radius:10px;">${driver.vehicle_type}</span>` : ''}
+                    ${driver.vehicle_make ? `<span style="font-size:11px;color:var(--text-muted);background:var(--bg-alt);padding:2px 8px;border-radius:10px;">${driver.vehicle_make} ${driver.vehicle_model || ''}</span>` : ''}
+                    ${driver.license_plate ? `<span style="font-size:11px;font-family:monospace;color:var(--text-secondary);background:var(--bg-alt);padding:2px 8px;border-radius:10px;">${driver.license_plate}</span>` : ''}
                   </div>
-                  <div style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-sm);">
-                    <strong>Email:</strong> ${driver.email || '—'} &nbsp;|&nbsp; <strong>Phone:</strong> ${driver.phone || '—'}
+                  <div style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-sm);display:flex;flex-wrap:wrap;gap:var(--space-sm);">
+                    ${driver.email ? `<span>📧 ${driver.email}</span>` : ''}
+                    ${driver.phone ? `<span>📱 ${driver.phone}</span>` : ''}
+                    <span style="color:var(--text-muted);">📄 ${totalDocs}/9 documents</span>
                   </div>
-                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:4px;">
-                    ${docsHtml}
+                  <div style="border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:var(--space-sm);">
+                    ${docGroupsHtml}
                   </div>
-                  ${c.rejection_reason ? `<div style="margin-top:var(--space-sm);padding:var(--space-sm);background:rgba(231,76,60,0.05);border-radius:var(--radius-sm);font-size:12px;"><strong style="color:var(--error);">Rejection Reason:</strong> ${c.rejection_reason}${c.rejection_notes ? ' — ' + c.rejection_notes : ''}</div>` : ''}
-                  <div style="font-size:11px;color:var(--text-muted);margin-top:var(--space-sm);">Submitted: ${UI.formatDate(c.created_at)}${c.reviewed_at ? ' | Reviewed: ' + UI.formatDate(c.reviewed_at) : ''}</div>
+                  ${c.rejection_reason ? `<div style="margin-top:var(--space-sm);padding:var(--space-sm);background:rgba(231,76,60,0.05);border-radius:var(--radius-sm);font-size:12px;border-left:3px solid var(--error);"><strong style="color:var(--error);">Rejected:</strong> ${c.rejection_reason}${c.rejection_notes ? ' — ' + c.rejection_notes : ''}</div>` : ''}
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:var(--space-sm);">Submitted ${UI.formatDate(c.created_at)}${c.reviewed_at ? ' · Reviewed ' + UI.formatDate(c.reviewed_at) : ''}</div>
                 </div>
                 ${c.status === 'submitted' ? `
                   <div style="display:flex;flex-direction:column;gap:var(--space-sm);min-width:140px;">
@@ -1401,7 +1430,6 @@ setInterval(loadGPSData, 30000);
         `;
       }).join('');
 
-      // Update badge count
       const pendingCount = data.filter(c => c.status === 'submitted').length;
       const badge = document.getElementById('pending-driver-kyc-count');
       if (badge) {
@@ -1409,36 +1437,55 @@ setInterval(loadGPSData, 30000);
         badge.style.display = pendingCount > 0 ? 'inline-flex' : 'none';
       }
     } catch (err) {
-      list.innerHTML = '<div style="text-align:center;padding:var(--space-xl);color:var(--error);">Error loading driver compliance data</div>';
+      list.innerHTML = `<div style="text-align:center;padding:var(--space-xl);color:var(--error);">Error loading driver compliance data: ${err.message || 'Unknown error'}</div>`;
     }
   }
 
   async function reviewDriverKYC(complianceId, action) {
-    const msg = action === 'approve'
-      ? 'Are you sure you want to APPROVE this driver\'s KYC?'
-      : 'Enter rejection reason:';
     if (action === 'reject') {
-      const reason = prompt('Rejection reason (required):');
-      if (!reason) return;
-      const notes = prompt('Additional notes (optional):') || '';
-      if (!confirm('Reject this driver\'s KYC submission?')) return;
-      try {
-        await api.driverCompliance.review(complianceId, 'reject', reason, notes);
-        UI.toast('Driver KYC rejected', 'success');
-        loadDriverCompliance();
-      } catch (err) {
-        UI.toast(err.message, 'error');
-      }
+      UI.createModal({
+        id:'kyc-reject-modal', title:'Reject KYC Submission',
+        content:`<div style="margin-bottom:var(--space-md);font-size:14px;color:var(--text-secondary);">Provide a reason for rejecting this driver's KYC documents. The driver will be notified.</div>
+          <div class="form-group"><label class="form-label">Rejection Reason *</label><select class="form-control" id="kyc-reject-reason"><option value="">Select reason…</option><option value="Blurry or unreadable ID">Blurry or unreadable ID</option><option value="Expired license">Expired license</option><option value="Expired insurance">Expired insurance</option><option value="Expired DEKRA certificate">Expired DEKRA certificate</option><option value="Missing PrDP">Missing Professional Driving Permit</option><option value="Wrong vehicle information">Wrong vehicle information</option><option value="Proof of address too old">Proof of address older than 3 months</option><option value="Profile photo does not match ID">Profile photo does not match ID</option><option value="Document does not belong to driver">Document does not belong to driver</option><option value="Other">Other</option></select></div>
+          <div class="form-group" id="kyc-reject-custom-wrap" style="display:none;"><label class="form-label">Specify Reason</label><input type="text" class="form-control" id="kyc-reject-custom" placeholder="Enter reason…"></div>
+          <div class="form-group"><label class="form-label">Additional Notes (optional)</label><textarea class="form-control" id="kyc-reject-notes" rows="3" placeholder="Any extra details for the driver…"></textarea></div>`,
+        footer:`<button class="btn btn-ghost" onclick="UI.closeModal('kyc-reject-modal')">Cancel</button>
+                <button class="btn btn-danger" onclick="submitDriverKYCReject('${complianceId}')">Reject Submission</button>`
+      });
+      setTimeout(()=>{
+        const sel=document.getElementById('kyc-reject-reason');
+        if(sel) sel.onchange=()=>{
+          document.getElementById('kyc-reject-custom-wrap').style.display=sel.value==='Other'?'block':'none';
+        };
+      },100);
     } else {
-      if (!confirm(msg)) return;
-      try {
-        await api.driverCompliance.review(complianceId, 'approve');
-        UI.toast('Driver KYC approved', 'success');
-        loadDriverCompliance();
-      } catch (err) {
-        UI.toast(err.message, 'error');
-      }
+      UI.confirmDialog({
+        title:'Approve KYC',
+        message:'Approve this driver\'s KYC submission? They will be notified and can start accepting deliveries.',
+        confirmText:'Approve',
+        onConfirm:async()=>{
+          try {
+            await api.driverCompliance.review(complianceId, 'approve');
+            UI.toast('Driver KYC approved — driver notified','success');
+            loadDriverCompliance();
+          } catch (err) { UI.toast(err.message,'error'); }
+        }
+      });
     }
+  }
+
+  async function submitDriverKYCReject(complianceId) {
+    const reasonSel = document.getElementById('kyc-reject-reason')?.value;
+    const reasonCustom = document.getElementById('kyc-reject-custom')?.value;
+    const notes = document.getElementById('kyc-reject-notes')?.value || '';
+    const reason = reasonSel === 'Other' ? reasonCustom : reasonSel;
+    if (!reason) { UI.toast('Please provide a rejection reason','warning'); return; }
+    UI.closeModal('kyc-reject-modal');
+    try {
+      await api.driverCompliance.review(complianceId, 'reject', reason, notes);
+      UI.toast('Driver KYC rejected — driver notified','success');
+      loadDriverCompliance();
+    } catch (err) { UI.toast(err.message,'error'); }
   }
 
   // ======== DRIVER PAYROLL ======== //
