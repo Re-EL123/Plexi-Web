@@ -640,6 +640,15 @@
     flex-wrap: nowrap !important;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* Shopper cart */
+  #section-cart > div {
+    grid-template-columns: 1fr !important;
+  }
+
+  #cart-summary {
+    position: static !important;
+  }
 }
 
 @media (max-width: 640px) {
