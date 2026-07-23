@@ -594,9 +594,35 @@
     grid-template-columns: 1fr !important;
   }
 
+  /* Inline 3-col grids (e.g. verification address row) stack */
+  [style*="grid-template-columns:2fr 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
   /* Form rows stack */
   .form-row[style*="grid-template-columns:1fr 1fr"] {
     grid-template-columns: 1fr !important;
+  }
+
+  /* Section header inline-width form controls: full width */
+  .section-header [style*="width:220px"],
+  .section-header [style*="width:160px"],
+  .section-header [style*="width:150px"],
+  .section-header [style*="width:140px"],
+  .section-header [style*="width:130px"] {
+    width: 100% !important;
+  }
+
+  /* Section header filter flex divs: wrap children */
+  .section-header > div[style*="display:flex"] {
+    flex-wrap: wrap !important;
+    gap: var(--space-xs) !important;
+  }
+
+  .section-header > div[style*="display:flex"] > .form-control,
+  .section-header > div[style*="display:flex"] > .btn {
+    min-width: 0 !important;
+    flex: 1 1 120px !important;
   }
 
   /* Flex containers that are inline 2-col */
@@ -613,6 +639,17 @@
   /* GPS map */
   #gps-map {
     height: 300px !important;
+    min-height: 300px !important;
+  }
+
+  /* GPS map card */
+  .card[style*="min-height:500px"] {
+    min-height: 320px !important;
+  }
+
+  /* Chart canvas containers in reports */
+  .card-body[style*="height:280px"] {
+    height: 220px !important;
   }
 
   /* Tables: horizontal scroll */
@@ -781,6 +818,38 @@
   /* Section header title: smaller */
   .section-title {
     font-size: clamp(16px, 4vw, 22px) !important;
+  }
+
+  /* Section header filter bars: stack vertically */
+  .section-header > div[style*="display:flex"] {
+    flex-direction: column !important;
+  }
+
+  .section-header > div[style*="display:flex"] > .form-control,
+  .section-header > div[style*="display:flex"] > .btn,
+  .section-header > div[style*="display:flex"] > .dropdown {
+    width: 100% !important;
+    flex: none !important;
+  }
+
+  /* Topbar right area: tighter gap */
+  .topbar > div[style*="display:flex"][style*="align-items:center"] {
+    gap: 4px !important;
+  }
+
+  /* Topbar "Add Product" button: icon-only */
+  .topbar .btn-primary.btn-sm svg {
+    margin-right: 0 !important;
+  }
+
+  /* Section header dropdowns: full width */
+  .section-header .dropdown {
+    width: 100% !important;
+  }
+
+  .section-header .dropdown .btn {
+    width: 100% !important;
+    justify-content: center !important;
   }
 }
 
