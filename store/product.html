@@ -551,13 +551,17 @@
     if (variants.length) {
       document.getElementById('variants-section').style.display = 'block';
       const container = document.getElementById('variants-btns');
-      container.innerHTML = variants.map(v => `
-        <button class="variant-btn" onclick="selectVariant('${v}', this)">${v}</button>
-      `).join('');
+      container.innerHTML = variants.map(v => {
+        const label = v.name ? `${v.name}: ${(v.values || []).join(', ')}` : JSON.stringify(v);
+        return `<button class="variant-btn" onclick="selectVariant('${label.replace(/'/g, "\\'")}', this)">${label}</button>`;
+      }).join('');
       // Show in description tab too
       document.getElementById('variants-detail').innerHTML = `
         <div style="font-weight:700;margin-bottom:var(--space-sm);">Available Variants</div>
-        <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">${variants.map(v=>`<span class="badge badge-gray">${v}</span>`).join('')}</div>`;
+        <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">${variants.map(v => {
+          const label = v.name ? `${v.name}: ${(v.values || []).join(', ')}` : JSON.stringify(v);
+          return `<span class="badge badge-gray">${label}</span>`;
+        }).join('')}</div>`;
     }
 
     // Enable cart button if in stock
