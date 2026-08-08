@@ -1145,7 +1145,7 @@
       content,
       size: 'modal-xl',
       footer: `<button class="btn btn-ghost" type="button" onclick="UI.closeModal('product-modal')">Cancel</button>
-        <button class="btn btn-primary" type="submit" form="product-form">${pd ? 'Save Changes' : 'Add Product'}</button>`
+        <button class="btn btn-primary" type="submit" form="product-form" id="product-submit-btn">${pd ? 'Save Changes' : 'Add Product'}</button>`
     });
     setTimeout(() => switchProductTab('tab-general'), 10);
   }
@@ -1546,97 +1546,103 @@
     e.preventDefault();
     if (!currentStore) { UI.toast('Select a store first','warning'); return; }
 
-    const formData = new FormData(e.target);
+    // Show immediate feedback BEFORE any async operations
+    const submitBtn = e.submitter || document.getElementById('product-submit-btn');
+    UI.setLoading(submitBtn, true, 'Saving…');
 
-    const data = {
-      name: formData.get('name') || '',
-      product_type: formData.get('product_type') || 'physical',
-      category: formData.get('category') || '',
-      description: formData.get('description') || '',
-      price: parseFloat(formData.get('price')) || 0,
-      original_price: formData.get('original_price') ? parseFloat(formData.get('original_price')) : null,
-      inventory: parseInt(formData.get('inventory')) || 0,
-      sku: formData.get('sku') || '',
-      tags: productTagsData,
-      visibility: formData.get('visibility') || 'visible',
-      sold_out: e.target.querySelector('[name=sold_out]')?.checked || false,
-      track_quantity: e.target.querySelector('[name=track_quantity]')?.checked || true,
-      delivery_override: e.target.querySelector('[name=delivery_override]')?.checked || false,
-      limit_delivery_dates: formData.get('limit_delivery_dates') === 'true',
-      delivery_date_from: formData.get('delivery_date_from') || null,
-      delivery_date_to: formData.get('delivery_date_to') || null,
-      weight: formData.get('weight') ? parseFloat(formData.get('weight')) : null,
-      available_methods: []
-    };
+    try {
+      const formData = new FormData(e.target);
 
-    // Available methods
-    document.querySelectorAll('[name=available_methods]:checked').forEach(cb => {
-      data.available_methods.push(cb.value);
-    });
+      const data = {
+        name: formData.get('name') || '',
+        product_type: formData.get('product_type') || 'physical',
+        category: formData.get('category') || '',
+        description: formData.get('description') || '',
+        price: parseFloat(formData.get('price')) || 0,
+        original_price: formData.get('original_price') ? parseFloat(formData.get('original_price')) : null,
+        inventory: parseInt(formData.get('inventory')) || 0,
+        sku: formData.get('sku') || '',
+        tags: productTagsData,
+        visibility: formData.get('visibility') || 'visible',
+        sold_out: e.target.querySelector('[name=sold_out]')?.checked || false,
+        track_quantity: e.target.querySelector('[name=track_quantity]')?.checked || true,
+        delivery_override: e.target.querySelector('[name=delivery_override]')?.checked || false,
+        limit_delivery_dates: formData.get('limit_delivery_dates') === 'true',
+        delivery_date_from: formData.get('delivery_date_from') || null,
+        delivery_date_to: formData.get('delivery_date_to') || null,
+        weight: formData.get('weight') ? parseFloat(formData.get('weight')) : null,
+        available_methods: []
+      };
 
-    // Image handling - upload pending images
-    let imageUrls = [];
-    if (pendingProductImages.length > 0) {
-      for (let i = 0; i < pendingProductImages.length; i++) {
-        try {
-          const result = await api.upload.file(pendingProductImages[i], 'products');
-          imageUrls.push(result.url);
-        } catch (err) {
-          UI.toast(err.message, 'error');
+      // Available methods
+      document.querySelectorAll('[name=available_methods]:checked').forEach(cb => {
+        data.available_methods.push(cb.value);
+      });
+
+      // Image handling - upload pending images
+      let imageUrls = [];
+      if (pendingProductImages.length > 0) {
+        for (let i = 0; i < pendingProductImages.length; i++) {
+          try {
+            const result = await api.upload.file(pendingProductImages[i], 'products');
+            if (result.url) {
+              imageUrls.push(result.url);
+            }
+          } catch (err) {
+            UI.toast(err.message, 'error');
+          }
         }
       }
-    }
 
-    // Add existing images (excluding removed ones)
-    const existingImages = productEditData ? (productEditData.images || []) : [];
-    existingImages.forEach(url => {
-      if (!removedExistingImageUrls.includes(url) && !imageUrls.includes(url)) {
-        imageUrls.push(url);
-      }
-    });
-    data.images = imageUrls;
+      // Add existing images (excluding removed ones)
+      const existingImages = productEditData ? (productEditData.images || []) : [];
+      existingImages.forEach(url => {
+        if (!removedExistingImageUrls.includes(url) && !imageUrls.includes(url)) {
+          imageUrls.push(url);
+        }
+      });
+      data.images = imageUrls;
 
-    // Process options data
-    data.options = productOptionsData.map(opt => ({
-      name: opt.name,
-      type: opt.type,
-      required: opt.required,
-      values: opt.values
-    }));
+      // Process options data
+      data.options = productOptionsData.map(opt => ({
+        name: opt.name,
+        type: opt.type,
+        required: opt.required,
+        values: opt.values
+      }));
 
-    // Process variants data
-    data.variants = productVariantsData.map(v => ({
-      name: v.name,
-      values: v.values,
-      options: []
-    }));
+      // Process variants data
+      data.variants = productVariantsData.map(v => ({
+        name: v.name,
+        values: v.values,
+        options: []
+      }));
 
-    const payload = {
-      store_id: currentStore.id,
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      original_price: data.original_price,
-      product_type: data.product_type,
-      category: data.category,
-      inventory: data.inventory,
-      sku: data.sku,
-      tags: data.tags,
-      visibility: data.visibility,
-      sold_out: data.sold_out,
-      track_quantity: data.track_quantity,
-      delivery_override: data.delivery_override,
-      weight: data.weight,
-      available_methods: data.available_methods,
-      limit_delivery_dates: data.limit_delivery_dates,
-      options: data.options,
-      variants: data.variants.map(v => ({ name: v.name, values: v.values, options: [] })),
-      delivery_date_from: data.delivery_date_from,
-      delivery_date_to: data.delivery_date_to
-    };
+      const payload = {
+        store_id: currentStore.id,
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        original_price: data.original_price,
+        product_type: data.product_type,
+        category: data.category,
+        inventory: data.inventory,
+        sku: data.sku,
+        tags: data.tags,
+        visibility: data.visibility,
+        sold_out: data.sold_out,
+        track_quantity: data.track_quantity,
+        delivery_override: data.delivery_override,
+        weight: data.weight,
+        available_methods: data.available_methods,
+        limit_delivery_dates: data.limit_delivery_dates,
+        options: data.options,
+        variants: data.variants,
+        images: data.images,
+        delivery_date_from: data.delivery_date_from,
+        delivery_date_to: data.delivery_date_to
+      };
 
-    UI.setLoading(e.submitter || e.target.querySelector('[type=submit]'), true, 'Saving…');
-    try {
       const editId = e.target.querySelector('[name="_editId"]')?.value;
       if (editId) {
         await api.products.update(editId, payload);
@@ -1650,7 +1656,7 @@
     } catch (err) {
       UI.toast(err.message, 'error');
     } finally {
-      UI.setLoading(e.submitter || e.target.querySelector('[type=submit]'), false, productEditData ? 'Save Changes' : 'Add Product');
+      UI.setLoading(submitBtn, false, productEditData ? 'Save Changes' : 'Add Product');
     }
   }
 
