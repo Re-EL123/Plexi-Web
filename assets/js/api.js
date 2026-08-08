@@ -33,10 +33,12 @@ const api = (() => {
 
   async function request(method, path, body = null, opts = {}) {
     const url = `${BASE}${path}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
     const options = {
       method,
       headers: buildHeaders(opts.headers || {}),
-      signal: AbortSignal.timeout(CONFIG.TIMEOUT)
+      signal: controller.signal
     };
     if (body && method !== 'GET') {
       options.body = JSON.stringify(body);
@@ -44,6 +46,7 @@ const api = (() => {
 
     try {
       const res = await fetch(url, options);
+      clearTimeout(timeoutId);
 
       if (res.status === 401) {
         localStorage.removeItem(CONFIG.TOKEN_KEY);
@@ -70,7 +73,8 @@ const api = (() => {
 
       return data;
     } catch (err) {
-      if (err.name === 'TimeoutError') {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError' || err.name === 'TimeoutError') {
         throw new Error('Request timed out. Please try again.');
       }
       throw err;
