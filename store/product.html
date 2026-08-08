@@ -562,11 +562,11 @@
 
     // Enable cart button if in stock
     const addBtn = document.getElementById('add-cart-btn');
-    if (p.inventory > 0) {
+    if (p.inventory > 0 && !p.sold_out) {
       addBtn.disabled = false;
     } else {
       addBtn.disabled = true;
-      addBtn.textContent = 'Out of Stock';
+      addBtn.textContent = p.sold_out ? 'Sold Out' : 'Out of Stock';
     }
   }
 

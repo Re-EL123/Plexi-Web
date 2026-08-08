@@ -1134,8 +1134,8 @@
       title: pd ? 'Edit Product' : 'Add Product',
       content,
       size: 'modal-xl',
-      footer: `<button class="btn btn-ghost" onclick="UI.closeModal('product-modal')">Cancel</button>
-        <button class="btn btn-primary" onclick="submitProductAddProduct(event)">${pd ? 'Save Changes' : 'Add Product'}</button>`
+      footer: `<button class="btn btn-ghost" type="button" onclick="UI.closeModal('product-modal')">Cancel</button>
+        <button class="btn btn-primary" type="submit" form="product-form">${pd ? 'Save Changes' : 'Add Product'}</button>`
     });
     setTimeout(() => switchProductTab('tab-general'), 10);
   }
@@ -1543,7 +1543,9 @@
       sold_out: e.target.querySelector('[name=sold_out]')?.checked || false,
       track_quantity: e.target.querySelector('[name=track_quantity]')?.checked || true,
       delivery_override: e.target.querySelector('[name=delivery_override]')?.checked || false,
-      limit_delivery_dates: e.target.querySelector('[name=limit_delivery_dates]')?.checked || false,
+      limit_delivery_dates: formData.get('limit_delivery_dates') === 'true',
+      delivery_date_from: formData.get('delivery_date_from') || null,
+      delivery_date_to: formData.get('delivery_date_to') || null,
       weight: formData.get('weight') ? parseFloat(formData.get('weight')) : null,
       available_methods: []
     };
@@ -1613,18 +1615,22 @@
       delivery_date_to: data.delivery_date_to
     };
 
-    UI.setLoading(e.target.querySelector('[type=submit]'), true, 'Saving…');
+    UI.setLoading(e.submitter || e.target.querySelector('[type=submit]'), true, 'Saving…');
     try {
-      const editId = e.target.querySelector('[name="id"]')?.value || e.target.querySelector('[name="_editId"]')?.value;
-      // We need to get the editId from the form data differently. Let me handle this properly.
-      // The form is submitted via onsubmit="submitProduct(event,'${pd?.id||''}')"
-      // So we need to pass the editId to the submit function
+      const editId = e.target.querySelector('[name="_editId"]')?.value;
+      if (editId) {
+        await api.products.update(editId, payload);
+        UI.toast('Product updated!', 'success');
+      } else {
+        await api.products.create(payload);
+        UI.toast('Product added!', 'success');
+      }
       UI.closeModal('product-modal');
       loadProducts();
     } catch (err) {
       UI.toast(err.message, 'error');
     } finally {
-      UI.setLoading(e.target.querySelector('[type=submit]'), false, 'Save Changes');
+      UI.setLoading(e.submitter || e.target.querySelector('[type=submit]'), false, 'Save Changes');
     }
   }
 
