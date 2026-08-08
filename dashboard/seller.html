@@ -42,10 +42,18 @@
      .product-modal-scroll { max-height:520px;overflow-y:auto;padding-right:8px; }
      .upload-drop { border:2px dashed var(--border);border-radius:var(--radius-md);padding:var(--space-xl);text-align:center;cursor:pointer;transition:all 0.2s; }
      .upload-drop:hover { border-color:var(--primary);background:var(--bg-alt); }
-     .option-type-btn { display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:12px;cursor:pointer; }
-     .option-type-btn:hover { background:var(--bg-alt); }
-     .option-type-btn.active { background:var(--primary-alpha);border-color:var(--primary);color:var(--primary); }
-  </style>
+      .option-type-btn { display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:12px;cursor:pointer; }
+      .option-type-btn:hover { background:var(--bg-alt); }
+      .option-type-btn.active { background:var(--primary-alpha);border-color:var(--primary);color:var(--primary); }
+      .spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .product-tab-nav { display:flex;gap:4px;margin-bottom:var(--space-md);border-bottom:1px solid var(--border);padding-bottom:4px;flex-wrap:wrap; }
+      .product-tab-btn { padding:8px 16px;font-size:13px;border:none;background:none;cursor:pointer;border-radius:var(--radius-sm);color:var(--text-secondary); }
+      .product-tab-btn.active { background:var(--primary-alpha);color:var(--primary);box-shadow:var(--neo-shadow-sm); }
+      .product-tab-content { display:none; }
+      .product-tab-content.active { display:block; }
+      .product-modal-scroll { max-height:500px;overflow-y:auto;padding:var(--space-sm); }
+   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -1599,7 +1607,8 @@
     // Process variants data
     data.variants = productVariantsData.map(v => ({
       name: v.name,
-      values: v.values
+      values: v.values,
+      options: []
     }));
 
     const payload = {
@@ -1621,7 +1630,7 @@
       available_methods: data.available_methods,
       limit_delivery_dates: data.limit_delivery_dates,
       options: data.options,
-      variants: data.variants,
+      variants: data.variants.map(v => ({ name: v.name, values: v.values, options: [] })),
       delivery_date_from: data.delivery_date_from,
       delivery_date_to: data.delivery_date_to
     };
@@ -1641,7 +1650,7 @@
     } catch (err) {
       UI.toast(err.message, 'error');
     } finally {
-      UI.setLoading(e.submitter || e.target.querySelector('[type=submit]'), false, 'Save Changes');
+      UI.setLoading(e.submitter || e.target.querySelector('[type=submit]'), false, productEditData ? 'Save Changes' : 'Add Product');
     }
   }
 
