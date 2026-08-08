@@ -1089,6 +1089,7 @@
   let productOptionsData = [];
   let productVariantsData = [];
   let productTagsData = [];
+  let removedExistingImageUrls = [];
   let productEditData = null;
 
   const OPTION_TYPE_ICONS = {
@@ -1103,6 +1104,7 @@
     productVariantsData = pd?.variants ? JSON.parse(JSON.stringify(pd.variants)) : [];
     productTagsData = pd?.tags ? [...pd.tags] : [];
     pendingProductImages = [];
+    removedExistingImageUrls = [];
 
     const content = `
       <div class="product-tab-nav">
@@ -1377,16 +1379,29 @@
     const files = Array.from(input.files);
     pendingProductImages.push(...files);
     input.value = '';
-    updateProductImagePreviews();
+    renderProductImagesSection();
   }
 
-  function updateProductImagePreviews() {
-    const preview = document.getElementById('product-images-preview');
-    if (!preview) return;
-    preview.innerHTML = pendingProductImages.map((f, i) => {
+  function renderProductImagesSection() {
+    const container = document.getElementById('product-images-drop');
+    if (!container) return;
+    const pd = productEditData;
+    const existingImages = (pd?.images || []).filter(url => !removedExistingImageUrls.includes(url));
+    const existingImgs = existingImages.map(url => `<div style="position:relative;margin:4px;display:inline-block;"><img src="${url}" style="max-height:80px;max-width:80px;border-radius:var(--radius-sm);object-fit:cover;"><button type="button" class="btn btn-ghost btn-xs" style="position:absolute;top:-4px;right:-4px;padding:0;width:18px;height:18px;border-radius:50%;border:none;background:rgba(255,0,0,0.1);color:#fff;font-size:12px;cursor:pointer;" onclick="removeExistingProductImage('${url}')">×</button></div>`).join('');
+    const newPreviews = pendingProductImages.map((f, i) => {
       const url = URL.createObjectURL(f);
       return `<div style="position:relative;margin:4px;display:inline-block;"><img src="${url}" style="max-height:80px;max-width:80px;border-radius:var(--radius-sm);object-fit:cover;"><button type="button" class="btn btn-ghost btn-xs" style="position:absolute;top:-4px;right:-4px;padding:0;width:18px;height:18px;border-radius:50%;border:none;background:rgba(255,0,0,0.2);color:#fff;font-size:12px;cursor:pointer;" onclick="removeNewProductImage(${i})">×</button></div>`;
     }).join('');
+
+    if (!existingImgs && !newPreviews) {
+      container.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin:0 auto var(--space-sm);display:block;opacity:0.5;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><p style="color:var(--text-secondary);font-size:13px;margin:4px 0 0">Click to upload or drag & drop images</p><small style="color:var(--text-muted);">PNG, JPG, WebP — max 5MB each</small>`;
+    } else {
+      container.innerHTML = existingImgs + newPreviews;
+    }
+  }
+
+  function updateProductImagePreviews() {
+    renderProductImagesSection();
   }
 
   function handleProductTagKeydown(e) {
@@ -1410,11 +1425,7 @@
 
   function removeExistingProductImage(url) {
     removedExistingImageUrls.push(url);
-    const preview = document.getElementById('product-images-preview');
-    if (preview) preview.innerHTML = '';
-    pendingProductImages = pendingProductImages.filter(f => {
-      return !removedExistingImageUrls.includes(URL.createObjectURL(f));
-    });
+    renderProductImagesSection();
   }
 
   function removeNewProductImage(index) {
@@ -1568,10 +1579,10 @@
       }
     }
 
-    // Add existing images
+    // Add existing images (excluding removed ones)
     const existingImages = productEditData ? (productEditData.images || []) : [];
     existingImages.forEach(url => {
-      if (!imageUrls.includes(url)) {
+      if (!removedExistingImageUrls.includes(url) && !imageUrls.includes(url)) {
         imageUrls.push(url);
       }
     });
