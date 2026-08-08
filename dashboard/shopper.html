@@ -673,8 +673,8 @@
             </button>
           </div>
           <div class="product-card-body">
-            <div class="product-card-name">${item.product?.name||'Product'}</div>
-            <div class="product-card-price">${UI.formatCurrency(item.product?.price||0)}</div>
+            <div class="product-card-name">${item.product?.name||'Product'}${item.product?.product_type?` <span class="badge badge-gray" style="font-size:10px;">${item.product.product_type}</span>`:''}</div>
+            <div class="product-card-price">${item.product?.original_price && item.product?.original_price > (item.product?.price||0) ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;">${UI.formatCurrency(item.product.original_price)}</span> ` : ''}${UI.formatCurrency(item.product?.price||0)}</div>
           </div>
           <div class="product-card-footer">
             <button class="btn btn-primary btn-sm" onclick="addWishToCart('${item.product_id}')">Add to Cart</button>
