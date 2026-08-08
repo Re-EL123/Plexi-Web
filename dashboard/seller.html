@@ -1231,7 +1231,7 @@
         <button type="button" class="btn btn-ghost btn-sm" onclick="removeProductVariant(${i})">×</button>
       </div>
       <div style="margin-left:24px;">
-        ${v.values.map((val, j) => `
+        ${(v.values || []).map((val, j) => `
           <div style="display:flex;align-items:center;gap:var(--space-xs);margin-bottom:2px;">
             <input type="text" value="${val}" placeholder="Value" class="form-control" style="max-width:150px;font-size:13px;" onchange="updateProductVariantValue(${i},${j},this.value)">
             <button type="button" class="btn btn-ghost btn-sm" onclick="removeProductVariantValue(${i},${j})">×</button>
