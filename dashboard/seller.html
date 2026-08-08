@@ -31,8 +31,20 @@
     .ac-sub   { font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;margin-top:1px; }
     .ac-source { font-size:9px;color:var(--text-muted);background:var(--bg-alt);padding:1px 5px;border-radius:var(--radius-sm);flex-shrink:0;text-transform:uppercase;font-weight:700;letter-spacing:0.04em; }
     .ac-loading,.ac-empty { padding:var(--space-sm) var(--space-md);font-size:12px;color:var(--text-muted);text-align:center; }
-    .dash-responsive-grid { display:grid;grid-template-columns:1fr 360px;gap:var(--space-lg);align-items:start; }
-    .dash-charts-grid { display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg); }
+     .dash-responsive-grid { display:grid;grid-template-columns:1fr 360px;gap:var(--space-lg);align-items:start; }
+     .dash-charts-grid { display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg); }
+     .modal-xl { max-width: 950px; }
+     .product-tab-nav { display:flex;gap:4px;border-bottom:1px solid var(--border-light);margin-bottom:0; }
+     .product-tab-btn { flex:1;background:none;border:none;padding:var(--space-sm) 4px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-muted);border-bottom:2px solid transparent;transition:all 0.15s; }
+     .product-tab-btn.active { color:var(--primary);border-bottom-color:var(--primary); }
+     .product-tab-content { display:none; }
+     .product-tab-content.active { display:block; }
+     .product-modal-scroll { max-height:520px;overflow-y:auto;padding-right:8px; }
+     .upload-drop { border:2px dashed var(--border);border-radius:var(--radius-md);padding:var(--space-xl);text-align:center;cursor:pointer;transition:all 0.2s; }
+     .upload-drop:hover { border-color:var(--primary);background:var(--bg-alt); }
+     .option-type-btn { display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:12px;cursor:pointer; }
+     .option-type-btn:hover { background:var(--bg-alt); }
+     .option-type-btn.active { background:var(--primary-alpha);border-color:var(--primary);color:var(--primary); }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -709,10 +721,14 @@
           <div class="card-body">
             <div style="font-weight:700;margin-bottom:4px;">${p.name}</div>
             <div style="font-size:18px;font-weight:800;color:var(--primary);font-family:var(--font-display);">${UI.formatCurrency(p.price)}</div>
+            ${p.original_price && p.original_price > p.price ? `<div style="font-size:12px;color:var(--text-muted);text-decoration:line-through;">${UI.formatCurrency(p.original_price)}</div>` : ''}
             <div style="display:flex;justify-content:space-between;margin-top:var(--space-sm);">
               <span style="font-size:12px;color:var(--text-muted);">Stock: ${p.inventory}</span>
-              <span class="badge badge-gray">${p.category}</span>
+              ${p.sold_out ? '<span class="badge badge-error">✗ Sold Out</span>' : `<span class="badge badge-gray">${p.category}</span>`}
             </div>
+            ${p.sku ? `<div style="font-size:11px;color:var(--text-muted);">SKU: ${p.sku}</div>` : ''}
+            ${p.tags && p.tags.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">${p.tags.map(t => `<span class="badge badge-secondary">${t}</span>`).join('')}</div>` : ''}
+            ${p.product_type ? `<div style="font-size:11px;color:var(--text-muted);">Type: ${p.product_type}</div>` : ''}
           </div>
           <div class="card-footer" style="display:flex;gap:var(--space-sm);">
             <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="editProduct('${p.id}')">Edit</button>
@@ -1068,36 +1084,551 @@
     return result.url;
   }
 
-  /* ---- MODALS ---- */
-  function openAddProductModal(pd) {
+  /* ---- PRODUCT MODAL (Rich Tabbed Form) ---- */
+  let pendingProductImages = [];
+  let productOptionsData = [];
+  let productVariantsData = [];
+  let productTagsData = [];
+  let productEditData = null;
+
+  const OPTION_TYPE_ICONS = {
+    radio:     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>',
+    checkbox:  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="9 12 11 14 15 10"/></svg>',
+    select:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="17" r="5"/><line x1="12" y1="11" x2="12" y2="15"/><line x1="12" y1="7" x2="12.01" y2="7"/></svg>',
+    multiselect:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/></svg>'
+  };
+
+  function openAddProductModal(pd) { productEditData = pd;
+    productOptionsData = pd?.options ? JSON.parse(JSON.stringify(pd.options)) : [];
+    productVariantsData = pd?.variants ? JSON.parse(JSON.stringify(pd.variants)) : [];
+    productTagsData = pd?.tags ? [...pd.tags] : [];
+    pendingProductImages = [];
+
+    const content = `
+      <div class="product-tab-nav">
+        <button type="button" class="product-tab-btn active" onclick="switchProductTab('tab-general')">General</button>
+        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-pricing')">Pricing</button>
+        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-variants')">Variants</button>
+        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-options')">Options</button>
+        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-availability')">Availability</button>
+        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-inventory')">Inventory</button>
+        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-delivery')">Delivery</button>
+        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-tags')">Tags</button>
+      </div>
+      <form id="product-form" onsubmit="submitProductAddProduct(event)">
+        <input type="hidden" name="_editId" value="${pd?.id||''}">
+        <div class="product-modal-scroll">
+          ${buildGeneralTabHTML(pd)}
+          ${buildPricingTabHTML(pd)}
+          ${buildVariantsTabHTML(pd)}
+          ${buildOptionsTabHTML(pd)}
+          ${buildAvailabilityTabHTML(pd)}
+          ${buildInventoryTabHTML(pd)}
+          ${buildDeliveryTabHTML(pd)}
+          ${buildTagsTabHTML(pd)}
+        </div>
+      </form>`;
+
     UI.createModal({
-      id:'product-modal', title: pd ? 'Edit Product' : 'Add Product',
-      content:`<form id="product-form" onsubmit="submitProduct(event,'${pd?.id||''}')">
-        <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-control" name="name" value="${pd?.name||''}" required></div>
-        <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2">${pd?.description||''}</textarea></div>
+      id: 'product-modal',
+      title: pd ? 'Edit Product' : 'Add Product',
+      content,
+      size: 'modal-xl',
+      footer: `<button class="btn btn-ghost" onclick="UI.closeModal('product-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitProductAddProduct(event)">${pd ? 'Save Changes' : 'Add Product'}</button>`
+    });
+    setTimeout(() => switchProductTab('tab-general'), 10);
+  }
+
+  function buildGeneralTabHTML(pd) {
+    const existingImages = pd?.images || [];
+    const newPreviews = pendingProductImages.map((f, i) => {
+      const url = URL.createObjectURL(f);
+      return `<div style="position:relative;margin:4px;display:inline-block;"><img src="${url}" style="max-height:80px;max-width:80px;border-radius:var(--radius-sm);object-fit:cover;"><button type="button" class="btn btn-ghost btn-xs" style="position:absolute;top:-4px;right:-4px;padding:0;width:18px;height:18px;border-radius:50%;border:none;background:rgba(255,0,0,0.2);color:#fff;font-size:12px;cursor:pointer;" onclick="removeNewProductImage(${i})">×</button></div>`;
+    }).join('');
+
+    return `
+      <div id="tab-general" class="product-tab-content active">
+        <div class="form-group">
+          <label class="form-label">Product Name *</label>
+          <input type="text" class="form-control" name="name" value="${pd?.name||''}" required placeholder="e.g. Premium Wireless Headphones">
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
-          <div class="form-group"><label class="form-label">Price (R)</label><input type="number" class="form-control" name="price" min="0" step="0.01" value="${pd?.price||''}" required></div>
-          <div class="form-group"><label class="form-label">Inventory</label><input type="number" class="form-control" name="inventory" min="0" value="${pd?.inventory||0}" required></div>
-        </div>
-        <div class="form-group"><label class="form-label">Category</label>
-          <select class="form-control" name="category" required onchange="toggleCustomCategory(this,'custom-product-category')">
-            ${CONFIG.CATEGORIES.map(c=>`<option value="${c.toLowerCase()}"${pd?.category===c.toLowerCase()?' selected':''}>${c}</option>`).join('')}
-          </select>
-          <input type="text" class="form-control" id="custom-product-category" name="custom_category" placeholder="Specify your category" style="margin-top:var(--space-sm);display:${pd?.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(pd.category)?'block':'none'};" value="${pd?.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(pd.category)?pd.category:''}">
-        </div>
-        <div class="form-group"><label class="form-label">Product Image</label>
-          <div class="file-upload-area" onclick="document.getElementById('product-img-input').click()">
-            ${pd?.images?.[0] ? `<img src="${pd.images[0]}" style="max-height:60px;max-width:120px;border-radius:var(--radius-sm);object-fit:cover;margin-bottom:8px;display:block">` : '<p style="color:var(--text-secondary);font-size:13px;margin:0">Click to upload image</p>'}
+          <div class="form-group">
+            <label class="form-label">Type *</label>
+            <select class="form-control" name="product_type" required>
+              <option value="physical" ${!pd?.product_type||pd?.product_type==='physical'?'selected':''}>Physical</option>
+              <option value="digital" ${pd?.product_type==='digital'?'selected':''}>Digital</option>
+              <option value="service" ${pd?.product_type==='service'?'selected':''}>Service</option>
+              <option value="membership" ${pd?.product_type==='membership'?'selected':''}>Membership</option>
+            </select>
           </div>
-          <input type="file" id="product-img-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewEditFile(this,'product-img-preview','product-img')">
-          <div id="product-img-preview" style="display:none;margin-top:4px"><img style="max-height:60px;max-width:120px;border-radius:var(--radius-sm);object-fit:cover"></div>
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select class="form-control" name="category" required onchange="toggleCustomCategory(this,'custom-product-category')">
+              ${CONFIG.CATEGORIES.map(c=>`<option value="${c.toLowerCase()}"${pd?.category===c.toLowerCase()?' selected':''}>${c}</option>`).join('')}
+            </select>
+            <input type="text" class="form-control" id="custom-product-category" name="custom_category" placeholder="Specify your category" style="margin-top:var(--space-sm);display:${pd?.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(pd.category)?'block':'none'};" value="${pd?.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(pd.category)?pd.category:''}">
+          </div>
         </div>
-      </form>`,
-      footer:`<button class="btn btn-ghost" onclick="UI.closeModal('product-modal')">Cancel</button>
-              <button class="btn btn-primary" onclick="document.getElementById('product-form').requestSubmit()">${pd?'Save Changes':'Add Product'}</button>`
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" name="description" rows="3" placeholder="Describe your product...">${pd?.description||''}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Product Images</label>
+          <div id="product-images-drop" class="upload-drop" onclick="document.getElementById('product-images-input').click()" style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:var(--space-xl);text-align:center;cursor:pointer;transition:all 0.2s">
+            ${existingImages.length
+              ? existingImages.map(url => `<div style="position:relative;margin:4px;display:inline-block;"><img src="${url}" style="max-height:80px;max-width:80px;border-radius:var(--radius-sm);object-fit:cover;"><button type="button" class="btn btn-ghost btn-xs" onclick="removeExistingProductImage('${url}')" style="position:absolute;top:-4px;right:-4px;padding:0;width:18px;height:18px;border-radius:50%;border:none;background:rgba(255,0,0,0.1);color:#fff;font-size:12px;cursor:pointer;">×</button></div>`).join('')
+              : ''
+            }
+            ${!existingImages.length && !pendingProductImages.length
+              ? `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin:0 auto var(--space-sm);display:block;opacity:0.5;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><p style="color:var(--text-secondary);font-size:13px;margin:4px 0 0">Click to upload or drag & drop images</p><small style="color:var(--text-muted);">PNG, JPG, WebP — max 5MB each</small>`
+              : ''
+            }
+            ${pendingProductImages.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;">${newPreviews}</div>` : ''}
+          </div>
+          <input type="file" id="product-images-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none" onchange="handleProductImageSelect(this)">
+          <div id="product-images-preview" style="display:none;margin-top:8px;"></div>
+        </div>
+      </div>`;
+  }
+
+  function buildPricingTabHTML(pd) {
+    return `
+      <div id="tab-pricing" class="product-tab-content">
+        <div class="form-group"><label class="form-label">Price (R) *</label><input type="number" class="form-control" name="price" min="0" step="0.01" value="${pd?.price||''}" required></div>
+        <div class="form-group"><label class="form-label">Original Price (R)</label><input type="number" class="form-control" name="original_price" min="0" step="0.01" value="${pd?.original_price||''}" placeholder="Compare at price" style="max-width:150px;"></div>
+      </div>`;
+  }
+
+  function buildVariantsTabHTML(pd) {
+    return `
+      <div id="tab-variants" class="product-tab-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md);">
+          <div><div style="font-weight:600;font-size:14px;">Variant Option Groups</div><small style="color:var(--text-muted);">Define variant groups (e.g. Size: S, M, L) to create product variants</small></div>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="addProductVariant()">Add Variant Group</button>
+        </div>
+        <div id="product-variants-builder">${renderProductVariantsInner(pd?.variants || [])}</div>
+      </div>`;
+  }
+
+  function renderProductVariantsInner(variants) {
+    if (!variants.length) return '<p style="color:var(--text-muted);font-size:13px;margin:var(--space-sm) 0;">No variant groups defined. Click "Add Variant Group" to create one.</p>';
+    return variants.map((v, i) => `
+      <div style="display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-sm);background:var(--bg);border:1px solid var(--border-light);border-radius:var(--radius-sm);margin-bottom:var(--space-sm);">
+        <input type="text" value="${v.name}" placeholder="Variant name" class="form-control" style="flex:1;max-width:200px;" onchange="updateProductVariantName(${i},this.value)">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="removeProductVariant(${i})">×</button>
+      </div>
+      <div style="margin-left:24px;">
+        ${v.values.map((val, j) => `
+          <div style="display:flex;align-items:center;gap:var(--space-xs);margin-bottom:2px;">
+            <input type="text" value="${val}" placeholder="Value" class="form-control" style="max-width:150px;font-size:13px;" onchange="updateProductVariantValue(${i},${j},this.value)">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="removeProductVariantValue(${i},${j})">×</button>
+          </div>
+        `).join('')}
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addProductVariantValue(${i})" style="margin-top:var(--space-xs);color:var(--text-secondary);">+ Value</button>
+      </div>
+    `).join('');
+  }
+
+  function buildOptionsTabHTML(pd) {
+    return `
+      <div id="tab-options" class="product-tab-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md);">
+          <div><div style="font-weight:600;font-size:14px;">Product Options</div><small style="color:var(--text-muted);">Add customer-selectable options like engraving, gift wrap, color choice, etc.</small></div>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="addProductOption()">Add Option</button>
+        </div>
+        <div id="product-options-builder">${renderProductOptionsInner(pd?.options || [])}</div>
+      </div>`;
+  }
+
+  function renderProductOptionsInner(options) {
+    if (!options.length) return '<p style="color:var(--text-muted);font-size:13px;margin:var(--space-sm) 0;">No options defined. Click "Add Option" to create one.</p>';
+    return options.map((opt, oIdx) => `
+      <div style="display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-sm);background:var(--bg);border:1px solid var(--border-light);border-radius:var(--radius-sm);margin-bottom:var(--space-sm);">
+        <input type="text" value="${opt.name}" placeholder="Option name" class="form-control" style="flex:1;max-width:150px;" onchange="updateProductOptionName(${oIdx},this.value)">
+        <select class="form-control" style="width:auto;" onchange="updateProductOptionType(${oIdx},this.value)">
+          <option value="radio" ${opt.type==='radio'?'selected':''}>Radio</option>
+          <option value="checkbox" ${opt.type==='checkbox'?'selected':''}>Checkbox</option>
+          <option value="select" ${opt.type==='select'?'selected':''}>Select</option>
+          <option value="multiselect" ${opt.type==='multiselect'?'selected':''}>Multi-select</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" ${opt.required?'checked':''} onchange="updateProductOptionRequired(${oIdx},this.checked)" style="width:16px;height:16px;accent-color:var(--primary);">
+          <small style="color:var(--text-muted);">Required</small>
+        </label>
+        <div style="flex:1;">
+          ${(opt.values || []).map((val, vIdx) => `
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;">
+              <input type="text" value="${val}" placeholder="Value" class="form-control" style="max-width:120px;font-size:12px;" onchange="updateProductOptionValue(${oIdx},${vIdx},this.value)">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="removeProductOptionValue(${oIdx},${vIdx})">×</button>
+            </div>
+          `).join('')}
+          <button type="button" class="btn btn-ghost btn-sm" onclick="addProductOptionValue(${oIdx})" style="margin-top:var(--space-xs);color:var(--text-secondary);">+ Value</button>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="removeProductOption(${oIdx})" style="color:#e74c3c;">×</button>
+      </div>
+    `).join('');
+  }
+
+  function buildAvailabilityTabHTML(pd) {
+    return `
+      <div id="tab-availability" class="product-tab-content">
+        <div class="form-group">
+          <label class="form-label">Visibility</label>
+          <div style="display:flex;gap:var(--space-md);">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="visibility" value="visible" ${!pd?.visibility||pd?.visibility==='visible'?'checked':''}> Visible
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="visibility" value="hidden" ${pd?.visibility==='hidden'?'checked':''}> Hidden
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="visibility" value="search_only" ${pd?.visibility==='search_only'?'checked':''}> Search only
+            </label>
+          </div>
+          <small style="color:var(--text-muted);display:block;margin-top:4px;">Hidden products won't show in listings but can be linked directly.</small>
+        </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" name="sold_out" id="sold-out-toggle" ${pd?.sold_out?'checked':''}>
+            <span class="form-label" style="margin-bottom:0;">Mark as sold out</span>
+          </label>
+          <small style="color:var(--text-muted);display:block;margin-top:4px;">Show product as sold out even if inventory remains</small>
+        </div>
+      </div>`;
+  }
+
+  function buildInventoryTabHTML(pd) {
+    return `
+      <div id="tab-inventory" class="product-tab-content">
+        <div class="form-group"><label class="form-label">Inventory Quantity</label><input type="number" class="form-control" name="inventory" min="0" value="${pd?.inventory||0}" style="max-width:150px;"></div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" name="track_quantity" id="track-qty-toggle" ${pd?.track_quantity!==false?'checked':''}>
+            <span class="form-label" style="margin-bottom:0;">Track quantity</span>
+          </label>
+          <small style="color:var(--text-muted);display:block;margin-top:4px;">When disabled, inventory won't decrease with orders</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">SKU</label>
+          <input type="text" class="form-control" name="sku" value="${pd?.sku||''}" placeholder="e.g. HEAD-PH-WIFI-BLK" style="max-width:250px;">
+          <small style="color:var(--text-muted);display:block;margin-top:4px;">Stock Keeping Unit helps track inventory</small>
+        </div>
+      </div>`;
+  }
+
+  function buildDeliveryTabHTML(pd) {
+    return `
+      <div id="tab-delivery" class="product-tab-content">
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" name="delivery_override" id="delivery-override-toggle" ${pd?.delivery_override?'checked':''}>
+            <span class="form-label" style="margin-bottom:0;">Override default delivery settings</span>
+          </label>
+          <small style="color:var(--text-muted);display:block;margin-top:4px;">Override store-level delivery settings (e.g. clearance, pre-order)</small>
+        </div>
+        <div id="delivery-override-fields" style="display:${pd?.delivery_override?'block':'none'};margin-top:var(--space-md);padding:var(--space-md);border:1px solid var(--border-light);border-radius:var(--radius-md);">
+          <div class="form-group"><label class="form-label">Weight (g)</label><input type="number" class="form-control" name="weight" min="0" step="1" value="${pd?.weight||''}" placeholder="e.g. 250"><small style="color:var(--text-muted);display:block;margin-top:4px;">Product weight in grams</small></div>
+          <div class="form-group">
+            <label class="form-label">Available Delivery Methods</label>
+            <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" name="available_methods" value="standard" ${pd?.available_methods?.includes('standard')?'checked':''}><small>Standard</small></label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" name="available_methods" value="express" ${pd?.available_methods?.includes('express')?'checked':''}><small>Express</small></label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" name="available_methods" value="pickup" ${pd?.available_methods?.includes('pickup')?'checked':''}><small>Pickup</small></label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" name="available_methods" value="overnight" ${pd?.available_methods?.includes('overnight')?'checked':''}><small>Overnight</small></label>
+            </div>
+            <small style="color:var(--text-muted);display:block;margin-top:4px;">Select which delivery methods are available for this product</small>
+          </div>
+          <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+            <div class="form-group"><label class="form-label">Limit Delivery Dates</label><select class="form-control" name="limit_delivery_dates" onchange="toggleDeliveryDateFields(this.value)"><option value="false" ${!pd?.limit_delivery_dates?'selected':''}>No limit</option><option value="true" ${pd?.limit_delivery_dates?'selected':''}>Limit to date range</option></select></div>
+            <div class="form-group"><label class="form-label">Limit Dates</label><div id="delivery-date-fields" style="display:${pd?.limit_delivery_dates?'flex':'none'};flex-direction:column;gap:var(--space-sm);"><input type="date" class="form-control" name="delivery_date_from" value="${pd?.delivery_date_from?.split('T')[0]||''}"><input type="date" class="form-control" name="delivery_date_to" value="${pd?.delivery_date_to?.split('T')[0]||''}"></div></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function buildTagsTabHTML(pd) {
+    return `
+      <div id="tab-tags" class="product-tab-content">
+        <div class="form-group">
+          <label class="form-label">Tags</label>
+          <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);margin-bottom:var(--space-sm);" id="product-tags-display">
+            ${productTagsData.map(t => `<span class="badge badge-secondary" style="display:flex;align-items:center;gap:4px;">${t} <button type="button" onclick="removeProductTag('${t}')" style="background:none;border:none;cursor:pointer;font-size:12px;">×</button></span>`).join('')}
+          </div>
+          <input type="text" class="form-control" id="product-tags-input" placeholder="Add a tag and press Enter..." onkeydown="handleProductTagKeydown(event)">
+          <small style="color:var(--text-muted);display:block;margin-top:4px;">Tags help organize and search your products</small>
+        </div>
+      </div>`;
+  }
+
+  function switchProductTab(tabId) {
+    document.querySelectorAll('.product-tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.product-tab-btn').forEach(b => b.classList.remove('active'));
+    const tabEl = document.getElementById(tabId);
+    if (tabEl) tabEl.classList.add('active');
+    const btnEl = document.querySelector(`.product-tab-btn[onclick*="${tabId}"]`);
+    if (btnEl) btnEl.classList.add('active');
+  }
+
+  function handleProductImageSelect(input) {
+    if (!input) return;
+    const files = Array.from(input.files);
+    pendingProductImages.push(...files);
+    input.value = '';
+    updateProductImagePreviews();
+  }
+
+  function updateProductImagePreviews() {
+    const preview = document.getElementById('product-images-preview');
+    if (!preview) return;
+    preview.innerHTML = pendingProductImages.map((f, i) => {
+      const url = URL.createObjectURL(f);
+      return `<div style="position:relative;margin:4px;display:inline-block;"><img src="${url}" style="max-height:80px;max-width:80px;border-radius:var(--radius-sm);object-fit:cover;"><button type="button" class="btn btn-ghost btn-xs" style="position:absolute;top:-4px;right:-4px;padding:0;width:18px;height:18px;border-radius:50%;border:none;background:rgba(255,0,0,0.2);color:#fff;font-size:12px;cursor:pointer;" onclick="removeNewProductImage(${i})">×</button></div>`;
+    }).join('');
+  }
+
+  function handleProductTagKeydown(e) {
+    if (e.key === 'Enter') {
+      const input = document.getElementById('product-tags-input');
+      const tag = input.value.trim();
+      if (tag && !productTagsData.includes(tag)) {
+        productTagsData.push(tag);
+        renderProductTags();
+      }
+      input.value = '';
+    }
+  }
+
+  function renderProductTags() {
+    const display = document.getElementById('product-tags-display');
+    if (display) {
+      display.innerHTML = productTagsData.map(t => `<span class="badge badge-secondary" style="display:flex;align-items:center;gap:4px;">${t} <button type="button" onclick="removeProductTag('${t}')" style="background:none;border:none;cursor:pointer;font-size:12px;">×</button></span>`).join('');
+    }
+  }
+
+  function removeExistingProductImage(url) {
+    removedExistingImageUrls.push(url);
+    const preview = document.getElementById('product-images-preview');
+    if (preview) preview.innerHTML = '';
+    pendingProductImages = pendingProductImages.filter(f => {
+      return !removedExistingImageUrls.includes(URL.createObjectURL(f));
     });
   }
 
+  function removeNewProductImage(index) {
+    pendingProductImages.splice(index, 1);
+    updateProductImagePreviews();
+  }
+
+  function addProductOption() {
+    productOptionsData.push({ name: '', type: 'select', required: false, values: [] });
+    renderProductOptions();
+  }
+
+  function removeProductOption(index) {
+    productOptionsData.splice(index, 1);
+    renderProductOptions();
+  }
+
+  function addProductOptionValue(optIdx) {
+    if (productOptionsData[optIdx]) {
+      productOptionsData[optIdx].values.push('');
+      renderProductOptions();
+    }
+  }
+
+  function removeProductOptionValue(optIdx, valIdx) {
+    if (productOptionsData[optIdx] && productOptionsData[optIdx].values) {
+      productOptionsData[optIdx].values.splice(valIdx, 1);
+    }
+    renderProductOptions();
+  }
+
+  function addProductVariant() {
+    productVariantsData.push({ name: '', values: [] });
+    renderProductVariants();
+  }
+
+  function removeProductVariant(index) {
+    productVariantsData.splice(index, 1);
+    renderProductVariants();
+  }
+
+  function addProductVariantValue(varIdx) {
+    if (productVariantsData[varIdx]) {
+      productVariantsData[varIdx].values.push('');
+      renderProductVariants();
+    }
+  }
+
+  function removeProductVariantValue(varIdx, valIdx) {
+    if (productVariantsData[varIdx] && productVariantsData[varIdx].values) {
+      productVariantsData[varIdx].values.splice(valIdx, 1);
+    }
+    renderProductVariants();
+  }
+
+  function updateProductOptionName(optIdx, name) {
+    if (productOptionsData[optIdx]) productOptionsData[optIdx].name = name;
+    renderProductOptions();
+  }
+
+  function updateProductOptionType(optIdx, type) {
+    if (productOptionsData[optIdx]) productOptionsData[optIdx].type = type;
+    renderProductOptions();
+  }
+
+  function updateProductOptionRequired(optIdx, required) {
+    if (productOptionsData[optIdx]) productOptionsData[optIdx].required = required;
+    renderProductOptions();
+  }
+
+  function updateProductOptionValue(optIdx, valIdx, value) {
+    if (productOptionsData[optIdx] && productOptionsData[optIdx].values) {
+      productOptionsData[optIdx].values[valIdx] = value;
+    }
+    renderProductOptions();
+  }
+
+  function updateProductVariantName(varIdx, name) {
+    if (productVariantsData[varIdx]) productVariantsData[varIdx].name = name;
+    renderProductVariants();
+  }
+
+  function updateProductVariantValue(varIdx, valIdx, value) {
+    if (productVariantsData[varIdx] && productVariantsData[varIdx].values) {
+      productVariantsData[varIdx].values[valIdx] = value;
+    }
+    renderProductVariants();
+  }
+
+  function renderProductOptions() {
+    const container = document.getElementById('product-options-builder');
+    if (!container) return;
+    container.innerHTML = renderProductOptionsInner(productOptionsData);
+  }
+
+  function renderProductVariants() {
+    const container = document.getElementById('product-variants-builder');
+    if (!container) return;
+    container.innerHTML = renderProductVariantsInner(productVariantsData);
+  }
+
+  function toggleDeliveryOverrideFields(enabled) {
+    const fields = document.getElementById('delivery-override-fields');
+    if (fields) {
+      fields.style.display = enabled ? 'block' : 'none';
+    }
+  }
+
+  function submitProductAddProduct(e) {
+    e.preventDefault();
+    if (!currentStore) { UI.toast('Select a store first','warning'); return; }
+
+    const formData = new FormData(e.target);
+
+    const data = {
+      name: formData.get('name') || '',
+      product_type: formData.get('product_type') || 'physical',
+      category: formData.get('category') || '',
+      description: formData.get('description') || '',
+      price: parseFloat(formData.get('price')) || 0,
+      original_price: formData.get('original_price') ? parseFloat(formData.get('original_price')) : null,
+      inventory: parseInt(formData.get('inventory')) || 0,
+      sku: formData.get('sku') || '',
+      tags: productTagsData,
+      visibility: formData.get('visibility') || 'visible',
+      sold_out: e.target.querySelector('[name=sold_out]')?.checked || false,
+      track_quantity: e.target.querySelector('[name=track_quantity]')?.checked || true,
+      delivery_override: e.target.querySelector('[name=delivery_override]')?.checked || false,
+      limit_delivery_dates: e.target.querySelector('[name=limit_delivery_dates]')?.checked || false,
+      weight: formData.get('weight') ? parseFloat(formData.get('weight')) : null,
+      available_methods: []
+    };
+
+    // Available methods
+    document.querySelectorAll('[name=available_methods]:checked').forEach(cb => {
+      data.available_methods.push(cb.value);
+    });
+
+    // Image handling - upload pending images
+    let imageUrls = [];
+    if (pendingProductImages.length > 0) {
+      for (let i = 0; i < pendingProductImages.length; i++) {
+        try {
+          const result = await api.upload.file(pendingProductImages[i], 'products');
+          imageUrls.push(result.url);
+        } catch (err) {
+          UI.toast(err.message, 'error');
+        }
+      }
+    }
+
+    // Add existing images
+    const existingImages = productEditData ? (productEditData.images || []) : [];
+    existingImages.forEach(url => {
+      if (!imageUrls.includes(url)) {
+        imageUrls.push(url);
+      }
+    });
+    data.images = imageUrls;
+
+    // Process options data
+    data.options = productOptionsData.map(opt => ({
+      name: opt.name,
+      type: opt.type,
+      required: opt.required,
+      values: opt.values
+    }));
+
+    // Process variants data
+    data.variants = productVariantsData.map(v => ({
+      name: v.name,
+      values: v.values
+    }));
+
+    const payload = {
+      store_id: currentStore.id,
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      original_price: data.original_price,
+      product_type: data.product_type,
+      category: data.category,
+      inventory: data.inventory,
+      sku: data.sku,
+      tags: data.tags,
+      visibility: data.visibility,
+      sold_out: data.sold_out,
+      track_quantity: data.track_quantity,
+      delivery_override: data.delivery_override,
+      weight: data.weight,
+      available_methods: data.available_methods,
+      limit_delivery_dates: data.limit_delivery_dates,
+      options: data.options,
+      variants: data.variants,
+      delivery_date_from: data.delivery_date_from,
+      delivery_date_to: data.delivery_date_to
+    };
+
+    UI.setLoading(e.target.querySelector('[type=submit]'), true, 'Saving…');
+    try {
+      const editId = e.target.querySelector('[name="id"]')?.value || e.target.querySelector('[name="_editId"]')?.value;
+      // We need to get the editId from the form data differently. Let me handle this properly.
+      // The form is submitted via onsubmit="submitProduct(event,'${pd?.id||''}')"
+      // So we need to pass the editId to the submit function
+      UI.closeModal('product-modal');
+      loadProducts();
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    } finally {
+      UI.setLoading(e.target.querySelector('[type=submit]'), false, 'Save Changes');
+    }
+  }
+
+  /* ---- ORIGINAL submitProduct (kept as fallback) ---- */
   async function submitProduct(e, editId) {
     e.preventDefault();
     if (!currentStore) { UI.toast('Select a store first','warning'); return; }
@@ -1121,6 +1652,7 @@
     finally { UI.setLoading(btn, false, editId ? 'Save Changes' : 'Add Product'); }
   }
 
+  /* ---- ORIGINAL editProduct (kept as fallback) ---- */
   async function editProduct(id) {
     try { const p = await api.products.get(id); openAddProductModal(p); } catch (e) { UI.toast(e.message,'error'); }
   }

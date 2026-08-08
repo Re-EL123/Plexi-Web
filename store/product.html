@@ -452,13 +452,67 @@
       ${p.inventory > 0
         ? `<span class="badge badge-success">● In Stock (${p.inventory})</span>`
         : `<span class="badge badge-error">✗ Out of Stock</span>`}
+      ${p.sold_out ? '<span class="badge badge-error">✗ Sold Out</span>' : ''}
     `;
+
+    // Product type badge
+    if (p.product_type) {
+      document.getElementById('badge-row').innerHTML += ` <span class="badge badge-gray">${capitalize(p.product_type)}</span>`;
+    }
+
+    // Price with original price
+    document.getElementById('product-price').textContent = UI.formatCurrency(p.price);
+    if (p.original_price && p.original_price > p.price) {
+      const originalPriceEl = document.createElement('span');
+      originalPriceEl.className = 'badge badge-warning';
+      originalPriceEl.style.cssText = 'font-size:12px;margin-left:8px;text-decoration:line-through;';
+      originalPriceEl.textContent = UI.formatCurrency(p.original_price);
+      document.getElementById('product-price').after(originalPriceEl);
+    }
+
+    // SKU
+    if (p.sku) {
+      const skuEl = document.createElement('div');
+      skuEl.style.cssText = 'font-size:11px;color:var(--text-muted);margin-top:2px;';
+      skuEl.textContent = `SKU: ${p.sku}`;
+      document.getElementById('product-title').after(skuEl);
+    }
+
+    // Tags
+    if (p.tags && p.tags.length) {
+      const tagContainer = document.createElement('div');
+      tagContainer.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;';
+      p.tags.forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'badge badge-secondary';
+        tagEl.textContent = tag;
+        tagContainer.appendChild(tagEl);
+      });
+      document.getElementById('badge-row').after(tagContainer);
+    }
 
     // Title
     document.getElementById('product-title').textContent = p.name;
 
     // Price
     document.getElementById('product-price').textContent = UI.formatCurrency(p.price);
+    if (p.original_price && p.original_price > p.price) {
+      document.getElementById('product-price').style.textDecoration = 'line-through';
+      document.getElementById('product-price').style.color = 'var(--text-muted)';
+      const originalPriceEl = document.createElement('span');
+      originalPriceEl.style.cssText = 'font-size:12px;color:var(--text-muted);text-decoration:line-through;margin-left:4px;';
+      originalPriceEl.textContent = UI.formatCurrency(p.original_price);
+      document.getElementById('product-price').after(originalPriceEl);
+    }
+
+    // Sale badge
+    if (p.original_price && p.original_price > p.price) {
+      const saleBadge = document.createElement('span');
+      saleBadge.className = 'badge badge-warning';
+      saleBadge.style.cssText = 'margin-left:8px;';
+      saleBadge.textContent = `Save ${UI.formatCurrency(p.original_price - p.price)}`;
+      document.getElementById('product-price').after(saleBadge);
+    }
 
     // Description
     document.getElementById('product-desc').textContent = p.description || 'No description provided.';
