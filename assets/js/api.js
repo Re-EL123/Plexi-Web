@@ -117,6 +117,7 @@ const api = (() => {
     unfollow: (storeId)              => del(`/stores?action=unfollow&id=${storeId}`),
     followersCount: (storeId)        => get(`/stores?action=followers-count&id=${storeId}`),
     isFollowing: (storeId)           => get(`/stores?action=is-following&id=${storeId}`),
+    categories: (params = {})        => get(`/stores?action=categories&${new URLSearchParams(params)}`),
   };
 
   // ======== PRODUCTS ======== //
@@ -204,6 +205,10 @@ const api = (() => {
     deleteUser:  (userId)       => del(`/admin?action=manage-user&user_id=${userId}`),
     deleteStore: (storeId)      => post('/admin?action=delete-store', { store_id: storeId }),
     updateStore: (storeId, data) => put(`/admin?action=manage-store`, { store_id: storeId, ...data }),
+    categories:  (params = {}) => get(`/admin?action=categories&${new URLSearchParams(params)}`),
+    createCategory: (name)     => post('/admin?action=create-category', { name }),
+    updateCategory: (categoryId, name) => put(`/admin?action=update-category&category_id=${categoryId}`, { name }),
+    deleteCategory: (categoryId) => del(`/admin?action=delete-category&category_id=${categoryId}`),
   };
 
   // ======== DRIVER COMPLIANCE (KYC) ======== //

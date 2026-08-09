@@ -274,12 +274,49 @@ const UI = (() => {
     });
   }
 
+  // ======== CATEGORIES ======== //
+  let categoriesCache = null;
+
+  async function fetchCategories() {
+    if (categoriesCache) return categoriesCache;
+    try {
+      const data = await api.stores.categories();
+      const list = Array.isArray(data) ? data : (data?.categories || []);
+      const names = list.map(c => c.name);
+      categoriesCache = names.length ? names : CONFIG.CATEGORIES;
+    } catch (_) {
+      categoriesCache = CONFIG.CATEGORIES;
+    }
+    return categoriesCache;
+  }
+
+  async function populateCategories(select, opts = {}) {
+    const el = typeof select === 'string' ? document.getElementById(select) : select;
+    if (!el) return;
+    const keep = opts.keep ?? '';
+    const includeOthers = opts.includeOthers !== false;
+    const categories = await fetchCategories();
+    let options = '';
+    if (keep) options += `<option value="">${keep}</option>`;
+    for (const name of categories) {
+      const value = opts.lowercase ? name.toLowerCase() : name;
+      options += `<option value="${value}">${name}</option>`;
+    }
+    if (includeOthers && !categories.includes('Others')) {
+      options += `<option value="${opts.lowercase ? 'others' : 'Others'}">Others</option>`;
+    }
+    el.innerHTML = options;
+    if (opts.selected) el.value = opts.selected;
+    return categories;
+  }
+
   return {
     toast, openModal, closeModal, createModal, confirmDialog,
     setLoading, showPageLoader, hidePageLoader,
     formatCurrency, formatDate, formatDateTime, timeAgo,
     badge, statusBadge, stars, avatar, skeleton, empty,
-    staggerReveal, initDropdowns, initTabs, initSidebarToggle, addRipple
+    staggerReveal, initDropdowns, initTabs, initSidebarToggle, addRipple,
+    fetchCategories, populateCategories
   };
 })();
 

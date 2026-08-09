@@ -342,8 +342,15 @@
   let activeCat = 'all';
   const _wishlist = JSON.parse(localStorage.getItem('wishlist')||'[]');
 
-  function renderCategories() {
-    document.getElementById('categories-bar').innerHTML = CATS.map((c,i) => `
+  async function renderCategories() {
+    let cats = CATS;
+    try {
+      const d = await api.stores.categories();
+      const list = Array.isArray(d) ? d : (d.categories || []);
+      if (list.length) cats = ['All', ...list.map(c => c.name)];
+    } catch (_) {}
+    cats = [...new Set(cats)];
+    document.getElementById('categories-bar').innerHTML = cats.map((c,i) => `
       <button class="chip ${i===0?'active':''} stagger-child" onclick="filterCategory('${c.toLowerCase()}',this)">${c}</button>`).join('');
     setTimeout(()=>document.querySelectorAll('.cat-scroll .stagger-child').forEach((el,i)=>setTimeout(()=>el.classList.add('visible'),i*40)),200);
   }
