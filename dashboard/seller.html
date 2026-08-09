@@ -33,26 +33,364 @@
     .ac-loading,.ac-empty { padding:var(--space-sm) var(--space-md);font-size:12px;color:var(--text-muted);text-align:center; }
      .dash-responsive-grid { display:grid;grid-template-columns:1fr 360px;gap:var(--space-lg);align-items:start; }
      .dash-charts-grid { display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg); }
-     .modal-xl { max-width: 950px; }
-     .product-tab-nav { display:flex;gap:4px;border-bottom:1px solid var(--border-light);margin-bottom:0; }
-     .product-tab-btn { flex:1;background:none;border:none;padding:var(--space-sm) 4px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-muted);border-bottom:2px solid transparent;transition:all 0.15s; }
-     .product-tab-btn.active { color:var(--primary);border-bottom-color:var(--primary); }
-     .product-tab-content { display:none; }
-     .product-tab-content.active { display:block; }
-     .product-modal-scroll { max-height:520px;overflow-y:auto;padding-right:8px; }
-     .upload-drop { border:2px dashed var(--border);border-radius:var(--radius-md);padding:var(--space-xl);text-align:center;cursor:pointer;transition:all 0.2s; }
-     .upload-drop:hover { border-color:var(--primary);background:var(--bg-alt); }
-      .option-type-btn { display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:12px;cursor:pointer; }
-      .option-type-btn:hover { background:var(--bg-alt); }
-      .option-type-btn.active { background:var(--primary-alpha);border-color:var(--primary);color:var(--primary); }
-      .spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite; }
-      @keyframes spin { to { transform: rotate(360deg); } }
-      .product-tab-nav { display:flex;gap:4px;margin-bottom:var(--space-md);border-bottom:1px solid var(--border);padding-bottom:4px;flex-wrap:wrap; }
-      .product-tab-btn { padding:8px 16px;font-size:13px;border:none;background:none;cursor:pointer;border-radius:var(--radius-sm);color:var(--text-secondary); }
-      .product-tab-btn.active { background:var(--primary-alpha);color:var(--primary);box-shadow:var(--neo-shadow-sm); }
-      .product-tab-content { display:none; }
-      .product-tab-content.active { display:block; }
-      .product-modal-scroll { max-height:500px;overflow-y:auto;padding:var(--space-sm); }
+
+     /* ============ PRODUCT MODAL — ENHANCED UI ============ */
+     .modal-xl { max-width: 980px; }
+     #product-modal .modal-body { padding: 0; }
+
+     /* Stepper tab bar */
+     .product-tabs {
+       display: flex;
+       gap: 2px;
+       padding: 12px 12px 0;
+       background: var(--surface);
+       border-bottom: 1px solid var(--border-light);
+       overflow-x: auto;
+       scrollbar-width: none;
+       -webkit-overflow-scrolling: touch;
+     }
+     .product-tabs::-webkit-scrollbar { display: none; }
+     .product-tab {
+       display: inline-flex;
+       align-items: center;
+       gap: 8px;
+       padding: 10px 14px;
+       border: none;
+       background: transparent;
+       border-radius: var(--radius-md) var(--radius-md) 0 0;
+       cursor: pointer;
+       font-family: var(--font-body);
+       font-size: 13px;
+       font-weight: 600;
+       color: var(--text-muted);
+       white-space: nowrap;
+       position: relative;
+       transition: color 0.2s, background 0.2s;
+     }
+     .product-tab:hover { color: var(--text-primary); background: var(--surface-2); }
+     .product-tab.active { color: var(--primary); background: var(--primary-alpha); }
+     .product-tab.active::after {
+       content: '';
+       position: absolute;
+       left: 10px; right: 10px; bottom: 0;
+       height: 3px;
+       border-radius: 3px 3px 0 0;
+       background: var(--primary);
+     }
+     .product-tab .tab-num {
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+       width: 20px; height: 20px;
+       border-radius: 50%;
+       background: var(--surface-2);
+       color: var(--text-muted);
+       font-size: 11px;
+       font-weight: 700;
+       box-shadow: var(--neo-shadow-sm);
+       transition: all 0.2s;
+       flex-shrink: 0;
+     }
+     .product-tab.active .tab-num { background: var(--primary); color: #fff; box-shadow: var(--neo-shadow-primary); }
+     .product-tab .tab-ico { display: inline-flex; }
+
+     /* Scroll area */
+     .product-modal-scroll {
+       max-height: 62vh;
+       overflow-y: auto;
+       padding: var(--space-lg);
+       scrollbar-width: thin;
+       scrollbar-color: var(--gray-300) transparent;
+     }
+     .product-modal-scroll::-webkit-scrollbar { width: 8px; }
+     .product-modal-scroll::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 4px; }
+
+     /* Tab panels */
+     .product-tab-content { display: none; }
+     .product-tab-content.active { display: block; animation: fadeInUp 0.28s ease; }
+
+     /* Form sections */
+     .form-section {
+       background: var(--surface);
+       border: 1px solid var(--border-light);
+       border-radius: var(--radius-lg);
+       padding: var(--space-lg);
+       margin-bottom: var(--space-md);
+       box-shadow: var(--neo-shadow-sm);
+     }
+     .form-section-head {
+       display: flex;
+       align-items: center;
+       gap: var(--space-sm);
+       margin-bottom: var(--space-md);
+     }
+     .form-section-head .sec-ico {
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+       width: 34px; height: 34px;
+       border-radius: var(--radius-md);
+       background: var(--primary-alpha);
+       color: var(--primary);
+       flex-shrink: 0;
+     }
+     .form-section-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+     .form-section-sub { font-size: 12px; color: var(--text-muted); }
+
+     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
+     .field-row .form-group { margin-bottom: 0; }
+     .field-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; display: block; }
+     .req { color: var(--error); }
+
+     /* Segmented control (Product Type) */
+     .segmented {
+       display: grid;
+       grid-template-columns: repeat(4, 1fr);
+       gap: 6px;
+       padding: 5px;
+       background: var(--bg);
+       border-radius: var(--radius-md);
+       box-shadow: var(--neo-shadow-inset);
+     }
+     .segmented .seg {
+       border: none;
+       background: transparent;
+       padding: 9px 6px;
+       border-radius: var(--radius-sm);
+       font-family: var(--font-body);
+       font-size: 13px;
+       font-weight: 600;
+       color: var(--text-secondary);
+       cursor: pointer;
+       transition: all 0.2s;
+     }
+     .segmented .seg:hover { color: var(--primary); }
+     .segmented .seg.active {
+       background: var(--surface);
+       color: var(--primary);
+       box-shadow: var(--neo-shadow-sm);
+     }
+
+     /* Builder rows (variants / options) */
+     .builder-row {
+       background: var(--surface);
+       border: 1px solid var(--border-light);
+       border-radius: var(--radius-md);
+       padding: var(--space-md);
+       margin-bottom: var(--space-sm);
+       box-shadow: var(--neo-shadow-sm);
+       animation: fadeInUp 0.25s ease;
+     }
+     .builder-row-head {
+       display: flex;
+       align-items: center;
+       gap: var(--space-sm);
+       margin-bottom: var(--space-sm);
+     }
+     .builder-row-head .grip { color: var(--text-light); cursor: grab; font-size: 14px; letter-spacing: -2px; }
+     .builder-row-head .form-control { font-weight: 600; }
+     .icon-btn {
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+       width: 30px; height: 30px;
+       border: 1px solid var(--border);
+       background: var(--surface);
+       border-radius: var(--radius-sm);
+       color: var(--text-secondary);
+       cursor: pointer;
+       font-size: 16px;
+       transition: all 0.2s;
+       flex-shrink: 0;
+     }
+     .icon-btn:hover { color: var(--primary); border-color: var(--primary); box-shadow: var(--neo-shadow-sm); }
+     .icon-btn.danger:hover { color: var(--error); border-color: var(--error); background: rgba(231,76,60,0.06); }
+
+     /* Chip values */
+     .chip-wrap { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+     .value-chip {
+       display: inline-flex;
+       align-items: center;
+       gap: 6px;
+       padding: 5px 8px 5px 12px;
+       background: var(--surface-2);
+       border: 1px solid var(--border);
+       border-radius: var(--radius-pill);
+       font-size: 13px;
+       color: var(--text-primary);
+     }
+     .value-chip input {
+       border: none;
+       background: transparent;
+       outline: none;
+       font-family: var(--font-body);
+       font-size: 13px;
+       color: var(--text-primary);
+       min-width: 24px;
+     }
+     .value-chip .chip-x {
+       border: none;
+       background: transparent;
+       cursor: pointer;
+       color: var(--text-muted);
+       display: inline-flex;
+       padding: 0;
+       font-size: 15px;
+       line-height: 1;
+     }
+     .value-chip .chip-x:hover { color: var(--error); }
+     .chip-add-input {
+       border: 1px dashed var(--gray-300);
+       background: transparent;
+       border-radius: var(--radius-pill);
+       padding: 5px 12px;
+       font-family: var(--font-body);
+       font-size: 13px;
+       color: var(--text-primary);
+       outline: none;
+       min-width: 160px;
+       transition: all 0.2s;
+     }
+      .chip-add-input:focus { border-color: var(--primary); background: var(--primary-alpha); }
+
+      /* Tag pills */
+      .tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--surface-2);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-pill);
+        padding: 6px 13px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        transition: border-color 0.2s;
+      }
+      .tag-pill:hover { border-color: var(--primary); }
+      .tag-pill button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        color: var(--text-muted);
+        padding: 0;
+      }
+      .tag-pill button:hover { color: var(--danger); }
+
+
+     /* Image dropzone */
+     .upload-drop {
+       border: 2px dashed var(--gray-300);
+       border-radius: var(--radius-lg);
+       padding: var(--space-xl) var(--space-md);
+       text-align: center;
+       cursor: pointer;
+       transition: all 0.2s;
+       background: var(--surface-2);
+     }
+     .upload-drop:hover, .upload-drop.dragover { border-color: var(--primary); background: var(--primary-alpha); }
+     .upload-drop .drop-ico {
+       width: 48px; height: 48px;
+       margin: 0 auto var(--space-sm);
+       border-radius: 50%;
+       background: var(--primary-alpha);
+       color: var(--primary);
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       box-shadow: var(--neo-shadow-sm);
+     }
+     .img-grid { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-md); }
+     .img-tile {
+       position: relative;
+       width: 88px; height: 88px;
+       border-radius: var(--radius-md);
+       overflow: hidden;
+       box-shadow: var(--neo-shadow-sm);
+       background: var(--surface);
+     }
+     .img-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+     .img-tile-remove {
+       position: absolute; top: 4px; right: 4px;
+       width: 22px; height: 22px;
+       border-radius: 50%;
+       border: none;
+       background: rgba(0,0,0,0.55);
+       color: #fff;
+       cursor: pointer;
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       font-size: 12px;
+       transition: all 0.2s;
+     }
+     .img-tile-remove:hover { background: var(--error); transform: scale(1.1); }
+
+     /* Toggle pills (availability) */
+     .pill-group { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+     .pill {
+       display: inline-flex;
+       align-items: center;
+       gap: 6px;
+       padding: 8px 14px;
+       border: 1px solid var(--border);
+       background: var(--surface);
+       border-radius: var(--radius-pill);
+       font-family: var(--font-body);
+       font-size: 13px;
+       font-weight: 600;
+       color: var(--text-secondary);
+       cursor: pointer;
+       transition: all 0.2s;
+       box-shadow: var(--neo-shadow-sm);
+     }
+     .pill input { accent-color: var(--primary); }
+     .pill:hover { border-color: var(--primary); color: var(--primary); }
+     .pill:has(input:checked) { border-color: var(--primary); background: var(--primary-alpha); color: var(--primary); }
+
+     /* Switch */
+     .switch-row {
+       display: flex;
+       align-items: center;
+       justify-content: space-between;
+       gap: var(--space-md);
+       padding: var(--space-sm) 0;
+     }
+     .switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+     .switch input { opacity: 0; width: 0; height: 0; }
+     .switch .slider {
+       position: absolute;
+       inset: 0;
+       background: var(--gray-300);
+       border-radius: var(--radius-pill);
+       transition: 0.25s;
+       cursor: pointer;
+     }
+     .switch .slider::before {
+       content: '';
+       position: absolute;
+       height: 18px; width: 18px;
+       left: 3px; top: 3px;
+       background: #fff;
+       border-radius: 50%;
+       transition: 0.25s;
+       box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+     }
+     .switch input:checked + .slider { background: var(--primary); }
+     .switch input:checked + .slider::before { transform: translateX(20px); }
+
+     .spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite; }
+     @keyframes spin { to { transform: rotate(360deg); } }
+
+     @media (max-width: 640px) {
+       .field-row { grid-template-columns: 1fr; }
+       .field-row .form-group { margin-bottom: var(--space-md); }
+       .segmented { grid-template-columns: repeat(2, 1fr); }
+       .product-modal-scroll { max-height: 55vh; padding: var(--space-md); }
+     }
    </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -1276,6 +1614,17 @@
     multiselect:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/></svg>'
   };
 
+  const PRODUCT_TABS = [
+    { id: 'tab-general',     icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>', label: 'General' },
+    { id: 'tab-pricing',     icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>', label: 'Pricing' },
+    { id: 'tab-variants',    icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="5" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="8" y1="8" x2="10.5" y2="10.5"/><line x1="13.5" y1="13.5" x2="16" y2="16"/><line x1="8" y1="16" x2="10.5" y2="13.5"/><line x1="13.5" y1="10.5" x2="16" y2="8"/></svg>', label: 'Variants' },
+    { id: 'tab-options',     icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>', label: 'Options' },
+    { id: 'tab-availability',icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>', label: 'Availability' },
+    { id: 'tab-inventory',   icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>', label: 'Inventory' },
+    { id: 'tab-delivery',    icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>', label: 'Delivery' },
+    { id: 'tab-tags',        icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>', label: 'Tags' }
+  ];
+
   function openAddProductModal(pd) { productEditData = pd;
     productOptionsData = pd?.options ? JSON.parse(JSON.stringify(pd.options)) : [];
     productVariantsData = pd?.variants ? JSON.parse(JSON.stringify(pd.variants)) : [];
@@ -1283,19 +1632,18 @@
     pendingProductImages = [];
     removedExistingImageUrls = [];
 
+    const tabs = PRODUCT_TABS.map((t, i) => `
+      <button type="button" class="product-tab ${i === 0 ? 'active' : ''}" onclick="switchProductTab('${t.id}')">
+        <span class="tab-num">${i + 1}</span>
+        <span class="tab-ico">${t.icon}</span>
+        <span>${t.label}</span>
+      </button>`).join('');
+
     const content = `
-      <div class="product-tab-nav">
-        <button type="button" class="product-tab-btn active" onclick="switchProductTab('tab-general')">General</button>
-        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-pricing')">Pricing</button>
-        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-variants')">Variants</button>
-        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-options')">Options</button>
-        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-availability')">Availability</button>
-        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-inventory')">Inventory</button>
-        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-delivery')">Delivery</button>
-        <button type="button" class="product-tab-btn" onclick="switchProductTab('tab-tags')">Tags</button>
-      </div>
+      <div class="product-tabs">${tabs}</div>
       <form id="product-form" onsubmit="submitProductAddProduct(event)">
         <input type="hidden" name="_editId" value="${pd?.id||''}">
+        <input type="hidden" name="product_type" id="product-type-input" value="${pd?.product_type||'physical'}">
         <div class="product-modal-scroll">
           ${buildGeneralTabHTML(pd)}
           ${buildPricingTabHTML(pd)}
@@ -1310,65 +1658,79 @@
 
     UI.createModal({
       id: 'product-modal',
-      title: pd ? 'Edit Product' : 'Add Product',
+      title: `<span style="display:inline-flex;align-items:center;gap:8px;"><span class="sec-ico">${PRODUCT_TABS[0].icon}</span>${pd ? 'Edit Product' : 'Add Product'}<span style="font-size:12px;font-weight:500;color:var(--text-muted);margin-left:2px;">· ${pd ? 'Update your listing' : 'Create a new listing'}</span></span>`,
       content,
       size: 'modal-xl',
-      footer: `<button class="btn btn-ghost" type="button" onclick="UI.closeModal('product-modal')">Cancel</button>
+      footer: `
+        <div style="display:flex;gap:var(--space-sm);margin-right:auto;">
+          <button class="btn btn-ghost" type="button" onclick="prevProductTab()" id="product-prev-btn" disabled>← Back</button>
+          <button class="btn btn-outline" type="button" onclick="nextProductTab()" id="product-next-btn">Next →</button>
+        </div>
+        <button class="btn btn-ghost" type="button" onclick="UI.closeModal('product-modal')">Cancel</button>
         <button class="btn btn-primary" type="submit" form="product-form" id="product-submit-btn">${pd ? 'Save Changes' : 'Add Product'}</button>`
     });
-    setTimeout(() => switchProductTab('tab-general'), 10);
+    setTimeout(() => {
+      switchProductTab('tab-general');
+      initProductDropzone();
+      initProductTypeSeg();
+    }, 10);
+  }
+
+  function nextProductTab() {
+    const cur = PRODUCT_TABS.find(t => document.getElementById(t.id)?.classList.contains('active'));
+    const i = PRODUCT_TABS.findIndex(t => t.id === (cur?.id || 'tab-general'));
+    if (i < PRODUCT_TABS.length - 1) switchProductTab(PRODUCT_TABS[i + 1].id);
+  }
+
+  function prevProductTab() {
+    const cur = PRODUCT_TABS.find(t => document.getElementById(t.id)?.classList.contains('active'));
+    const i = PRODUCT_TABS.findIndex(t => t.id === (cur?.id || 'tab-general'));
+    if (i > 0) switchProductTab(PRODUCT_TABS[i - 1].id);
   }
 
   function buildGeneralTabHTML(pd) {
-    const existingImages = pd?.images || [];
-    const newPreviews = pendingProductImages.map((f, i) => {
-      const url = URL.createObjectURL(f);
-      return `<div style="position:relative;margin:4px;display:inline-block;"><img src="${url}" style="max-height:80px;max-width:80px;border-radius:var(--radius-sm);object-fit:cover;"><button type="button" class="btn btn-ghost btn-xs" style="position:absolute;top:-4px;right:-4px;padding:0;width:18px;height:18px;border-radius:50%;border:none;background:rgba(255,0,0,0.2);color:#fff;font-size:12px;cursor:pointer;" onclick="removeNewProductImage(${i})">×</button></div>`;
-    }).join('');
-
+    const typeLbl = t => t.charAt(0).toUpperCase() + t.slice(1);
     return `
       <div id="tab-general" class="product-tab-content active">
-        <div class="form-group">
-          <label class="form-label">Product Name *</label>
-          <input type="text" class="form-control" name="name" value="${pd?.name||''}" required placeholder="e.g. Premium Wireless Headphones">
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
-          <div class="form-group">
-            <label class="form-label">Type *</label>
-            <select class="form-control" name="product_type" required>
-              <option value="physical" ${!pd?.product_type||pd?.product_type==='physical'?'selected':''}>Physical</option>
-              <option value="digital" ${pd?.product_type==='digital'?'selected':''}>Digital</option>
-              <option value="service" ${pd?.product_type==='service'?'selected':''}>Service</option>
-              <option value="membership" ${pd?.product_type==='membership'?'selected':''}>Membership</option>
-            </select>
+        <div class="form-section">
+          <div class="form-section-head">
+            <span class="sec-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+            <div><div class="form-section-title">Basic Details</div><div class="form-section-sub">Name, type, category and description</div></div>
           </div>
           <div class="form-group">
-            <label class="form-label">Category *</label>
-            <select class="form-control" name="category" required onchange="toggleCustomCategory(this,'custom-product-category')">
-              ${CONFIG.CATEGORIES.map(c=>`<option value="${c.toLowerCase()}"${pd?.category===c.toLowerCase()?' selected':''}>${c}</option>`).join('')}
-            </select>
-            <input type="text" class="form-control" id="custom-product-category" name="custom_category" placeholder="Specify your category" style="margin-top:var(--space-sm);display:${pd?.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(pd.category)?'block':'none'};" value="${pd?.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(pd.category)?pd.category:''}">
+            <label class="form-label">Product Name <span class="req">*</span></label>
+            <input type="text" class="form-control" name="name" value="${pd?.name||''}" required placeholder="e.g. Premium Wireless Headphones">
+          </div>
+          <div class="field-row">
+            <div class="form-group">
+              <label class="form-label">Type <span class="req">*</span></label>
+              <div class="segmented" id="product-type-seg">
+                ${['physical','digital','service','membership'].map(t => `
+                  <button type="button" class="seg ${(pd?.product_type||'physical')===t?'active':''}" data-value="${t}">${typeLbl(t)}</button>`).join('')}
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Category <span class="req">*</span></label>
+              <select class="form-control" name="category" required onchange="toggleCustomCategory(this,'custom-product-category')">
+                ${CONFIG.CATEGORIES.map(c=>`<option value="${c.toLowerCase()}"${pd?.category===c.toLowerCase()?' selected':''}>${c}</option>`).join('')}
+              </select>
+              <input type="text" class="form-control" id="custom-product-category" name="custom_category" placeholder="Specify your category" style="margin-top:var(--space-sm);display:${pd?.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(pd.category)?'block':'none'};" value="${pd?.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(pd.category)?pd.category:''}">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" name="description" rows="4" placeholder="Describe your product...">${pd?.description||''}</textarea>
+            <small class="field-hint">Tell buyers what makes your product special.</small>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Description</label>
-          <textarea class="form-control" name="description" rows="3" placeholder="Describe your product...">${pd?.description||''}</textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Product Images</label>
-          <div id="product-images-drop" class="upload-drop" onclick="document.getElementById('product-images-input').click()" style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:var(--space-xl);text-align:center;cursor:pointer;transition:all 0.2s">
-            ${existingImages.length
-              ? existingImages.map(url => `<div style="position:relative;margin:4px;display:inline-block;"><img src="${url}" style="max-height:80px;max-width:80px;border-radius:var(--radius-sm);object-fit:cover;"><button type="button" class="btn btn-ghost btn-xs" onclick="removeExistingProductImage('${url}')" style="position:absolute;top:-4px;right:-4px;padding:0;width:18px;height:18px;border-radius:50%;border:none;background:rgba(255,0,0,0.1);color:#fff;font-size:12px;cursor:pointer;">×</button></div>`).join('')
-              : ''
-            }
-            ${!existingImages.length && !pendingProductImages.length
-              ? `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin:0 auto var(--space-sm);display:block;opacity:0.5;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><p style="color:var(--text-secondary);font-size:13px;margin:4px 0 0">Click to upload or drag & drop images</p><small style="color:var(--text-muted);">PNG, JPG, WebP — max 5MB each</small>`
-              : ''
-            }
-            ${pendingProductImages.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;">${newPreviews}</div>` : ''}
+
+        <div class="form-section">
+          <div class="form-section-head">
+            <span class="sec-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
+            <div><div class="form-section-title">Product Images</div><div class="form-section-sub">Drag &amp; drop or click to add photos</div></div>
           </div>
+          <div id="product-images-drop" class="upload-drop" onclick="document.getElementById('product-images-input').click()"></div>
           <input type="file" id="product-images-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none" onchange="handleProductImageSelect(this)">
-          <div id="product-images-preview" style="display:none;margin-top:8px;"></div>
         </div>
       </div>`;
   }
@@ -1376,105 +1738,153 @@
   function buildPricingTabHTML(pd) {
     return `
       <div id="tab-pricing" class="product-tab-content">
-        <div class="form-group"><label class="form-label">Price (R) *</label><input type="number" class="form-control" name="price" min="0" step="0.01" value="${pd?.price||''}" required></div>
-        <div class="form-group"><label class="form-label">Original Price (R)</label><input type="number" class="form-control" name="original_price" min="0" step="0.01" value="${pd?.original_price||''}" placeholder="Compare at price" style="max-width:150px;"></div>
+        <div class="form-section">
+          <div class="form-section-head">
+            <span class="sec-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span>
+            <div><div class="form-section-title">Pricing</div><div class="form-section-sub">Set your price and optional compare-at price</div></div>
+          </div>
+          <div class="field-row">
+            <div class="form-group">
+              <label class="form-label">Selling Price (R) <span class="req">*</span></label>
+              <div class="input-group" style="box-shadow:var(--neo-shadow-inset);background:var(--bg);">
+                <span class="input-icon" style="font-weight:700;color:var(--primary);">R</span>
+                <input type="number" class="form-control" name="price" min="0" step="0.01" value="${pd?.price||''}" required placeholder="299.00" style="box-shadow:none;background:transparent;padding-left:0;">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Compare-at Price (R)</label>
+              <div class="input-group" style="box-shadow:var(--neo-shadow-inset);background:var(--bg);">
+                <span class="input-icon" style="font-weight:700;color:var(--text-muted);">R</span>
+                <input type="number" class="form-control" name="original_price" min="0" step="0.01" value="${pd?.original_price||''}" placeholder="399.00" style="box-shadow:none;background:transparent;padding-left:0;">
+              </div>
+              <small class="field-hint">Original price shown with a strike-through to highlight savings. Must be higher than the selling price.</small>
+            </div>
+          </div>
+        </div>
       </div>`;
   }
 
   function buildVariantsTabHTML(pd) {
     return `
       <div id="tab-variants" class="product-tab-content">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md);">
-          <div><div style="font-weight:600;font-size:14px;">Variant Option Groups</div><small style="color:var(--text-muted);">Define variant groups (e.g. Size: S, M, L) to create product variants</small></div>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="addProductVariant()">Add Variant Group</button>
+        <div class="form-section">
+          <div class="form-section-head">
+            <span class="sec-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="5" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/></svg></span>
+            <div><div class="form-section-title">Variants</div><div class="form-section-sub">Variant groups let buyers choose options like Size or Colour</div></div>
+            <button type="button" class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="addProductVariant()">+ Add Group</button>
+          </div>
+          <div id="product-variants-builder">${renderProductVariantsInner(pd?.variants || [])}</div>
         </div>
-        <div id="product-variants-builder">${renderProductVariantsInner(pd?.variants || [])}</div>
       </div>`;
   }
 
   function renderProductVariantsInner(variants) {
-    if (!variants.length) return '<p style="color:var(--text-muted);font-size:13px;margin:var(--space-sm) 0;">No variant groups defined. Click "Add Variant Group" to create one.</p>';
-    return variants.map((v, i) => `
-      <div style="display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-sm);background:var(--bg);border:1px solid var(--border-light);border-radius:var(--radius-sm);margin-bottom:var(--space-sm);">
-        <input type="text" value="${v.name}" placeholder="Variant name" class="form-control" style="flex:1;max-width:200px;" onchange="updateProductVariantName(${i},this.value)">
-        <button type="button" class="btn btn-ghost btn-sm" onclick="removeProductVariant(${i})">×</button>
-      </div>
-      <div style="margin-left:24px;">
-        ${((v.values && v.values.length ? v.values : (v.options || []))).map((val, j) => `
-          <div style="display:flex;align-items:center;gap:var(--space-xs);margin-bottom:2px;">
-            <input type="text" value="${val}" placeholder="Value" class="form-control" style="max-width:150px;font-size:13px;" onchange="updateProductVariantValue(${i},${j},this.value)">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="removeProductVariantValue(${i},${j})">×</button>
-          </div>
-        `).join('')}
-        <button type="button" class="btn btn-ghost btn-sm" onclick="addProductVariantValue(${i})" style="margin-top:var(--space-xs);color:var(--text-secondary);">+ Value</button>
-      </div>
-    `).join('');
+    if (!variants.length) {
+      return `<div style="text-align:center;padding:var(--space-xl) var(--space-md);color:var(--text-muted);">
+        <div style="font-size:36px;margin-bottom:var(--space-sm);">🧩</div>
+        <div style="font-weight:600;color:var(--text-secondary);margin-bottom:4px;">No variant groups yet</div>
+        <small>Click "+ Add Group" to create one (e.g. Size: S, M, L)</small>
+      </div>`;
+    }
+    return variants.map((v, i) => {
+      const vals = v.values && v.values.length ? v.values : (v.options || []);
+      return `
+      <div class="builder-row">
+        <div class="builder-row-head">
+          <span class="grip">⋮⋮</span>
+          <input type="text" value="${v.name}" placeholder="Group name (e.g. Size)" class="form-control" onchange="updateProductVariantName(${i},this.value)">
+          <button type="button" class="icon-btn danger" onclick="removeProductVariant(${i})" title="Remove group">×</button>
+        </div>
+        <div class="chip-wrap">
+          ${vals.map((val, j) => `
+            <span class="value-chip">
+              <input type="text" value="${val}" onchange="updateProductVariantValue(${i},${j},this.value)" title="Edit value">
+              <button type="button" class="chip-x" onclick="removeProductVariantValue(${i},${j})" title="Remove">×</button>
+            </span>`).join('')}
+          <input type="text" class="chip-add-input" placeholder="Add value, press Enter" onkeydown="if(event.key==='Enter'){event.preventDefault();addProductVariantValueByInput(${i},this)}">
+        </div>
+      </div>`;
+    }).join('');
   }
 
   function buildOptionsTabHTML(pd) {
     return `
       <div id="tab-options" class="product-tab-content">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md);">
-          <div><div style="font-weight:600;font-size:14px;">Product Options</div><small style="color:var(--text-muted);">Add customer-selectable options like engraving, gift wrap, color choice, etc.</small></div>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="addProductOption()">Add Option</button>
+        <div class="form-section">
+          <div class="form-section-head">
+            <span class="sec-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span>
+            <div><div class="form-section-title">Custom Options</div><div class="form-section-sub">Buyer-selectable extras like gift wrap, engraving or colour choice</div></div>
+            <button type="button" class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="addProductOption()">+ Add Option</button>
+          </div>
+          <div id="product-options-builder">${renderProductOptionsInner(pd?.options || [])}</div>
         </div>
-        <div id="product-options-builder">${renderProductOptionsInner(pd?.options || [])}</div>
       </div>`;
   }
 
   function renderProductOptionsInner(options) {
-    if (!options.length) return '<p style="color:var(--text-muted);font-size:13px;margin:var(--space-sm) 0;">No options defined. Click "Add Option" to create one.</p>';
+    if (!options.length) {
+      return `<div style="text-align:center;padding:var(--space-xl) var(--space-md);color:var(--text-muted);">
+        <div style="font-size:36px;margin-bottom:var(--space-sm);">🎁</div>
+        <div style="font-weight:600;color:var(--text-secondary);margin-bottom:4px;">No custom options yet</div>
+        <small>Add options like "Gift wrap" or "Engraving text" that buyers choose at checkout</small>
+      </div>`;
+    }
     return options.map((opt, oIdx) => `
-      <div style="display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-sm);background:var(--bg);border:1px solid var(--border-light);border-radius:var(--radius-sm);margin-bottom:var(--space-sm);">
-        <input type="text" value="${opt.name}" placeholder="Option name" class="form-control" style="flex:1;max-width:150px;" onchange="updateProductOptionName(${oIdx},this.value)">
-        <select class="form-control" style="width:auto;" onchange="updateProductOptionType(${oIdx},this.value)">
-          <option value="radio" ${opt.type==='radio'?'selected':''}>Radio</option>
-          <option value="checkbox" ${opt.type==='checkbox'?'selected':''}>Checkbox</option>
-          <option value="select" ${opt.type==='select'?'selected':''}>Select</option>
-          <option value="multiselect" ${opt.type==='multiselect'?'selected':''}>Multi-select</option>
-        </select>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-          <input type="checkbox" ${opt.required?'checked':''} onchange="updateProductOptionRequired(${oIdx},this.checked)" style="width:16px;height:16px;accent-color:var(--primary);">
-          <small style="color:var(--text-muted);">Required</small>
-        </label>
-        <div style="flex:1;">
-          ${(opt.values || []).map((val, vIdx) => `
-            <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;">
-              <input type="text" value="${val}" placeholder="Value" class="form-control" style="max-width:120px;font-size:12px;" onchange="updateProductOptionValue(${oIdx},${vIdx},this.value)">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="removeProductOptionValue(${oIdx},${vIdx})">×</button>
-            </div>
-          `).join('')}
-          <button type="button" class="btn btn-ghost btn-sm" onclick="addProductOptionValue(${oIdx})" style="margin-top:var(--space-xs);color:var(--text-secondary);">+ Value</button>
+      <div class="builder-row">
+        <div class="builder-row-head" style="flex-wrap:wrap;">
+          <span class="grip">⋮⋮</span>
+          <input type="text" value="${opt.name}" placeholder="Option name (e.g. Gift wrap)" class="form-control" onchange="updateProductOptionName(${oIdx},this.value)" style="max-width:220px;">
+          <select class="form-control" style="width:auto;padding:8px 32px 8px 12px;font-size:12px;" onchange="updateProductOptionType(${oIdx},this.value)" title="Input type">
+            <option value="radio" ${opt.type==='radio'?'selected':''}>Radio</option>
+            <option value="checkbox" ${opt.type==='checkbox'?'selected':''}>Checkbox</option>
+            <option value="select" ${opt.type==='select'?'selected':''}>Select</option>
+            <option value="multiselect" ${opt.type==='multiselect'?'selected':''}>Multi-select</option>
+          </select>
+          <label class="pill" style="cursor:pointer;">
+            <input type="checkbox" ${opt.required?'checked':''} onchange="updateProductOptionRequired(${oIdx},this.checked)">
+            Required
+          </label>
+          <button type="button" class="icon-btn danger" style="margin-left:auto;" onclick="removeProductOption(${oIdx})" title="Remove option">×</button>
         </div>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="removeProductOption(${oIdx})" style="color:#e74c3c;">×</button>
-      </div>
-    `).join('');
+        <div class="chip-wrap">
+          ${(opt.values || []).map((val, vIdx) => `
+            <span class="value-chip">
+              <input type="text" value="${val}" onchange="updateProductOptionValue(${oIdx},${vIdx},this.value)" title="Edit value">
+              <button type="button" class="chip-x" onclick="removeProductOptionValue(${oIdx},${vIdx})" title="Remove">×</button>
+            </span>`).join('')}
+          <input type="text" class="chip-add-input" placeholder="Add value, press Enter" onkeydown="if(event.key==='Enter'){event.preventDefault();addProductOptionValueByInput(${oIdx},this)}">
+        </div>
+      </div>`
+    ).join('');
   }
 
   function buildAvailabilityTabHTML(pd) {
     return `
       <div id="tab-availability" class="product-tab-content">
-        <div class="form-group">
-          <label class="form-label">Visibility</label>
-          <div style="display:flex;gap:var(--space-md);">
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-              <input type="radio" name="visibility" value="visible" ${!pd?.visibility||pd?.visibility==='visible'?'checked':''}> Visible
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-              <input type="radio" name="visibility" value="hidden" ${pd?.visibility==='hidden'?'checked':''}> Hidden
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-              <input type="radio" name="visibility" value="search_only" ${pd?.visibility==='search_only'?'checked':''}> Search only
+        <div class="form-section">
+          <div class="form-section-head">
+            <span class="sec-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <div><div class="form-section-title">Availability</div><div class="form-section-sub">Control where and how this product is shown</div></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Visibility</label>
+            <div class="pill-group">
+              <label class="pill"><input type="radio" name="visibility" value="visible" ${!pd?.visibility||pd?.visibility==='visible'?'checked':''}> Visible</label>
+              <label class="pill"><input type="radio" name="visibility" value="hidden" ${pd?.visibility==='hidden'?'checked':''}> Hidden</label>
+              <label class="pill"><input type="radio" name="visibility" value="search_only" ${pd?.visibility==='search_only'?'checked':''}> Search only</label>
+            </div>
+            <small class="field-hint">Hidden products won't show in listings but can be linked directly. "Search only" appears in search but not in browse listings.</small>
+          </div>
+          <div class="switch-row">
+            <div>
+              <div style="font-weight:600;font-size:14px;color:var(--text-primary);">Mark as sold out</div>
+              <small style="color:var(--text-muted);">Show as sold out even if inventory remains</small>
+            </div>
+            <label class="switch">
+              <input type="checkbox" name="sold_out" id="sold-out-toggle" ${pd?.sold_out?'checked':''}>
+              <span class="slider"></span>
             </label>
           </div>
-          <small style="color:var(--text-muted);display:block;margin-top:4px;">Hidden products won't show in listings but can be linked directly.</small>
-        </div>
-        <div class="form-group">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" name="sold_out" id="sold-out-toggle" ${pd?.sold_out?'checked':''}>
-            <span class="form-label" style="margin-bottom:0;">Mark as sold out</span>
-          </label>
-          <small style="color:var(--text-muted);display:block;margin-top:4px;">Show product as sold out even if inventory remains</small>
         </div>
       </div>`;
   }
@@ -1482,18 +1892,32 @@
   function buildInventoryTabHTML(pd) {
     return `
       <div id="tab-inventory" class="product-tab-content">
-        <div class="form-group"><label class="form-label">Inventory Quantity</label><input type="number" class="form-control" name="inventory" min="0" value="${pd?.inventory||0}" style="max-width:150px;"></div>
-        <div class="form-group">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" name="track_quantity" id="track-qty-toggle" ${pd?.track_quantity!==false?'checked':''}>
-            <span class="form-label" style="margin-bottom:0;">Track quantity</span>
-          </label>
-          <small style="color:var(--text-muted);display:block;margin-top:4px;">When disabled, inventory won't decrease with orders</small>
-        </div>
-        <div class="form-group">
-          <label class="form-label">SKU</label>
-          <input type="text" class="form-control" name="sku" value="${pd?.sku||''}" placeholder="e.g. HEAD-PH-WIFI-BLK" style="max-width:250px;">
-          <small style="color:var(--text-muted);display:block;margin-top:4px;">Stock Keeping Unit helps track inventory</small>
+        <div class="form-section">
+          <div class="form-section-head">
+            <span class="sec-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg></span>
+            <div><div class="form-section-title">Inventory &amp; SKU</div><div class="form-section-sub">Manage stock levels and internal tracking</div></div>
+          </div>
+          <div class="field-row">
+            <div class="form-group">
+              <label class="form-label">Quantity in Stock</label>
+              <input type="number" class="form-control" name="inventory" min="0" value="${pd?.inventory||0}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">SKU</label>
+              <input type="text" class="form-control" name="sku" value="${pd?.sku||''}" placeholder="e.g. HEAD-PH-WIFI-BLK">
+              <small class="field-hint">Stock Keeping Unit — helps you track inventory internally</small>
+            </div>
+          </div>
+          <div class="switch-row">
+            <div>
+              <div style="font-weight:600;font-size:14px;color:var(--text-primary);">Track quantity</div>
+              <small style="color:var(--text-muted);">When disabled, inventory won't decrease with orders</small>
+            </div>
+            <label class="switch">
+              <input type="checkbox" name="track_quantity" id="track-qty-toggle" ${pd?.track_quantity!==false?'checked':''}>
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
       </div>`;
   }
@@ -1501,28 +1925,48 @@
   function buildDeliveryTabHTML(pd) {
     return `
       <div id="tab-delivery" class="product-tab-content">
-        <div class="form-group">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" name="delivery_override" id="delivery-override-toggle" ${pd?.delivery_override?'checked':''} onchange="toggleDeliveryOverrideFields(this.checked)">
-            <span class="form-label" style="margin-bottom:0;">Override default delivery settings</span>
-          </label>
-          <small style="color:var(--text-muted);display:block;margin-top:4px;">Override store-level delivery settings (e.g. clearance, pre-order)</small>
-        </div>
-        <div id="delivery-override-fields" style="display:${pd?.delivery_override?'block':'none'};margin-top:var(--space-md);padding:var(--space-md);border:1px solid var(--border-light);border-radius:var(--radius-md);">
-          <div class="form-group"><label class="form-label">Weight (g)</label><input type="number" class="form-control" name="weight" min="0" step="1" value="${pd?.weight||''}" placeholder="e.g. 250"><small style="color:var(--text-muted);display:block;margin-top:4px;">Product weight in grams</small></div>
-          <div class="form-group">
-            <label class="form-label">Available Delivery Methods</label>
-            <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" name="available_methods" value="standard" ${pd?.available_methods?.includes('standard')?'checked':''}><small>Standard</small></label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" name="available_methods" value="express" ${pd?.available_methods?.includes('express')?'checked':''}><small>Express</small></label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" name="available_methods" value="pickup" ${pd?.available_methods?.includes('pickup')?'checked':''}><small>Pickup</small></label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" name="available_methods" value="overnight" ${pd?.available_methods?.includes('overnight')?'checked':''}><small>Overnight</small></label>
-            </div>
-            <small style="color:var(--text-muted);display:block;margin-top:4px;">Select which delivery methods are available for this product</small>
+        <div class="form-section">
+          <div class="form-section-head">
+            <span class="sec-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
+            <div><div class="form-section-title">Delivery</div><div class="form-section-sub">Override store-level delivery settings for this product</div></div>
           </div>
-          <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
-            <div class="form-group"><label class="form-label">Limit Delivery Dates</label><select class="form-control" name="limit_delivery_dates" onchange="toggleDeliveryDateFields(this.value)"><option value="false" ${!pd?.limit_delivery_dates?'selected':''}>No limit</option><option value="true" ${pd?.limit_delivery_dates?'selected':''}>Limit to date range</option></select></div>
-            <div class="form-group"><label class="form-label">Limit Dates</label><div id="delivery-date-fields" style="display:${pd?.limit_delivery_dates?'flex':'none'};flex-direction:column;gap:var(--space-sm);"><input type="date" class="form-control" name="delivery_date_from" value="${pd?.delivery_date_from?.split('T')[0]||''}"><input type="date" class="form-control" name="delivery_date_to" value="${pd?.delivery_date_to?.split('T')[0]||''}"></div></div>
+          <div class="switch-row">
+            <div>
+              <div style="font-weight:600;font-size:14px;color:var(--text-primary);">Override default delivery settings</div>
+              <small style="color:var(--text-muted);">Use custom weight, methods and date limits for this product</small>
+            </div>
+            <label class="switch">
+              <input type="checkbox" name="delivery_override" id="delivery-override-toggle" ${pd?.delivery_override?'checked':''} onchange="toggleDeliveryOverrideFields(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div id="delivery-override-fields" style="display:${pd?.delivery_override?'block':'none'};margin-top:var(--space-md);padding-top:var(--space-md);border-top:1px solid var(--border-light);">
+            <div class="field-row">
+              <div class="form-group">
+                <label class="form-label">Weight (g)</label>
+                <input type="number" class="form-control" name="weight" min="0" step="1" value="${pd?.weight||''}" placeholder="e.g. 250">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Limit Delivery Dates</label>
+                <select class="form-control" name="limit_delivery_dates" onchange="toggleDeliveryDateFields(this.value)">
+                  <option value="false" ${!pd?.limit_delivery_dates?'selected':''}>No limit</option>
+                  <option value="true" ${pd?.limit_delivery_dates?'selected':''}>Limit to date range</option>
+                </select>
+              </div>
+            </div>
+            <div id="delivery-date-fields" style="display:${pd?.limit_delivery_dates?'grid':'none'};grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-md);">
+              <div><small style="color:var(--text-muted);font-size:12px;">From</small><input type="date" class="form-control" name="delivery_date_from" value="${pd?.delivery_date_from?.split('T')[0]||''}"></div>
+              <div><small style="color:var(--text-muted);font-size:12px;">To</small><input type="date" class="form-control" name="delivery_date_to" value="${pd?.delivery_date_to?.split('T')[0]||''}"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Available Delivery Methods</label>
+              <div class="pill-group">
+                <label class="pill"><input type="checkbox" name="available_methods" value="standard" ${pd?.available_methods?.includes('standard')?'checked':''}> Standard</label>
+                <label class="pill"><input type="checkbox" name="available_methods" value="express" ${pd?.available_methods?.includes('express')?'checked':''}> Express</label>
+                <label class="pill"><input type="checkbox" name="available_methods" value="pickup" ${pd?.available_methods?.includes('pickup')?'checked':''}> Pickup</label>
+                <label class="pill"><input type="checkbox" name="available_methods" value="overnight" ${pd?.available_methods?.includes('overnight')?'checked':''}> Overnight</label>
+              </div>
+            </div>
           </div>
         </div>
       </div>`;
@@ -1531,40 +1975,80 @@
   function buildTagsTabHTML(pd) {
     return `
       <div id="tab-tags" class="product-tab-content">
-        <div class="form-group">
-          <label class="form-label">Tags</label>
-          <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);margin-bottom:var(--space-sm);" id="product-tags-display">
-            ${productTagsData.map(t => `<span class="badge badge-secondary" style="display:flex;align-items:center;gap:4px;">${t} <button type="button" onclick="removeProductTag('${t}')" style="background:none;border:none;cursor:pointer;font-size:12px;">×</button></span>`).join('')}
+        <div class="form-section">
+          <div class="form-section-head">
+            <span class="sec-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span>
+            <div><div class="form-section-title">Tags</div><div class="form-section-sub">Help customers find your product in search</div></div>
           </div>
-          <input type="text" class="form-control" id="product-tags-input" placeholder="Add a tag and press Enter..." onkeydown="handleProductTagKeydown(event)">
-          <small style="color:var(--text-muted);display:block;margin-top:4px;">Tags help organize and search your products</small>
+          <div class="form-group">
+            <div id="product-tags-display" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:var(--space-sm);">
+              ${productTagsData.map(t => `<span class="tag-pill">${t} <button type="button" onclick="removeProductTag('${t}')" aria-label="Remove tag">×</button></span>`).join('')}
+            </div>
+            <div class="input-group has-right" style="box-shadow:var(--neo-shadow-inset);background:var(--bg);border-radius:var(--radius-md);padding:0 12px;">
+              <input type="text" class="form-control" id="product-tags-input" placeholder="Add a tag and press Enter..." onkeydown="handleProductTagKeydown(event)" style="box-shadow:none;">
+              <span class="input-icon-right" onclick="addProductTagFromInput()" style="color:var(--primary);cursor:pointer;">＋</span>
+            </div>
+            <small class="field-hint">Add up to 10 tags, e.g. "wireless", "gaming", "clearance"</small>
+          </div>
         </div>
       </div>`;
   }
 
   function switchProductTab(tabId) {
     document.querySelectorAll('.product-tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.product-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.product-tab').forEach(b => b.classList.remove('active'));
     const tabEl = document.getElementById(tabId);
     if (tabEl) tabEl.classList.add('active');
-    const btnEl = document.querySelector(`.product-tab-btn[onclick*="${tabId}"]`);
+    const btnEl = document.querySelector(`.product-tab[onclick*="${tabId}"]`);
     if (btnEl) btnEl.classList.add('active');
+    const i = PRODUCT_TABS.findIndex(t => t.id === tabId);
+    const prev = document.getElementById('product-prev-btn');
+    const next = document.getElementById('product-next-btn');
+    if (prev) prev.disabled = i <= 0;
+    if (next) next.style.display = i >= PRODUCT_TABS.length - 1 ? 'none' : 'inline-flex';
   }
 
   function handleProductImageSelect(input) {
     if (!input) return;
-    const files = Array.from(input.files);
+    addPendingImages(Array.from(input.files));
+    input.value = '';
+  }
+
+  function addPendingImages(files) {
     const oversized = files.filter(f => f.size > 4 * 1024 * 1024);
     if (oversized.length) {
       UI.toast(`Image too large: ${oversized[0].name} (max 4MB)`, 'error');
-      const allowed = files.filter(f => f.size <= 4 * 1024 * 1024);
-      if (!allowed.length) { input.value = ''; return; }
-      pendingProductImages.push(...allowed);
-    } else {
-      pendingProductImages.push(...files);
     }
-    input.value = '';
+    const allowed = files.filter(f => f.size <= 4 * 1024 * 1024);
+    if (!allowed.length) return;
+    pendingProductImages.push(...allowed);
     renderProductImagesSection();
+  }
+
+  function initProductDropzone() {
+    const drop = document.getElementById('product-images-drop');
+    if (!drop) return;
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+    drop.addEventListener('drop', e => {
+      e.preventDefault();
+      drop.classList.remove('dragover');
+      const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+      if (files.length) addPendingImages(files);
+    });
+  }
+
+  function initProductTypeSeg() {
+    const seg = document.getElementById('product-type-seg');
+    const input = document.getElementById('product-type-input');
+    if (!seg || !input) return;
+    seg.querySelectorAll('.seg').forEach(btn => {
+      btn.addEventListener('click', () => {
+        input.value = btn.dataset.value;
+        seg.querySelectorAll('.seg').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
   }
 
   function renderProductImagesSection() {
@@ -1572,16 +2056,27 @@
     if (!container) return;
     const pd = productEditData;
     const existingImages = (pd?.images || []).filter(url => !removedExistingImageUrls.includes(url));
-    const existingImgs = existingImages.map(url => `<div style="position:relative;margin:4px;display:inline-block;"><img src="${url}" style="max-height:80px;max-width:80px;border-radius:var(--radius-sm);object-fit:cover;"><button type="button" class="btn btn-ghost btn-xs" style="position:absolute;top:-4px;right:-4px;padding:0;width:18px;height:18px;border-radius:50%;border:none;background:rgba(255,0,0,0.1);color:#fff;font-size:12px;cursor:pointer;" onclick="removeExistingProductImage('${url}')">×</button></div>`).join('');
+    const existingImgs = existingImages.map(url => `
+      <div class="img-tile">
+        <img src="${url}" alt="">
+        <button type="button" class="img-tile-remove" onclick="removeExistingProductImage('${url}')" title="Remove image">×</button>
+      </div>`).join('');
     const newPreviews = pendingProductImages.map((f, i) => {
       const url = URL.createObjectURL(f);
-      return `<div style="position:relative;margin:4px;display:inline-block;"><img src="${url}" style="max-height:80px;max-width:80px;border-radius:var(--radius-sm);object-fit:cover;"><button type="button" class="btn btn-ghost btn-xs" style="position:absolute;top:-4px;right:-4px;padding:0;width:18px;height:18px;border-radius:50%;border:none;background:rgba(255,0,0,0.2);color:#fff;font-size:12px;cursor:pointer;" onclick="removeNewProductImage(${i})">×</button></div>`;
+      return `
+      <div class="img-tile">
+        <img src="${url}" alt="">
+        <button type="button" class="img-tile-remove" onclick="removeNewProductImage(${i})" title="Remove image">×</button>
+      </div>`;
     }).join('');
 
     if (!existingImgs && !newPreviews) {
-      container.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin:0 auto var(--space-sm);display:block;opacity:0.5;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><p style="color:var(--text-secondary);font-size:13px;margin:4px 0 0">Click to upload or drag & drop images</p><small style="color:var(--text-muted);">PNG, JPG, WebP — max 5MB each</small>`;
+      container.innerHTML = `
+        <div class="drop-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+        <p style="color:var(--text-secondary);font-size:14px;margin:4px 0 0;font-weight:600;">Click to upload or drag &amp; drop</p>
+        <small style="color:var(--text-muted);">PNG, JPG, WebP — max 4MB each</small>`;
     } else {
-      container.innerHTML = existingImgs + newPreviews;
+      container.innerHTML = `<div class="img-grid">${existingImgs}${newPreviews}</div>`;
     }
   }
 
@@ -1591,6 +2086,7 @@
 
   function handleProductTagKeydown(e) {
     if (e.key === 'Enter') {
+      e.preventDefault();
       const input = document.getElementById('product-tags-input');
       const tag = input.value.trim();
       if (tag && !productTagsData.includes(tag)) {
@@ -1604,8 +2100,26 @@
   function renderProductTags() {
     const display = document.getElementById('product-tags-display');
     if (display) {
-      display.innerHTML = productTagsData.map(t => `<span class="badge badge-secondary" style="display:flex;align-items:center;gap:4px;">${t} <button type="button" onclick="removeProductTag('${t}')" style="background:none;border:none;cursor:pointer;font-size:12px;">×</button></span>`).join('');
+      display.innerHTML = productTagsData.map(t => `<span class="tag-pill">${t} <button type="button" onclick="removeProductTag('${t}')" aria-label="Remove tag">×</button></span>`).join('');
     }
+  }
+
+  function removeProductTag(tag) {
+    const i = productTagsData.indexOf(tag);
+    if (i !== -1) {
+      productTagsData.splice(i, 1);
+      renderProductTags();
+    }
+  }
+
+  function addProductTagFromInput() {
+    const input = document.getElementById('product-tags-input');
+    const tag = input.value.trim();
+    if (tag && !productTagsData.includes(tag)) {
+      productTagsData.push(tag);
+      renderProductTags();
+    }
+    input.value = '';
   }
 
   function removeExistingProductImage(url) {
@@ -1635,6 +2149,14 @@
     }
   }
 
+  function addProductOptionValueByInput(optIdx, input) {
+    const val = input.value.trim();
+    if (val) {
+      productOptionsData[optIdx].values.push(val);
+      renderProductOptions();
+    }
+  }
+
   function removeProductOptionValue(optIdx, valIdx) {
     if (productOptionsData[optIdx] && productOptionsData[optIdx].values) {
       productOptionsData[optIdx].values.splice(valIdx, 1);
@@ -1655,6 +2177,14 @@
   function addProductVariantValue(varIdx) {
     if (productVariantsData[varIdx]) {
       productVariantsData[varIdx].values.push('');
+      renderProductVariants();
+    }
+  }
+
+  function addProductVariantValueByInput(varIdx, input) {
+    const val = input.value.trim();
+    if (val) {
+      productVariantsData[varIdx].values.push(val);
       renderProductVariants();
     }
   }
@@ -1730,6 +2260,16 @@
     e.preventDefault();
     if (!currentStore) { UI.toast('Select a store first','warning'); return; }
 
+    const nameVal = e.target.querySelector('[name=name]')?.value.trim() || '';
+    const catSel = e.target.querySelector('[name=category]');
+    const catCustom = e.target.querySelector('[name=custom_category]');
+    const effectiveCategory = (catSel?.value === 'others' && catCustom?.value.trim()) ? catCustom.value.trim() : (catSel?.value || '');
+    const priceVal = parseFloat(e.target.querySelector('[name=price]')?.value);
+
+    if (!nameVal) { switchProductTab('tab-general'); UI.toast('Please enter a product name', 'error'); return; }
+    if (!effectiveCategory) { switchProductTab('tab-general'); UI.toast('Please select a category', 'error'); return; }
+    if (isNaN(priceVal) || priceVal <= 0) { switchProductTab('tab-pricing'); UI.toast('Please enter a valid selling price', 'error'); return; }
+
     // Show immediate feedback BEFORE any async operations
     const submitBtn = e.submitter || document.getElementById('product-submit-btn');
     UI.setLoading(submitBtn, true, 'Saving…');
@@ -1738,11 +2278,11 @@
       const formData = new FormData(e.target);
 
       const data = {
-        name: formData.get('name') || '',
+        name: nameVal,
         product_type: formData.get('product_type') || 'physical',
-        category: formData.get('category') || '',
+        category: effectiveCategory,
         description: formData.get('description') || '',
-        price: parseFloat(formData.get('price')) || 0,
+        price: priceVal,
         original_price: formData.get('original_price') ? parseFloat(formData.get('original_price')) : null,
         inventory: parseInt(formData.get('inventory')) || 0,
         sku: formData.get('sku') || '',
