@@ -1641,7 +1641,7 @@
 
     const content = `
       <div class="product-tabs">${tabs}</div>
-      <form id="product-form" onsubmit="submitProductAddProduct(event)">
+      <form id="product-form" novalidate onsubmit="submitProductAddProduct(event)">
         <input type="hidden" name="_editId" value="${pd?.id||''}">
         <input type="hidden" name="product_type" id="product-type-input" value="${pd?.product_type||'physical'}">
         <div class="product-modal-scroll">
@@ -2266,9 +2266,9 @@
     const effectiveCategory = (catSel?.value === 'others' && catCustom?.value.trim()) ? catCustom.value.trim() : (catSel?.value || '');
     const priceVal = parseFloat(e.target.querySelector('[name=price]')?.value);
 
-    if (!nameVal) { switchProductTab('tab-general'); UI.toast('Please enter a product name', 'error'); return; }
-    if (!effectiveCategory) { switchProductTab('tab-general'); UI.toast('Please select a category', 'error'); return; }
-    if (isNaN(priceVal) || priceVal <= 0) { switchProductTab('tab-pricing'); UI.toast('Please enter a valid selling price', 'error'); return; }
+    if (!nameVal) { switchProductTab('tab-general'); e.target.querySelector('[name=name]')?.focus(); UI.toast('Please enter a product name', 'error'); return; }
+    if (!effectiveCategory) { switchProductTab('tab-general'); e.target.querySelector('[name=category]')?.focus(); UI.toast('Please select a category', 'error'); return; }
+    if (isNaN(priceVal) || priceVal <= 0) { switchProductTab('tab-pricing'); e.target.querySelector('[name=price]')?.focus(); UI.toast('Please enter a valid selling price', 'error'); return; }
 
     // Show immediate feedback BEFORE any async operations
     const submitBtn = e.submitter || document.getElementById('product-submit-btn');
