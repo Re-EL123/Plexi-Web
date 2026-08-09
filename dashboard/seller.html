@@ -2198,36 +2198,30 @@
 
   function updateProductOptionName(optIdx, name) {
     if (productOptionsData[optIdx]) productOptionsData[optIdx].name = name;
-    renderProductOptions();
   }
 
   function updateProductOptionType(optIdx, type) {
     if (productOptionsData[optIdx]) productOptionsData[optIdx].type = type;
-    renderProductOptions();
   }
 
   function updateProductOptionRequired(optIdx, required) {
     if (productOptionsData[optIdx]) productOptionsData[optIdx].required = required;
-    renderProductOptions();
   }
 
   function updateProductOptionValue(optIdx, valIdx, value) {
     if (productOptionsData[optIdx] && productOptionsData[optIdx].values) {
       productOptionsData[optIdx].values[valIdx] = value;
     }
-    renderProductOptions();
   }
 
   function updateProductVariantName(varIdx, name) {
     if (productVariantsData[varIdx]) productVariantsData[varIdx].name = name;
-    renderProductVariants();
   }
 
   function updateProductVariantValue(varIdx, valIdx, value) {
     if (productVariantsData[varIdx] && productVariantsData[varIdx].values) {
       productVariantsData[varIdx].values[valIdx] = value;
     }
-    renderProductVariants();
   }
 
   function renderProductOptions() {
@@ -2263,11 +2257,18 @@
     const nameVal = e.target.querySelector('[name=name]')?.value.trim() || '';
     const catSel = e.target.querySelector('[name=category]');
     const catCustom = e.target.querySelector('[name=custom_category]');
-    const effectiveCategory = (catSel?.value === 'others' && catCustom?.value.trim()) ? catCustom.value.trim() : (catSel?.value || '');
+    const customCat = (catCustom?.value || '').trim();
+    const isCustom = catSel?.value === 'others' || (catCustom && catCustom.style.display !== 'none');
+    const effectiveCategory = isCustom ? customCat : (catSel?.value || '');
     const priceVal = parseFloat(e.target.querySelector('[name=price]')?.value);
 
     if (!nameVal) { switchProductTab('tab-general'); e.target.querySelector('[name=name]')?.focus(); UI.toast('Please enter a product name', 'error'); return; }
-    if (!effectiveCategory) { switchProductTab('tab-general'); e.target.querySelector('[name=category]')?.focus(); UI.toast('Please select a category', 'error'); return; }
+    if (!effectiveCategory) {
+      switchProductTab('tab-general');
+      if (isCustom) { catCustom?.focus(); UI.toast('Please specify your custom category', 'error'); }
+      else { catSel?.focus(); UI.toast('Please select a category', 'error'); }
+      return;
+    }
     if (isNaN(priceVal) || priceVal <= 0) { switchProductTab('tab-pricing'); e.target.querySelector('[name=price]')?.focus(); UI.toast('Please enter a valid selling price', 'error'); return; }
 
     // Show immediate feedback BEFORE any async operations
