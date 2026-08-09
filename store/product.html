@@ -257,6 +257,9 @@
         <div id="variants-btns" style="display:flex;gap:var(--space-sm);flex-wrap:wrap;"></div>
       </div>
 
+      <!-- Customer-selectable options -->
+      <div id="options-section" style="display:none;margin-bottom:var(--space-lg);"></div>
+
       <!-- Qty + Add to Cart -->
       <div style="margin-bottom:var(--space-lg);">
         <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:var(--space-sm);">Quantity</div>
@@ -401,6 +404,7 @@
   let storeData    = null;
   let quantity     = 1;
   let selectedVariant = null;
+  let selectedOptions = {};
   let wishlistActive  = false;
 
   document.addEventListener('DOMContentLoaded', async () => {
@@ -552,17 +556,22 @@
       document.getElementById('variants-section').style.display = 'block';
       const container = document.getElementById('variants-btns');
       container.innerHTML = variants.map(v => {
-        const label = v.name ? `${v.name}: ${(v.values || []).join(', ')}` : JSON.stringify(v);
+        const vals = v.values && v.values.length ? v.values : (v.options || []);
+        const label = v.name ? `${v.name}: ${vals.join(', ')}` : JSON.stringify(v);
         return `<button class="variant-btn" onclick="selectVariant('${label.replace(/'/g, "\\'")}', this)">${label}</button>`;
       }).join('');
       // Show in description tab too
       document.getElementById('variants-detail').innerHTML = `
         <div style="font-weight:700;margin-bottom:var(--space-sm);">Available Variants</div>
         <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">${variants.map(v => {
-          const label = v.name ? `${v.name}: ${(v.values || []).join(', ')}` : JSON.stringify(v);
+          const vals = v.values && v.values.length ? v.values : (v.options || []);
+          const label = v.name ? `${v.name}: ${vals.join(', ')}` : JSON.stringify(v);
           return `<span class="badge badge-gray">${label}</span>`;
         }).join('')}</div>`;
     }
+
+    // Customer-selectable options
+    renderProductOptions();
 
     // Enable cart button if in stock
     const addBtn = document.getElementById('add-cart-btn');
@@ -572,6 +581,55 @@
       addBtn.disabled = true;
       addBtn.textContent = p.sold_out ? 'Sold Out' : 'Out of Stock';
     }
+  }
+
+  function renderProductOptions() {
+    const section = document.getElementById('options-section');
+    if (!section) return;
+    const opts = Array.isArray(productData?.options) ? productData.options.filter(o => o.name && Array.isArray(o.values) && o.values.length) : [];
+    if (!opts.length) { section.style.display = 'none'; section.innerHTML = ''; return; }
+    selectedOptions = {};
+    section.style.display = 'block';
+    section.innerHTML = opts.map(opt => `
+      <div style="margin-bottom:var(--space-md);">
+        <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:var(--space-sm);">
+          ${opt.name}${opt.required ? ' <span style="color:var(--error);">*</span>' : ''}
+        </div>
+        ${renderOptionControl(opt)}
+      </div>
+    `).join('');
+  }
+
+  function renderOptionControl(opt) {
+    const vals = opt.values || [];
+    if (opt.type === 'radio') {
+      return `<div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">${vals.map(v => `
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:var(--space-xs) var(--space-sm);border:1px solid var(--border-light);border-radius:var(--radius-sm);background:var(--surface);font-size:13px;">
+          <input type="radio" name="opt-${opt.name}" value="${v.replace(/"/g,'&quot;')}" onchange="setProductOption('${opt.name.replace(/'/g,"\\'")}','${v.replace(/'/g,"\\'")}')" style="accent-color:var(--primary);">${v}
+        </label>`).join('')}</div>`;
+    }
+    if (opt.type === 'checkbox' || opt.type === 'multiselect') {
+      return `<div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">${vals.map(v => `
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:var(--space-xs) var(--space-sm);border:1px solid var(--border-light);border-radius:var(--radius-sm);background:var(--surface);font-size:13px;">
+          <input type="checkbox" value="${v.replace(/"/g,'&quot;')}" onchange="toggleProductOption('${opt.name.replace(/'/g,"\\'")}','${v.replace(/'/g,"\\'")}',this.checked)" style="accent-color:var(--primary);">${v}
+        </label>`).join('')}</div>`;
+    }
+    // select
+    return `<select class="form-control" style="max-width:280px;" onchange="setProductOption('${opt.name.replace(/'/g,"\\'")}',this.value)">
+      <option value="">${opt.required ? 'Select…' : 'None'}</option>
+      ${vals.map(v => `<option value="${v.replace(/"/g,'&quot;')}">${v}</option>`).join('')}
+    </select>`;
+  }
+
+  function setProductOption(name, value) {
+    selectedOptions[name] = value;
+  }
+
+  function toggleProductOption(name, value, checked) {
+    if (!Array.isArray(selectedOptions[name])) selectedOptions[name] = [];
+    const arr = selectedOptions[name];
+    if (checked) { if (!arr.includes(value)) arr.push(value); }
+    else { const i = arr.indexOf(value); if (i > -1) arr.splice(i, 1); }
   }
 
   function setMainImage(src, thumb) {
@@ -703,10 +761,22 @@
     const btn = document.getElementById('add-cart-btn');
     UI.setLoading(btn, true, 'Adding…');
     try {
+      const requiredOpts = Array.isArray(productData.options)
+        ? productData.options.filter(o => o.required && o.name && Array.isArray(o.values) && o.values.length)
+        : [];
+      for (const opt of requiredOpts) {
+        const v = selectedOptions[opt.name];
+        if (v === undefined || v === '' || (Array.isArray(v) && !v.length)) {
+          UI.setLoading(btn, false);
+          UI.toast(`Please select "${opt.name}"`, 'warning');
+          return;
+        }
+      }
       await api.cart.add({
         product_id: productId,
         quantity,
-        variant: selectedVariant || undefined
+        variant: selectedVariant || undefined,
+        options: Object.keys(selectedOptions).length ? selectedOptions : undefined
       });
       UI.toast(`Added ${quantity} × ${productData.name} to cart! 🛒`, 'success');
       Dashboard.loadCartCount();

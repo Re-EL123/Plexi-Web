@@ -34,7 +34,7 @@ const api = (() => {
   async function request(method, path, body = null, opts = {}) {
     const url = `${BASE}${path}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
+    const timeoutId = setTimeout(() => controller.abort(), opts.timeout || CONFIG.TIMEOUT);
     const options = {
       method,
       headers: buildHeaders(opts.headers || {}),
@@ -327,7 +327,7 @@ const api = (() => {
               filename: file.name,
               contentType: file.type,
               folder
-            });
+            }, { timeout: 60000 });
             resolve(result);
           } catch (err) { reject(err); }
         };

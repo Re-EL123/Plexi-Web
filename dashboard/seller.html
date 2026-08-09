@@ -1400,7 +1400,7 @@
         <button type="button" class="btn btn-ghost btn-sm" onclick="removeProductVariant(${i})">×</button>
       </div>
       <div style="margin-left:24px;">
-        ${(v.values || []).map((val, j) => `
+        ${((v.values && v.values.length ? v.values : (v.options || []))).map((val, j) => `
           <div style="display:flex;align-items:center;gap:var(--space-xs);margin-bottom:2px;">
             <input type="text" value="${val}" placeholder="Value" class="form-control" style="max-width:150px;font-size:13px;" onchange="updateProductVariantValue(${i},${j},this.value)">
             <button type="button" class="btn btn-ghost btn-sm" onclick="removeProductVariantValue(${i},${j})">×</button>
@@ -1503,7 +1503,7 @@
       <div id="tab-delivery" class="product-tab-content">
         <div class="form-group">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" name="delivery_override" id="delivery-override-toggle" ${pd?.delivery_override?'checked':''}>
+            <input type="checkbox" name="delivery_override" id="delivery-override-toggle" ${pd?.delivery_override?'checked':''} onchange="toggleDeliveryOverrideFields(this.checked)">
             <span class="form-label" style="margin-bottom:0;">Override default delivery settings</span>
           </label>
           <small style="color:var(--text-muted);display:block;margin-top:4px;">Override store-level delivery settings (e.g. clearance, pre-order)</small>
@@ -1554,7 +1554,15 @@
   function handleProductImageSelect(input) {
     if (!input) return;
     const files = Array.from(input.files);
-    pendingProductImages.push(...files);
+    const oversized = files.filter(f => f.size > 4 * 1024 * 1024);
+    if (oversized.length) {
+      UI.toast(`Image too large: ${oversized[0].name} (max 4MB)`, 'error');
+      const allowed = files.filter(f => f.size <= 4 * 1024 * 1024);
+      if (!allowed.length) { input.value = ''; return; }
+      pendingProductImages.push(...allowed);
+    } else {
+      pendingProductImages.push(...files);
+    }
     input.value = '';
     renderProductImagesSection();
   }
@@ -1711,6 +1719,13 @@
     }
   }
 
+  function toggleDeliveryDateFields(enabled) {
+    const fields = document.getElementById('delivery-date-fields');
+    if (fields) {
+      fields.style.display = enabled === true || enabled === 'true' ? 'flex' : 'none';
+    }
+  }
+
   async function submitProductAddProduct(e) {
     e.preventDefault();
     if (!currentStore) { UI.toast('Select a store first','warning'); return; }
@@ -1783,7 +1798,7 @@
       // Process variants data
       data.variants = productVariantsData.map(v => ({
         name: v.name,
-        values: v.values,
+        values: (v.values && v.values.length ? v.values : (v.options || [])),
         options: []
       }));
 

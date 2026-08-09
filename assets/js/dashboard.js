@@ -214,6 +214,8 @@ const Dashboard = (() => {
       }
       el.innerHTML = items.map(item => {
         const p = item.product || {};
+        const optLine = item.options && Object.keys(item.options).length
+          ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;word-break:break-word;">${formatCartOptions(item.options)}</div>` : '';
         return `
           <div style="display:flex;gap:var(--space-md);padding:var(--space-md) 0;border-bottom:1px solid var(--border-light);">
             <div style="width:60px;height:60px;border-radius:var(--radius-md);background:var(--bg);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
@@ -221,6 +223,8 @@ const Dashboard = (() => {
             </div>
             <div style="flex:1;min-width:0;">
               <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name || 'Product'}</div>
+              ${item.variant ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${item.variant}</div>` : ''}
+              ${optLine}
               <div style="font-size:13px;color:var(--primary);font-weight:700;margin-top:2px;">${UI.formatCurrency(p.price || 0)}</div>
               <div style="display:flex;align-items:center;gap:var(--space-sm);margin-top:6px;">
                 <button onclick="Dashboard.updateCartQty('${item.id}',${item.quantity - 1})" style="width:24px;height:24px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">−</button>
@@ -235,6 +239,12 @@ const Dashboard = (() => {
     } catch (err) {
       el.innerHTML = `<div style="text-align:center;padding:var(--space-xl);color:var(--error);">${err.message || 'Could not load cart'}</div>`;
     }
+  }
+
+  function formatCartOptions(opts) {
+    return Object.entries(opts || {}).map(([k, v]) =>
+      Array.isArray(v) ? `${k}: ${v.join(', ')}` : `${k}: ${v}`
+    ).join(' · ');
   }
 
   async function updateCartQty(id, qty) {
