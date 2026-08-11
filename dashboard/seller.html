@@ -253,6 +253,27 @@
      }
       .chip-add-input:focus { border-color: var(--primary); background: var(--primary-alpha); }
 
+      /* Variant SKU rows (take.app style) */
+      .variant-group-wrap { border: 1px solid var(--border-light); border-radius: var(--radius-md); margin-bottom: var(--space-md); overflow: hidden; background: var(--surface); box-shadow: var(--neo-shadow-sm); }
+      .variant-group-head { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md); background: var(--surface-2); border-bottom: 1px solid var(--border-light); }
+      .variant-group-head .grip { color: var(--text-light); cursor: grab; font-size: 14px; letter-spacing: -2px; }
+      .variant-sku-row { padding: var(--space-md); border-bottom: 1px solid var(--border-light); }
+      .variant-sku-row:last-child { border-bottom: none; }
+      .variant-sku-main { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+      .variant-sku-main .form-control { font-weight: 600; }
+      .variant-price-input { width: 110px; box-shadow: var(--neo-shadow-inset); background: var(--bg); border-radius: var(--radius-sm); }
+      .variant-price-input .input-icon { font-weight: 700; color: var(--primary); }
+      .variant-price-input input { box-shadow: none; background: transparent; }
+      .variant-sku-more { margin-top: var(--space-sm); padding-top: var(--space-sm); border-top: 1px dashed var(--border); display: none; }
+      .variant-sku-more.open { display: block; }
+      .variant-more-fields { display: flex; gap: var(--space-sm); flex-wrap: wrap; margin-top: var(--space-sm); }
+      .variant-more-fields .form-group { flex: 1; min-width: 140px; }
+      .variant-img-drop { border: 2px dashed var(--border); border-radius: var(--radius-md); padding: var(--space-md); text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg); }
+      .variant-img-drop:hover, .variant-img-drop.dragover { border-color: var(--primary); background: var(--primary-alpha); }
+      .variant-img-preview { position: relative; display: inline-block; }
+      .variant-img-preview img { width: 72px; height: 72px; object-fit: cover; border-radius: var(--radius-sm); display: block; }
+      .variant-img-preview .img-tile-remove { top: -8px; right: -8px; }
+
       /* Tag pills */
       .tag-pill {
         display: inline-flex;
@@ -947,6 +968,10 @@
   }
   Auth.requireRole('seller');
 
+  function escAttr(str) {
+    return String(str ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   let currentStore = null;
   let myStores = [];
 
@@ -1600,12 +1625,30 @@
     return result.url;
   }
 
+  function normalizeVariantValues(values) {
+    return (Array.isArray(values) ? values : []).map(val => {
+      if (val && typeof val === 'object') {
+        return {
+          value: val.value ?? '',
+          price: val.price ?? '',
+          original_price: val.original_price ?? '',
+          sku: val.sku ?? '',
+          weight: val.weight ?? '',
+          image: val.image ?? ''
+        };
+      }
+      return { value: val ?? '', price: '', original_price: '', sku: '', weight: '', image: '' };
+    });
+  }
+
   /* ---- PRODUCT MODAL (Rich Tabbed Form) ---- */
   let pendingProductImages = [];
   let productOptionsData = [];
   let productVariantsData = [];
   let productTagsData = [];
   let removedExistingImageUrls = [];
+  let variantImagePending = {};
+  let variantImageRemoved = {};
   let productEditData = null;
 
   const OPTION_TYPE_ICONS = {
@@ -1628,7 +1671,12 @@
 
   function openAddProductModal(pd) { productEditData = pd;
     productOptionsData = pd?.options ? JSON.parse(JSON.stringify(pd.options)) : [];
-    productVariantsData = pd?.variants ? JSON.parse(JSON.stringify(pd.variants)) : [];
+    productVariantsData = (pd?.variants || []).map(v => ({
+      name: v.name || '',
+      values: normalizeVariantValues(v.values || v.options || [])
+    }));
+    variantImagePending = {};
+    variantImageRemoved = {};
     productTagsData = pd?.tags ? [...pd.tags] : [];
     pendingProductImages = [];
     removedExistingImageUrls = [];
@@ -1772,10 +1820,10 @@
         <div class="form-section">
           <div class="form-section-head">
             <span class="sec-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="5" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/></svg></span>
-            <div><div class="form-section-title">Variants</div><div class="form-section-sub">Variant groups let buyers choose options like Size or Colour</div></div>
+            <div><div class="form-section-title">Variants</div><div class="form-section-sub">Add groups like Size or Colour — each value is its own SKU with price, weight &amp; image</div></div>
             <button type="button" class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="addProductVariant()">+ Add Group</button>
           </div>
-          <div id="product-variants-builder">${renderProductVariantsInner(pd?.variants || [])}</div>
+          <div id="product-variants-builder">${renderProductVariantsInner(productVariantsData)}</div>
         </div>
       </div>`;
   }
@@ -1788,25 +1836,68 @@
         <small>Click "+ Add Group" to create one (e.g. Size: S, M, L)</small>
       </div>`;
     }
-    return variants.map((v, i) => {
+    return variants.map((v, gi) => {
       const vals = v.values && v.values.length ? v.values : (v.options || []);
       return `
-      <div class="builder-row">
-        <div class="builder-row-head">
+      <div class="variant-group-wrap">
+        <div class="variant-group-head">
           <span class="grip">⋮⋮</span>
-          <input type="text" value="${v.name}" placeholder="Group name (e.g. Size)" class="form-control" onchange="updateProductVariantName(${i},this.value)">
-          <button type="button" class="icon-btn danger" onclick="removeProductVariant(${i})" title="Remove group">×</button>
+          <input type="text" value="${escAttr(v.name || '')}" placeholder="Group name (e.g. Size)" class="form-control" style="max-width:260px;" onchange="updateProductVariantName(${gi},this.value)">
+          <span style="font-size:11px;color:var(--text-muted);margin-left:auto;">${vals.length} value${vals.length===1?'':'s'}</span>
+          <button type="button" class="icon-btn danger" onclick="removeProductVariant(${gi})" title="Remove group">×</button>
         </div>
-        <div class="chip-wrap">
-          ${vals.map((val, j) => `
-            <span class="value-chip">
-              <input type="text" value="${val}" onchange="updateProductVariantValue(${i},${j},this.value)" title="Edit value">
-              <button type="button" class="chip-x" onclick="removeProductVariantValue(${i},${j})" title="Remove">×</button>
-            </span>`).join('')}
-          <input type="text" class="chip-add-input" placeholder="Add value, press Enter" onkeydown="if(event.key==='Enter'){event.preventDefault();addProductVariantValueByInput(${i},this)}">
+        ${vals.map((val, vi) => renderVariantSkuRow(gi, vi, val)).join('')}
+        <div style="padding:var(--space-md);background:var(--surface-2);">
+          <input type="text" class="chip-add-input" style="width:100%;" placeholder="Type a value (e.g. M) and press Enter" onkeydown="if(event.key==='Enter'){event.preventDefault();addProductVariantValueByInput(${gi},this)}">
         </div>
       </div>`;
     }).join('');
+  }
+
+  function renderVariantSkuRow(gi, vi, val) {
+    const v = (val && typeof val === 'object') ? val : { value: val };
+    const image = v.image;
+    const imageRemoved = variantImageRemoved[`${gi}:${vi}`];
+    const pendingImg = variantImagePending[`${gi}:${vi}`];
+    const showImage = !imageRemoved && (pendingImg || image);
+    const imgSrc = pendingImg ? pendingImg.preview : image;
+    const hasMore = !!(v.sku || v.weight || v.image || v.price || v.original_price);
+    return `
+      <div class="variant-sku-row">
+        <div class="variant-sku-main">
+          <input type="text" class="form-control" style="flex:1;min-width:120px;" value="${escAttr(v.value ?? '')}" placeholder="Value (e.g. M)" onchange="updateProductVariantValue(${gi},${vi},'value',this.value)">
+          <div class="input-group variant-price-input">
+            <span class="input-icon">R</span>
+            <input type="number" min="0" step="0.01" value="${v.price ?? ''}" placeholder="Price" onchange="updateProductVariantValue(${gi},${vi},'price',this.value)">
+          </div>
+          <div class="input-group variant-price-input">
+            <span class="input-icon" style="color:var(--text-muted);">R</span>
+            <input type="number" min="0" step="0.01" value="${v.original_price ?? ''}" placeholder="Orig." onchange="updateProductVariantValue(${gi},${vi},'original_price',this.value)">
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="toggleVariantSkuMore(${gi},${vi})">Show more</button>
+          <button type="button" class="icon-btn danger" onclick="removeProductVariantValue(${gi},${vi})" title="Remove value">×</button>
+        </div>
+        <div class="variant-sku-more${hasMore?' open':''}" id="variant-more-${gi}-${vi}">
+          <div class="variant-more-fields">
+            <div class="form-group">
+              <label class="form-label">SKU</label>
+              <input type="text" class="form-control" value="${escAttr(v.sku ?? '')}" placeholder="e.g. TSHIRT-M" onchange="updateProductVariantValue(${gi},${vi},'sku',this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Weight (g)</label>
+              <input type="number" min="0" step="0.01" class="form-control" value="${v.weight ?? ''}" placeholder="e.g. 250" onchange="updateProductVariantValue(${gi},${vi},'weight',this.value)">
+            </div>
+          </div>
+          ${showImage
+            ? `<div style="margin-top:var(--space-sm);"><span class="variant-img-preview"><img src="${imgSrc}" alt=""><button type="button" class="img-tile-remove" onclick="removeVariantValueImage(${gi},${vi})" title="Remove image">×</button></span></div>`
+            : `<div class="variant-img-drop" onclick="document.getElementById('variant-img-input-${gi}-${vi}').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault();this.classList.remove('dragover');dropVariantValueImage(event,${gi},${vi})">
+                <div style="font-size:20px;margin-bottom:4px;">🖼️</div>
+                <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">Drag &amp; drop or click to add image</div>
+                <small style="color:var(--text-muted);">PNG, JPG, WebP — max 4MB</small>
+              </div>`}
+          <input type="file" accept="image/*" style="display:none;" id="variant-img-input-${gi}-${vi}" onchange="variantValueImageSelected(${gi},${vi},this)">
+        </div>
+      </div>`;
   }
 
   function buildOptionsTabHTML(pd) {
@@ -2178,15 +2269,17 @@
 
   function addProductVariantValue(varIdx) {
     if (productVariantsData[varIdx]) {
-      productVariantsData[varIdx].values.push('');
+      if (!Array.isArray(productVariantsData[varIdx].values)) productVariantsData[varIdx].values = [];
+      productVariantsData[varIdx].values.push({ value: '', price: '', original_price: '', sku: '', weight: '', image: '' });
       renderProductVariants();
     }
   }
 
   function addProductVariantValueByInput(varIdx, input) {
     const val = input.value.trim();
-    if (val) {
-      productVariantsData[varIdx].values.push(val);
+    if (val && productVariantsData[varIdx]) {
+      if (!Array.isArray(productVariantsData[varIdx].values)) productVariantsData[varIdx].values = [];
+      productVariantsData[varIdx].values.push({ value: val, price: '', original_price: '', sku: '', weight: '', image: '' });
       renderProductVariants();
     }
   }
@@ -2195,7 +2288,84 @@
     if (productVariantsData[varIdx] && productVariantsData[varIdx].values) {
       productVariantsData[varIdx].values.splice(valIdx, 1);
     }
+    delete variantImagePending[`${varIdx}:${valIdx}`];
+    delete variantImageRemoved[`${varIdx}:${valIdx}`];
     renderProductVariants();
+  }
+
+  function updateProductVariantValue(varIdx, valIdx, field, value) {
+    if (!productVariantsData[varIdx] || !Array.isArray(productVariantsData[varIdx].values)) return;
+    const v = productVariantsData[varIdx].values[valIdx];
+    if (!v) return;
+    if (field === 'value') {
+      v.value = value;
+    } else if (field === 'price' || field === 'original_price' || field === 'weight') {
+      v[field] = value === '' ? '' : parseFloat(value);
+    } else {
+      v[field] = value;
+    }
+  }
+
+  function toggleVariantSkuMore(varIdx, valIdx) {
+    const el = document.getElementById(`variant-more-${varIdx}-${valIdx}`);
+    if (el) el.classList.toggle('open');
+  }
+
+  function storeVariantImageFile(varIdx, valIdx, file) {
+    if (!file || !file.type.startsWith('image/')) { UI.toast('Please choose an image file', 'error'); return; }
+    if (file.size > 4 * 1024 * 1024) { UI.toast('Image too large. Max 4MB.', 'error'); return; }
+    const preview = URL.createObjectURL(file);
+    variantImagePending[`${varIdx}:${valIdx}`] = { file, preview };
+    delete variantImageRemoved[`${varIdx}:${valIdx}`];
+    renderProductVariants();
+  }
+
+  function variantValueImageSelected(varIdx, valIdx, input) {
+    storeVariantImageFile(varIdx, valIdx, input.files[0]);
+    input.value = '';
+  }
+
+  function dropVariantValueImage(e, varIdx, valIdx) {
+    const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+    if (files.length) storeVariantImageFile(varIdx, valIdx, files[0]);
+  }
+
+  function removeVariantValueImage(varIdx, valIdx) {
+    const key = `${varIdx}:${valIdx}`;
+    const v = productVariantsData[varIdx]?.values?.[valIdx];
+    if (v && v.image) {
+      delete variantImagePending[key];
+      variantImageRemoved[key] = true;
+      delete v.image;
+    } else {
+      delete variantImagePending[key];
+      variantImageRemoved[key] = true;
+      if (v) delete v.image;
+    }
+    renderProductVariants();
+  }
+
+  async function uploadPendingVariantImages() {
+    for (let gi = 0; gi < productVariantsData.length; gi++) {
+      const vals = productVariantsData[gi].values || [];
+      for (let vi = 0; vi < vals.length; vi++) {
+        const key = `${gi}:${vi}`;
+        const pending = variantImagePending[key];
+        if (pending) {
+          try {
+            const result = await api.upload.file(pending.file, 'products');
+            vals[vi].image = result.url;
+          } catch (err) {
+            UI.toast(`Variant image upload failed: ${err.message}`, 'error');
+          }
+          delete variantImagePending[key];
+        }
+        if (variantImageRemoved[key] && vals[vi].image) {
+          delete vals[vi].image;
+        }
+        delete variantImageRemoved[key];
+      }
+    }
   }
 
   function updateProductOptionName(optIdx, name) {
@@ -2218,12 +2388,6 @@
 
   function updateProductVariantName(varIdx, name) {
     if (productVariantsData[varIdx]) productVariantsData[varIdx].name = name;
-  }
-
-  function updateProductVariantValue(varIdx, valIdx, value) {
-    if (productVariantsData[varIdx] && productVariantsData[varIdx].values) {
-      productVariantsData[varIdx].values[valIdx] = value;
-    }
   }
 
   function renderProductOptions() {
@@ -2339,9 +2503,21 @@
       }));
 
       // Process variants data
+      await uploadPendingVariantImages();
       data.variants = productVariantsData.map(v => ({
         name: v.name,
-        values: (v.values && v.values.length ? v.values : (v.options || [])),
+        values: (v.values && v.values.length ? v.values : (v.options || [])).map(val => {
+          if (val && typeof val === 'object') {
+            const out = { value: val.value || '' };
+            if (val.price !== '' && val.price != null) out.price = Number(val.price);
+            if (val.original_price !== '' && val.original_price != null) out.original_price = Number(val.original_price);
+            if (val.sku) out.sku = val.sku;
+            if (val.weight !== '' && val.weight != null) out.weight = Number(val.weight);
+            if (val.image) out.image = val.image;
+            return out;
+          }
+          return { value: String(val) };
+        }),
         options: []
       }));
 

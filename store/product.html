@@ -576,8 +576,11 @@
         }
         return `<div class="variant-group">
           <div class="variant-group-label">${groupName}</div>
-          <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;">${vals.map(val => `
-            <button type="button" class="variant-btn" onclick="selectVariantValue(${gi},'${String(val).replace(/'/g, "\\'")}',this)">${val}</button>`).join('')}
+          <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;">${vals.map(val => {
+            const label = (val && typeof val === 'object') ? val.value : val;
+            const priced = (val && typeof val === 'object' && val.price != null) ? `<span style="font-size:10px;color:var(--text-muted);display:block;">${UI.formatCurrency(val.price)}</span>` : '';
+            return `<span style="text-align:center;"><button type="button" class="variant-btn" onclick="selectVariantValue(${gi},'${String(label).replace(/'/g, "\\'")}',this)">${label}</button>${priced}</span>`;
+          }).join('')}
           </div>
         </div>`;
       }).join('');
@@ -586,7 +589,8 @@
         <div style="font-weight:700;margin-bottom:var(--space-sm);">Available Variants</div>
         <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">${variants.map(v => {
           const vals = v.values && v.values.length ? v.values : (v.options || []);
-          const label = v.name ? `${v.name}: ${vals.join(', ')}` : JSON.stringify(v);
+          const labels = vals.map(val => (val && typeof val === 'object') ? val.value : val);
+          const label = v.name ? `${v.name}: ${labels.join(', ')}` : JSON.stringify(v);
           return `<span class="badge badge-gray">${label}</span>`;
         }).join('')}</div>`;
       updateVariantSummary();
@@ -667,6 +671,7 @@
     btn.closest('.variant-group').querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     updateVariantSummary();
+    updateVariantPriceDisplay();
   }
 
   function updateVariantSummary() {
@@ -679,6 +684,42 @@
       return `${name}: ${selectedVariants[gi]}`;
     });
     el.textContent = entries.length ? entries.join(', ') : '';
+  }
+
+  function variantSelection() {
+    if (!productData || !Array.isArray(productData.variants)) return {};
+    const out = {};
+    Object.keys(selectedVariants).forEach(gi => {
+      const v = productData.variants[gi];
+      const name = (v && v.name && v.name.trim()) ? v.name.trim() : `Option ${+gi + 1}`;
+      out[name] = selectedVariants[gi];
+    });
+    return out;
+  }
+
+  function selectedVariantObject(gi, val) {
+    const v = productData?.variants?.[gi];
+    if (!v) return null;
+    const vals = v.values && v.values.length ? v.values : (v.options || []);
+    const match = vals.find(x => (x && typeof x === 'object') ? x.value === val : x === val);
+    return (match && typeof match === 'object') ? match : null;
+  }
+
+  function updateVariantPriceDisplay() {
+    if (!productData) return;
+    const priceEl = document.getElementById('product-price');
+    if (!priceEl) return;
+    const selections = Object.keys(selectedVariants);
+    if (!selections.length) {
+      priceEl.textContent = UI.formatCurrency(productData.price);
+      return;
+    }
+    let variantPrice = null;
+    for (const gi of selections) {
+      const vo = selectedVariantObject(Number(gi), selectedVariants[gi]);
+      if (vo && vo.price != null) { variantPrice = Number(vo.price); break; }
+    }
+    priceEl.textContent = UI.formatCurrency(variantPrice ?? productData.price);
   }
 
   function variantSummary() {
@@ -816,11 +857,14 @@
           return;
         }
       }
+      const selection = variantSelection();
+      const payloadOptions = Object.keys(selectedOptions).length ? { ...selectedOptions } : {};
+      if (Object.keys(selection).length) payloadOptions.__variants = selection;
       await api.cart.add({
         product_id: productId,
         quantity,
         variant: variantSummary() || undefined,
-        options: Object.keys(selectedOptions).length ? selectedOptions : undefined
+        options: Object.keys(payloadOptions).length ? payloadOptions : undefined
       });
       UI.toast(`Added ${quantity} × ${productData.name} to cart! 🛒`, 'success');
       Dashboard.loadCartCount();
