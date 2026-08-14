@@ -38,6 +38,7 @@ const api = (() => {
     const options = {
       method,
       headers: buildHeaders(opts.headers || {}),
+      cache: 'no-store',
       signal: controller.signal
     };
     if (body && method !== 'GET') {
