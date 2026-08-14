@@ -36,23 +36,14 @@ const Dashboard = (() => {
       return;
     }
     panel.innerHTML = notifs.slice(0, 8).map(n => `
-      <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}" style="
-        display:flex;gap:var(--space-sm);padding:var(--space-sm) var(--space-md);
-        border-bottom:1px solid var(--border-light);
-        cursor:pointer;
-        background:${n.read ? 'transparent' : 'var(--primary-alpha)'};
-        transition:background 0.2s;
-      " onclick="Dashboard.markRead('${n.id}')">
-        <div style="
-          width:8px;height:8px;border-radius:50%;
-          background:${n.read ? 'var(--gray-300)' : 'var(--primary)'};
-          flex-shrink:0;margin-top:6px;
-        "></div>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${n.title}</div>
-          <div style="font-size:12px;color:var(--text-secondary)">${n.message}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${UI.timeAgo(n.created_at)}</div>
-        </div>
+      <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}" role="button" tabindex="0"
+        onclick="Dashboard.markRead('${n.id}')">
+        ${UI.notifHeader(
+          `<span style="width:8px;height:8px;border-radius:50%;background:${n.read ? 'var(--gray-300)' : 'var(--primary)'};"></span>`,
+          n.title,
+          UI.timeAgo(n.created_at)
+        )}
+        <div class="notif-msg">${n.message}</div>
       </div>
     `).join('');
   }
@@ -61,10 +52,7 @@ const Dashboard = (() => {
     try {
       await api.notifications.markRead(id);
       const el = document.querySelector(`.notif-item[data-id="${id}"]`);
-      if (el) {
-        el.style.background = 'transparent';
-        el.querySelector('div').style.background = 'var(--gray-300)';
-      }
+      if (el) el.classList.remove('unread');
       await loadNotifications();
     } catch (_) {}
   }
@@ -187,6 +175,7 @@ const Dashboard = (() => {
     overlay.style.display = 'block';
     drawer.style.right = '0';
     requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+    initCartPanelKeys();
     loadCartPanelItems();
   }
 
@@ -198,11 +187,22 @@ const Dashboard = (() => {
     setTimeout(() => { if (overlay) overlay.style.display = 'none'; }, 300);
   }
 
+  function initCartPanelKeys() {
+    if (initCartPanelKeys.done) return;
+    initCartPanelKeys.done = true;
+    document.addEventListener('keydown', e => {
+      const drawer = document.getElementById('cart-drawer');
+      if (e.key === 'Escape' && drawer && drawer.style.right === '0px') {
+        closeCartPanel();
+      }
+    });
+  }
+
   async function loadCartPanelItems() {
     const el = document.getElementById('cart-panel-items');
     const totalEl = document.getElementById('cart-panel-total');
     if (!el) return;
-    el.innerHTML = '<div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">Loading…</div>';
+    el.innerHTML = UI.skeletonList(3);
     try {
       const data = await api.cart.get();
       const items = Array.isArray(data) ? data : (data.items || []);
@@ -292,7 +292,6 @@ const Dashboard = (() => {
 })();
 
 window.Dashboard = Dashboard;
-
 // ======== DASHBOARD SEARCH (icon toggle → fixed overlay) ======== //
 function openDashboardSearch() {
   const wrap = document.getElementById('topbar-search-wrap');

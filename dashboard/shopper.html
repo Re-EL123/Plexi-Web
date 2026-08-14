@@ -420,7 +420,7 @@
   async function loadOrders() {
     const status = document.getElementById('orders-status')?.value || '';
     const tbody  = document.getElementById('orders-tbody');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:var(--space-lg);">Loading…</td></tr>';
+    tbody.innerHTML = UI.skeletonTable(6, 5);
     try {
       const data   = await api.orders.list({ status });
       const orders = Array.isArray(data) ? data : (data.orders || []);
@@ -445,7 +445,7 @@
 
   async function loadCart() {
     const el = document.getElementById('cart-items');
-    el.innerHTML = '<div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">Loading…</div>';
+    el.innerHTML = UI.skeletonList(5);
     try {
       const data  = await api.cart.get();
       cartItems = Array.isArray(data) ? data : (data.items || []);
@@ -665,7 +665,7 @@
 
   async function loadWishlist() {
     const grid = document.getElementById('wishlist-grid');
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:var(--space-xl);">Loading…</div>';
+    grid.innerHTML = UI.skeletonGrid(6, '120px');
     try {
       const data  = await api.wishlist.list();
       const items = Array.isArray(data) ? data : (data.items || []);
@@ -701,7 +701,7 @@
   async function loadReviews() {
     const user = Auth.getUser();
     const el   = document.getElementById('reviews-list');
-    el.innerHTML = '<div style="text-align:center;padding:var(--space-xl);">Loading…</div>';
+    el.innerHTML = UI.skeletonList(5);
     try {
       const data    = await api.reviews.list({ user_id: user?.id });
       const reviews = Array.isArray(data) ? data : (data.reviews || []);
@@ -729,7 +729,7 @@
   }
 
   function viewOrderDetail(id) {
-    UI.createModal({ id:'order-detail', title:`Order #${id.slice(0,8)}`, content:'<div style="text-align:center;padding:var(--space-xl);">Loading…</div>' });
+    UI.createModal({ id:'order-detail', title:`Order #${id.slice(0,8)}`, content: UI.skeletonList(4) });
     api.orders.get(id).then(o => {
       const body = document.querySelector('#order-detail .modal-body');
       if (body) body.innerHTML = `
@@ -799,7 +799,7 @@
   }
 
   function viewTicketThread(id) {
-    UI.createModal({ id:'ticket-view', title:'Ticket Thread', content:'Loading…' });
+    UI.createModal({ id:'ticket-view', title:'Ticket Thread', content: UI.skeletonList(4) });
     Promise.all([api.support.get(id), api.support.messages(id)]).then(([t, msgs]) => {
       const messages = Array.isArray(msgs) ? msgs : (msgs.messages || []);
       const body = document.querySelector('#ticket-view .modal-body');

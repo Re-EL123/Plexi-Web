@@ -1248,7 +1248,7 @@
   async function loadProducts() {
     if (!currentStore) { UI.toast('Select a store first','warning'); return; }
     const grid = document.getElementById('products-grid');
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:var(--space-xl);">Loading…</div>';
+    grid.innerHTML = UI.skeletonGrid(6, '120px');
     try {
       const data = await api.products.list(currentStore.id);
       const prods = Array.isArray(data) ? data : (data.products || []);
@@ -1282,7 +1282,7 @@
     if (!currentStore) return;
     const status = document.getElementById('orders-filter')?.value || '';
     const tbody  = document.getElementById('orders-tbody');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:var(--space-lg);">Loading…</td></tr>';
+    tbody.innerHTML = UI.skeletonTable(6, 5);
     try {
       const data   = await api.orders.list({ store_id: currentStore.id, status });
       const orders = Array.isArray(data) ? data : (data.orders || []);
@@ -1303,7 +1303,7 @@
   async function loadReviews() {
     if (!currentStore) return;
     const grid = document.getElementById('reviews-grid');
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:var(--space-xl);">Loading…</div>';
+    grid.innerHTML = UI.skeletonGrid(6, '120px');
     try {
       const data    = await api.reviews.list({ store_id: currentStore.id });
       const reviews = Array.isArray(data) ? data : (data.reviews || []);
@@ -1914,6 +1914,14 @@
       </div>`;
   }
 
+  function optionTypeIcon(type) {
+    return OPTION_TYPE_ICONS[type] || OPTION_TYPE_ICONS.select;
+  }
+
+  function optionTypeLabel(type) {
+    return { radio: 'Radio', checkbox: 'Checkbox', select: 'Select', multiselect: 'Multi-select' }[type] || 'Select';
+  }
+
   function renderProductOptionsInner(options) {
     if (!options.length) {
       return `<div style="text-align:center;padding:var(--space-xl) var(--space-md);color:var(--text-muted);">
@@ -1927,12 +1935,18 @@
         <div class="builder-row-head" style="flex-wrap:wrap;">
           <span class="grip">⋮⋮</span>
           <input type="text" value="${opt.name}" placeholder="Option name (e.g. Gift wrap)" class="form-control" onchange="updateProductOptionName(${oIdx},this.value)" style="max-width:220px;">
-          <select class="form-control" style="width:auto;padding:8px 32px 8px 12px;font-size:12px;" onchange="updateProductOptionType(${oIdx},this.value)" title="Input type">
-            <option value="radio" ${opt.type==='radio'?'selected':''}>Radio</option>
-            <option value="checkbox" ${opt.type==='checkbox'?'selected':''}>Checkbox</option>
-            <option value="select" ${opt.type==='select'?'selected':''}>Select</option>
-            <option value="multiselect" ${opt.type==='multiselect'?'selected':''}>Multi-select</option>
-          </select>
+          <div class="dropdown" style="position:relative;">
+            <button type="button" class="form-control" data-dropdown="opt-type-dd-${oIdx}" title="Input type" style="display:inline-flex;align-items:center;gap:7px;width:auto;padding:9px 12px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-primary);">
+              ${optionTypeIcon(opt.type)}<span>${optionTypeLabel(opt.type)}</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="dropdown-menu" id="opt-type-dd-${oIdx}" style="left:0;right:auto;min-width:190px;">
+              <button class="dropdown-item" onclick="updateProductOptionType(${oIdx},'radio')">${optionTypeIcon('radio')} Radio</button>
+              <button class="dropdown-item" onclick="updateProductOptionType(${oIdx},'checkbox')">${optionTypeIcon('checkbox')} Checkbox</button>
+              <button class="dropdown-item" onclick="updateProductOptionType(${oIdx},'select')">${optionTypeIcon('select')} Select</button>
+              <button class="dropdown-item" onclick="updateProductOptionType(${oIdx},'multiselect')">${optionTypeIcon('multiselect')} Multi-select</button>
+            </div>
+          </div>
           <label class="pill" style="cursor:pointer;">
             <input type="checkbox" ${opt.required?'checked':''} onchange="updateProductOptionRequired(${oIdx},this.checked)">
             Required
@@ -2374,6 +2388,7 @@
 
   function updateProductOptionType(optIdx, type) {
     if (productOptionsData[optIdx]) productOptionsData[optIdx].type = type;
+    renderProductOptions();
   }
 
   function updateProductOptionRequired(optIdx, required) {
@@ -2459,8 +2474,8 @@
         track_quantity: e.target.querySelector('[name=track_quantity]')?.checked || true,
         delivery_override: e.target.querySelector('[name=delivery_override]')?.checked || false,
         limit_delivery_dates: formData.get('limit_delivery_dates') === 'true',
-        delivery_date_from: formData.get('delivery_date_from') || null,
-        delivery_date_to: formData.get('delivery_date_to') || null,
+        delivery_date_from: formData.get('delivery_date_from') ? new Date(formData.get('delivery_date_from')).toISOString() : null,
+        delivery_date_to: formData.get('delivery_date_to') ? new Date(formData.get('delivery_date_to')).toISOString() : null,
         weight: formData.get('weight') ? parseFloat(formData.get('weight')) : null,
         available_methods: []
       };
@@ -2766,7 +2781,7 @@
   }
 
   function openTicketThread(id) {
-    UI.createModal({ id:'ticket-view', title:'Ticket Thread', content:'Loading…' });
+    UI.createModal({ id:'ticket-view', title:'Ticket Thread', content: UI.skeletonList(4) });
     Promise.all([api.support.get(id), api.support.messages(id)]).then(([t, msgs]) => {
       const messages = Array.isArray(msgs) ? msgs : (msgs.messages || []);
       const body = document.querySelector('#ticket-view .modal-body');

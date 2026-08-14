@@ -827,7 +827,7 @@ async function deleteProduct(id){UI.confirmDialog({title:'Delete Product',messag
 // ======== CATEGORIES ======== //
 async function loadCategories(){
   const tbody=document.getElementById('categories-tbody');
-  tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:var(--space-lg);color:var(--text-muted);">Loading…</td></tr>';
+  tbody.innerHTML=UI.skeletonTable(6,5);
   try{
     const d=await api.admin.categories();
     const cats=Array.isArray(d)?d:(d.categories||[]);
@@ -1017,7 +1017,7 @@ let gpsMarkers = {};
 async function loadGPSData(){
   const listEl = document.getElementById('gps-store-list');
   if (!listEl) return;
-  listEl.innerHTML = '<div style="text-align:center;padding:var(--space-lg);color:var(--text-muted);">Loading…</div>';
+  listEl.innerHTML = UI.skeletonList(5);
   try {
     const data = await api.admin.getStoreLocations();
     const stores = data.stores || [];
@@ -1286,7 +1286,7 @@ setInterval(loadGPSData, 30000);
   async function loadVerifyApps() {
     const status = document.getElementById('verify-filter').value;
     const list = document.getElementById('verify-apps-list');
-    list.innerHTML = '<div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">Loading…</div>';
+    list.innerHTML = UI.skeletonList(5);
 
     try {
       const apps = await api.verification.admin.list(status);
@@ -1344,15 +1344,21 @@ setInterval(loadGPSData, 30000);
 
   async function reviewVerify(id, action) {
     const notes = document.getElementById(`verify-notes-${id}`)?.value || '';
-    if (!confirm(`Are you sure you want to ${action} this application?`)) return;
-
-    try {
-      await api.verification.admin.review(id, action, notes);
-      UI.toast(`Application ${action === 'approve' ? 'approved' : 'rejected'}`, 'success');
-      loadVerifyApps();
-    } catch (err) {
-      UI.toast(err.message, 'error');
-    }
+    UI.confirmDialog({
+      title: action === 'approve' ? 'Approve Application' : 'Reject Application',
+      message: `Are you sure you want to ${action} this application?`,
+      confirmText: action === 'approve' ? 'Approve' : 'Reject',
+      danger: action !== 'approve',
+      onConfirm: async () => {
+        try {
+          await api.verification.admin.review(id, action, notes);
+          UI.toast(`Application ${action === 'approve' ? 'approved' : 'rejected'}`, 'success');
+          loadVerifyApps();
+        } catch (err) {
+          UI.toast(err.message, 'error');
+        }
+      }
+    });
   }
 
   // ---- BANKING MANAGEMENT ---- //
@@ -1360,7 +1366,7 @@ setInterval(loadGPSData, 30000);
     const verified = document.getElementById('banking-filter').value;
     const search = document.getElementById('banking-search')?.value || '';
     const list = document.getElementById('banking-list');
-    list.innerHTML = '<div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">Loading…</div>';
+    list.innerHTML = UI.skeletonList(5);
 
     try {
       const params = {};
@@ -1410,14 +1416,21 @@ setInterval(loadGPSData, 30000);
 
   async function toggleBankVerify(id, verified) {
     const action = verified ? 'verify' : 'revoke verification for';
-    if (!confirm(`Are you sure you want to ${action} this bank account?`)) return;
-    try {
-      await api.admin.verifyBanking(id, verified);
-      UI.toast(`Bank account ${verified ? 'verified' : 'verification revoked'}`, 'success');
-      loadBankingList();
-    } catch (err) {
-      UI.toast(err.message, 'error');
-    }
+    UI.confirmDialog({
+      title: verified ? 'Verify Bank Account' : 'Revoke Verification',
+      message: `Are you sure you want to ${action} this bank account?`,
+      confirmText: verified ? 'Verify' : 'Revoke',
+      danger: !verified,
+      onConfirm: async () => {
+        try {
+          await api.admin.verifyBanking(id, verified);
+          UI.toast(`Bank account ${verified ? 'verified' : 'verification revoked'}`, 'success');
+          loadBankingList();
+        } catch (err) {
+          UI.toast(err.message, 'error');
+        }
+      }
+    });
   }
 
   // ======== DRIVER KYC COMPLIANCE ======== //
@@ -1429,7 +1442,7 @@ setInterval(loadGPSData, 30000);
   async function loadDriverCompliance() {
     const status = document.getElementById('kyc-filter').value;
     const list = document.getElementById('driver-compliance-list');
-    list.innerHTML = '<div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">Loading…</div>';
+    list.innerHTML = UI.skeletonList(5);
 
     try {
       const data = await api.driverCompliance.list(status);
@@ -1623,7 +1636,7 @@ setInterval(loadGPSData, 30000);
     const { start, end } = getPayrollDates();
     const status = document.getElementById('payroll-status-filter')?.value || '';
     const tbody = document.getElementById('payroll-tbody');
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">Loading…</td></tr>';
+    tbody.innerHTML = UI.skeletonTable(6, 11);
 
     try {
       const params = {};
@@ -1676,16 +1689,21 @@ setInterval(loadGPSData, 30000);
       UI.toast('Please select a start and end date', 'warning');
       return;
     }
-    if (!confirm(`Generate payslips for ${start} to ${end}?`)) return;
-
-    try {
-      const result = await api.driverPayments.generate(start, end);
-      UI.toast(`Generated ${result.generated} payslips`, 'success');
-      loadDriverPayments();
-      loadPayrollSummary();
-    } catch (err) {
-      UI.toast(err.message, 'error');
-    }
+    UI.confirmDialog({
+      title: 'Generate Payslips',
+      message: `Generate payslips for ${start} to ${end}?`,
+      confirmText: 'Generate',
+      onConfirm: async () => {
+        try {
+          const result = await api.driverPayments.generate(start, end);
+          UI.toast(`Generated ${result.generated} payslips`, 'success');
+          loadDriverPayments();
+          loadPayrollSummary();
+        } catch (err) {
+          UI.toast(err.message, 'error');
+        }
+      }
+    });
   }
 
   async function processPayment(paymentId, action) {
@@ -1699,24 +1717,30 @@ setInterval(loadGPSData, 30000);
       const deductReason = deductAmt && parseFloat(deductAmt) > 0 ? prompt('Deduction reason:') || '' : '';
       const notes = prompt('Admin notes (optional):') || '';
 
-      if (!confirm(`Process payment for this driver?`)) return;
-
-      try {
-        await api.driverPayments.process(paymentId, 'pay', {
-          payment_method: method,
-          payment_reference: ref,
-          bonus: parseFloat(bonusAmt) || 0,
-          bonus_reason: bonusReason,
-          deduction: parseFloat(deductAmt) || 0,
-          deduction_reason: deductReason,
-          admin_notes: notes
-        });
-        UI.toast('Payment processed', 'success');
-        loadDriverPayments();
-        loadPayrollSummary();
-      } catch (err) {
-        UI.toast(err.message, 'error');
-      }
+      UI.confirmDialog({
+        title: 'Process Payment',
+        message: `Process payment for this driver?`,
+        confirmText: 'Process Payment',
+        danger: true,
+        onConfirm: async () => {
+          try {
+            await api.driverPayments.process(paymentId, 'pay', {
+              payment_method: method,
+              payment_reference: ref,
+              bonus: parseFloat(bonusAmt) || 0,
+              bonus_reason: bonusReason,
+              deduction: parseFloat(deductAmt) || 0,
+              deduction_reason: deductReason,
+              admin_notes: notes
+            });
+            UI.toast('Payment processed', 'success');
+            loadDriverPayments();
+            loadPayrollSummary();
+          } catch (err) {
+            UI.toast(err.message, 'error');
+          }
+        }
+      });
     } else {
       const reason = prompt('Reason for marking as failed:');
       if (!reason) return;

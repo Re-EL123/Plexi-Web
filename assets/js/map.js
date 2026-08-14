@@ -17,7 +17,7 @@ const MallMap = (() => {
   function init(containerEl, onSelectCb = null) {
     container = containerEl;
     onSelect  = onSelectCb;
-    render();
+    renderLoading();
     loadStores();
   }
 
@@ -25,10 +25,35 @@ const MallMap = (() => {
     try {
       const data = await api.map.stores();
       stores = Array.isArray(data) ? data : (data.stores || []);
-      render();
     } catch (err) {
       console.error('Map load error:', err);
     }
+    render();
+  }
+
+  function renderLoading() {
+    if (!container) return;
+    const iw = container.clientWidth || 600;
+    const cellSize = Math.max(48, Math.floor((iw - 40) / GRID_SIZE));
+    let html = `
+      <div style="overflow:auto;padding:var(--space-md);" aria-busy="true" aria-label="Loading mall map">
+        <div class="mall-grid neo-inset-lg" style="
+          display:grid;
+          grid-template-columns:repeat(${GRID_SIZE},${cellSize}px);
+          grid-template-rows:repeat(${GRID_SIZE},${cellSize}px);
+          width:${cellSize * GRID_SIZE}px;
+          height:${cellSize * GRID_SIZE}px;
+          border-radius:var(--radius-lg);
+          overflow:hidden;
+          gap:2px;
+          background:var(--border-light);
+        ">
+    `;
+    for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+      html += `<div class="skeleton" style="width:100%;height:100%;border-radius:0;"></div>`;
+    }
+    html += `</div></div>`;
+    container.innerHTML = html;
   }
 
   function getStoreAt(x, y) {
@@ -76,7 +101,7 @@ const MallMap = (() => {
           overflow:hidden;
           gap:2px;
           background:var(--border-light);
-        ">
+        " role="group" aria-label="Mall map grid">
     `;
 
     for (let y = 0; y < GRID_SIZE; y++) {

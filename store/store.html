@@ -7,6 +7,18 @@
   <meta name="theme-color" content="#4361ee">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Store — Plexi Digital Mall</title>
+  <meta name="description" content="Browse products and reviews from South African stores on Plexi Digital Mall.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Plexi Digital Mall">
+  <meta property="og:locale" content="en_ZA">
+  <meta property="og:title" content="Store — Plexi Digital Mall">
+  <meta property="og:description" content="Browse products and reviews from South African stores on Plexi Digital Mall.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Store — Plexi Digital Mall">
+  <meta name="twitter:description" content="Browse products and reviews from South African stores on Plexi Digital Mall.">
+  <script type="application/ld+json" id="seo-jsonld">
+  { "@context": "https://schema.org", "@type": "Store", "name": "Plexi Digital Mall", "description": "Browse products and reviews from South African stores." }
+  </script>
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/base.css">
   <link rel="stylesheet" href="../assets/css/neomorphism.css">
@@ -220,7 +232,7 @@
           <div class="skeleton" style="width:280px;height:16px;margin-top:8px;"></div>
         </div>
       </div>
-      <div style="display:flex;gap:var(--space-sm);align-items:center;padding-top:52px;">
+      <div style="display:flex;gap:var(--space-sm);align-items:center;padding-top:52px;flex-wrap:wrap;">
         <button id="follow-btn" class="btn btn-outline btn-sm" onclick="toggleFollow()" style="display:none;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           <span id="follow-btn-text">Follow</span>
@@ -232,6 +244,10 @@
         <button class="btn btn-primary btn-sm" onclick="scrollToProducts()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           Browse Products
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="shareStore()" title="Share this store">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
         </button>
       </div>
     </div>
@@ -429,6 +445,55 @@
     }
   }
 
+  function updateStoreSeo(s) {
+    const url = UI.currentUrl();
+    const desc = (s.description || `Browse ${s.name} on Plexi Digital Mall — ${s.category || 'shopping'} store.`).slice(0, 160);
+    UI.updateMeta({
+      title: `${s.name} — Plexi Digital Mall`,
+      description: desc,
+      image: s.banner || s.logo || '',
+      url,
+      type: 'website'
+    });
+
+    const schema = {
+      '@context': 'https://schema.org',
+      '@type': 'Store',
+      name: s.name,
+      description: s.description || desc,
+      url,
+      image: s.banner || s.logo || ''
+    };
+    if (s.logo) schema.logo = s.logo;
+    if (s.category) schema.category = s.category;
+    if (s.telephone) schema.telephone = s.telephone;
+    if (s.address) schema.address = { '@type': 'PostalAddress', streetAddress: s.address };
+    const hours = s.trading_hours;
+    if (hours && typeof hours === 'object') {
+      const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+      const keys = ['sun','mon','tue','wed','thu','fri','sat'];
+      const specs = [];
+      keys.forEach((k, i) => {
+        const d = hours[k];
+        if (d && d.enabled && d.open && d.close) {
+          specs.push({ '@type': 'OpeningHoursSpecification', dayOfWeek: days[i], opens: d.open, closes: d.close });
+        }
+      });
+      if (specs.length) schema.openingHoursSpecification = specs;
+    }
+    UI.updateJsonLd(schema);
+  }
+
+  function shareStore() {
+    const s = storeData;
+    UI.shareDialog({
+      title: s?.name ? `${s.name} | Plexi Digital Mall` : 'Plexi Digital Mall',
+      text: s?.description ? s.description.slice(0, 140) : `Check out ${s?.name || 'this store'} on Plexi Digital Mall`,
+      url: UI.currentUrl(),
+      image: s?.banner || s?.logo || ''
+    });
+  }
+
   async function loadStore() {
     try {
       storeData = await api.stores.get(storeId);
@@ -443,6 +508,8 @@
     const s = storeData;
     document.title = `${s.name} — Plexi Digital Mall`;
     document.getElementById('breadcrumb-name').textContent = s.name;
+
+    updateStoreSeo(s);
 
     // Banner
     const banner = document.getElementById('store-banner');
