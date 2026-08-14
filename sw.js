@@ -3,26 +3,28 @@
 // Handles: caching, offline support, push notifications
 // ============================================================
 
-const CACHE_NAME = 'plexi-mall-v1';
+const CACHE_NAME = 'plexi-mall-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './login.html',
   './signup.html',
-  './manifest.json',
-  './assets/css/variables.css',
-  './assets/css/base.css',
-  './assets/css/neomorphism.css',
-  './assets/css/components.css',
-  './assets/css/animations.css',
-  './assets/js/config.js',
-  './assets/js/ui.js',
-  './assets/js/api.js',
-  './assets/js/auth.js',
-  './assets/js/state.js',
-  './assets/js/sounds.js',
-  './assets/js/dashboard.js',
-  './assets/js/map.js',
+  './manifest.json?v=2',
+  './assets/css/variables.css?v=2',
+  './assets/css/base.css?v=2',
+  './assets/css/neomorphism.css?v=2',
+  './assets/css/components.css?v=2',
+  './assets/css/animations.css?v=2',
+  './assets/css/responsive.css?v=2',
+  './assets/js/config.js?v=2',
+  './assets/js/ui.js?v=2',
+  './assets/js/api.js?v=2',
+  './assets/js/auth.js?v=2',
+  './assets/js/state.js?v=2',
+  './assets/js/sounds.js?v=2',
+  './assets/js/push.js?v=2',
+  './assets/js/dashboard.js?v=2',
+  './assets/js/map.js?v=2',
   './assets/icons/logo.jpg'
 ];
 
