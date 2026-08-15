@@ -214,11 +214,19 @@
               <div class="flex-between"><span style="color:var(--text-secondary);">Collection route</span><span id="delivery-route">—</span></div>
               <div class="flex-between" style="border-top:1px solid var(--border-light);padding-top:6px;margin-top:6px;"><strong>Delivery Total</strong><strong id="delivery-total" style="color:var(--primary);">R0.00</strong></div>
             </div>
+            <div style="margin:var(--space-md) 0;">
+              <label class="form-label" style="font-size:13px;">Driver Tip <span style="color:var(--text-muted);font-weight:400;">(optional, % of products)</span></label>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-xs);" id="tip-options"></div>
+              <div id="tip-custom-row" style="display:none;margin-top:var(--space-xs);">
+                <input type="number" id="tip-custom" class="form-control" min="0" max="100" placeholder="Custom %" style="font-size:13px;" oninput="onTipChange()">
+              </div>
+            </div>
             <div style="border-top:1px solid var(--border);margin:var(--space-md) 0;padding-top:var(--space-md);">
               <div class="flex-between"><span>Subtotal</span><span id="cart-subtotal">R0.00</span></div>
+              <div class="flex-between" style="margin-top:6px;"><span>Driver tip</span><span id="cart-tip">R0.00</span></div>
               <div class="flex-between" style="margin-top:6px;"><strong>Total</strong><strong id="cart-total" style="font-size:20px;color:var(--primary);">R0.00</strong></div>
             </div>
-            <button class="btn btn-primary btn-block" onclick="proceedToCheckout()">Place Order</button>
+            <button class="btn btn-primary btn-block" onclick="proceedToCheckout()">Place Order &amp; Pay</button>
           </div>
         </div>
       </section>
@@ -372,6 +380,7 @@
     UI.hidePageLoader();
     UI.staggerReveal(document.body);
     initDeliveryAutocomplete();
+    handlePaymentReturn();
   });
 
   document.querySelectorAll('[data-section]').forEach(a => {
@@ -443,6 +452,42 @@
   let cartItems = [];
   let cartSubtotal = 0;
   let deliveryFee = 0;
+  let tipPercent = 0;
+  const TIP_PRESETS = [0, 5, 10, 15];
+
+  function tipAmount() {
+    return Math.round(cartSubtotal * (tipPercent / 100) * 100) / 100;
+  }
+
+  function recalcTotals() {
+    const tipEl = document.getElementById('cart-tip');
+    if (tipEl) tipEl.textContent = UI.formatCurrency(tipAmount());
+    const totalEl = document.getElementById('cart-total');
+    if (totalEl) totalEl.textContent = UI.formatCurrency(cartSubtotal + deliveryFee + tipAmount());
+  }
+
+  function renderTipOptions() {
+    const wrap = document.getElementById('tip-options');
+    if (!wrap) return;
+    const isPreset = TIP_PRESETS.includes(tipPercent);
+    wrap.innerHTML = TIP_PRESETS.map(p => `
+      <button type="button" class="btn ${p === tipPercent ? 'btn-primary' : 'btn-ghost'}" style="padding:6px;font-size:13px;" onclick="setTip(${p})">${p}%</button>
+    `).join('');
+    document.getElementById('tip-custom-row').style.display = isPreset ? 'none' : 'block';
+    document.getElementById('tip-custom').value = isPreset ? '' : tipPercent;
+  }
+
+  function setTip(p) {
+    tipPercent = p;
+    renderTipOptions();
+    recalcTotals();
+  }
+
+  function onTipChange() {
+    const v = parseFloat(document.getElementById('tip-custom')?.value);
+    tipPercent = Number.isFinite(v) && v >= 0 && v <= 100 ? v : 0;
+    recalcTotals();
+  }
 
   async function loadCart() {
     const el = document.getElementById('cart-items');
@@ -452,13 +497,17 @@
       cartItems = Array.isArray(data) ? data : (data.items || []);
       if (!cartItems.length) {
         el.innerHTML = UI.empty('Cart is Empty','Browse stores to add items!','🛒',`<a href="../index.html" class="btn btn-primary">Shop Now</a>`);
+        tipPercent = 0;
         document.getElementById('cart-total').textContent = 'R0.00';
+        document.getElementById('cart-tip').textContent = 'R0.00';
+        renderTipOptions();
         document.getElementById('delivery-fee-box').style.display = 'none';
         return;
       }
       cartSubtotal = cartItems.reduce((s,i)=>s+parseFloat(i.subtotal!=null?i.subtotal:((i.product?.price||i.price||0)*i.quantity)),0);
       document.getElementById('cart-subtotal').textContent = UI.formatCurrency(cartSubtotal);
-      document.getElementById('cart-total').textContent = UI.formatCurrency(cartSubtotal + deliveryFee);
+      renderTipOptions();
+      recalcTotals();
       el.innerHTML = cartItems.map(item=>`
         <div class="card" style="display:flex;align-items:center;gap:var(--space-md);padding:var(--space-md);margin-bottom:var(--space-sm);">
           <div style="width:72px;height:72px;border-radius:var(--radius-md);background:var(--bg);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
@@ -566,14 +615,14 @@
       document.getElementById('delivery-route').textContent =
         storeCount > 0 ? `${storeCount} store${storeCount !== 1 ? 's' : ''} · ${routeKm.toFixed(1)} km` : '—';
       document.getElementById('delivery-fee-box').style.display = 'block';
-      document.getElementById('cart-total').textContent = UI.formatCurrency(cartSubtotal + deliveryFee);
+      recalcTotals();
       const storeName = preview.nearest_store?.name ? ` (nearest: ${preview.nearest_store.name})` : '';
       status.textContent = `Delivery calculated${storeName}`;
       status.style.color = 'var(--success)';
     } catch (err) {
       deliveryFee = 0;
       document.getElementById('delivery-fee-box').style.display = 'none';
-      document.getElementById('cart-total').textContent = UI.formatCurrency(cartSubtotal);
+      recalcTotals();
       status.textContent = 'Could not calculate delivery';
       status.style.color = 'var(--error)';
     }
@@ -604,10 +653,13 @@
 
     saveCheckoutDetails();
 
+    const tip = tipAmount();
+    const grandTotal = cartSubtotal + deliveryFee + tip;
+
     UI.confirmDialog({
-      title: 'Place Order',
-      message: `Total: ${UI.formatCurrency(cartSubtotal + deliveryFee)}${deliveryFee > 0 ? ' (incl. delivery)' : ''}<br><small style="color:var(--text-muted);">Delivering to ${name} ${surname} · ${phone}</small>`,
-      confirmText: 'Confirm Order',
+      title: 'Place Order & Pay',
+      message: `Total: ${UI.formatCurrency(grandTotal)}${deliveryFee > 0 ? ' (incl. delivery)' : ''}${tip > 0 ? ` · incl. R${tip.toFixed(2)} driver tip` : ''}<br><small style="color:var(--text-muted);">Delivering to ${name} ${surname} · ${phone}. You will pay securely via Yoco.</small>`,
+      confirmText: 'Pay Now',
       onConfirm: async () => {
         try {
           const items = cartItems.map(i => ({ product_id: i.product_id || i.product?.id, quantity: i.quantity, variant: i.variant, options: i.options }));
@@ -616,22 +668,64 @@
             customer_name: name,
             customer_surname: surname,
             customer_phone: phone,
-            customer_email: email
+            customer_email: email,
+            tip_amount: tip,
+            pay: true
           };
           if (shipping_lat && shipping_lng) {
             payload.shipping_lat = shipping_lat;
             payload.shipping_lng = shipping_lng;
             payload.shipping_address = { street: address };
           }
-          await api.orders.create(payload);
+          const resp = await api.orders.create(payload);
+          const orderData = resp?.order || resp;
+          if (orderData?.checkout_url) {
+            sessionStorage.setItem('plexi_pending_order', orderData.id || '');
+            window.location.href = orderData.checkout_url;
+            return;
+          }
           UI.toast('Order placed!', 'success');
           deliveryFee = 0;
+          tipPercent = 0;
           document.getElementById('delivery-fee-box').style.display = 'none';
           loadCart();
           loadOverview();
         } catch (err) { UI.toast(err.message, 'error'); }
       }
     });
+  }
+
+  function handlePaymentReturn() {
+    const outcome = new URLSearchParams(location.search).get('payment');
+    const orderId = sessionStorage.getItem('plexi_pending_order');
+    if (!outcome || !orderId) return;
+    sessionStorage.removeItem('plexi_pending_order');
+
+    if (outcome === 'success') {
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        try {
+          const res = await api.payments.status(orderId);
+          const o = (res && res.order) || res;
+          if (o?.payment_status === 'paid') {
+            clearInterval(poll);
+            UI.toast('Payment confirmed! Your order is on its way.', 'success');
+            loadCart();
+            loadOverview();
+          } else if (attempts >= 15) {
+            clearInterval(poll);
+            UI.toast('Payment received — your order is being confirmed.', 'info');
+          }
+        } catch (_) {
+          if (attempts >= 15) clearInterval(poll);
+        }
+      }, 2000);
+    } else if (outcome === 'cancelled') {
+      UI.toast('Payment cancelled. Your order was not placed.', 'warning');
+    } else {
+      UI.toast('Payment failed. Please try again.', 'error');
+    }
   }
 
   function saveCheckoutDetails() {

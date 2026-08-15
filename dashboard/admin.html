@@ -64,6 +64,8 @@
         <a href="#" data-section="sec-gps"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>GPS Tracker<span class="nav-badge" id="gps-online-nav" style="display:none;">0</span></a>
         <a href="#" data-section="sec-verification"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Verification<span class="nav-badge" id="pending-verify-count" style="display:none;">0</span></a>
         <a href="#" data-section="sec-banking"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Banking</a>
+        <a href="#" data-section="sec-rates"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4z"/></svg>Rates &amp; Fees</a>
+        <a href="#" data-section="sec-transactions"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Transactions</a>
         <a href="#" data-section="sec-driver-compliance"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>Driver KYC<span class="nav-badge" id="pending-driver-kyc-count" style="display:none;">0</span></a>
         <a href="#" data-section="sec-driver-payroll"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Driver Payroll</a>
       </div>
@@ -419,6 +421,96 @@
         </div>
       </div>
 
+      <!-- RATES & FEES -->
+      <div id="sec-rates" class="dash-section">
+        <div class="section-header mb-lg">
+          <h2 class="section-title">Rates &amp; <span>Fees</span></h2>
+          <button class="btn btn-primary btn-sm" onclick="savePlatformSettings()">Save Changes</button>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h4>Delivery Fees</h4></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Base delivery fee (R)</label>
+                <input type="number" step="0.01" min="0" class="form-control" id="set-delivery-base" oninput="settingsDirty()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Per kilometre (R)</label>
+                <input type="number" step="0.01" min="0" class="form-control" id="set-delivery-perkm" oninput="settingsDirty()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Per store on route (R)</label>
+                <input type="number" step="0.01" min="0" class="form-control" id="set-delivery-perstore" oninput="settingsDirty()">
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h4>Platform Commissions</h4></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Delivery commission (%)</label>
+                <input type="number" step="1" min="0" max="100" class="form-control" id="set-commission-delivery" oninput="settingsDirty()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Seller commission — Free plan (%)</label>
+                <input type="number" step="1" min="0" max="100" class="form-control" id="set-commission-free" oninput="settingsDirty()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Seller commission — Business plan (%)</label>
+                <input type="number" step="1" min="0" max="100" class="form-control" id="set-commission-business" oninput="settingsDirty()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Seller commission — Enterprise plan (%)</label>
+                <input type="number" step="1" min="0" max="100" class="form-control" id="set-commission-enterprise" oninput="settingsDirty()">
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h4>Subscription Pricing (R/month)</h4></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Business plan</label>
+                <input type="number" step="0.01" min="0" class="form-control" id="set-sub-business" oninput="settingsDirty()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Enterprise plan</label>
+                <input type="number" step="0.01" min="0" class="form-control" id="set-sub-enterprise" oninput="settingsDirty()">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRANSACTIONS -->
+      <div id="sec-transactions" class="dash-section">
+        <div class="section-header mb-lg">
+          <h2 class="section-title">Payment <span>Transactions</span></h2>
+          <div style="display:flex;gap:var(--space-sm);">
+            <select id="tx-status-filter" class="form-control" style="width:150px;" onchange="loadAdminTransactions()">
+              <option value="">All Status</option>
+              <option value="succeeded">Succeeded</option>
+              <option value="failed">Failed</option>
+              <option value="pending">Pending</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="loadAdminTransactions()">Refresh</button>
+          </div>
+        </div>
+        <div class="stats-grid" id="tx-summary" style="margin-bottom:var(--space-lg);"></div>
+        <div class="card">
+          <div class="table-wrap" style="border:none;border-radius:0;">
+            <table>
+              <thead><tr>
+                <th>Date</th><th>Order</th><th>Customer</th><th>Amount</th><th>Method</th>
+                <th>Status</th><th>Commission</th><th>Payment ID</th>
+              </tr></thead>
+              <tbody id="transactions-tbody"></tbody>
+            </table>
+          </div>
+          <div class="card-footer"><div id="transactions-pagination"></div></div>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -446,7 +538,7 @@ function gotoSection(id){Dashboard.showSection(id);document.querySelectorAll('.s
 
 document.addEventListener('DOMContentLoaded', async()=>{
   Dashboard.init(); UI.hidePageLoader(); document.getElementById('sidebar-toggle').style.display='flex';
-  document.querySelectorAll('[data-section]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();gotoSection(a.dataset.section);if(a.dataset.section==='sec-map')MallMap.render();if(a.dataset.section==='sec-alerts')loadRecentAlerts();if(a.dataset.section==='sec-subscriptions')loadSubscriptions(1);if(a.dataset.section==='sec-gps')loadGPSData();if(a.dataset.section==='sec-reports')loadAdminReport();if(a.dataset.section==='sec-verification')loadVerifyApps();if(a.dataset.section==='sec-banking')loadBankingList();if(a.dataset.section==='sec-driver-compliance')loadDriverCompliance();if(a.dataset.section==='sec-driver-payroll'){initPayrollDates();loadDriverPayments();}if(a.dataset.section==='sec-categories')loadCategories(); });});
+  document.querySelectorAll('[data-section]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();gotoSection(a.dataset.section);if(a.dataset.section==='sec-map')MallMap.render();if(a.dataset.section==='sec-alerts')loadRecentAlerts();if(a.dataset.section==='sec-subscriptions')loadSubscriptions(1);if(a.dataset.section==='sec-gps')loadGPSData();if(a.dataset.section==='sec-reports')loadAdminReport();if(a.dataset.section==='sec-verification')loadVerifyApps();if(a.dataset.section==='sec-banking')loadBankingList();if(a.dataset.section==='sec-driver-compliance')loadDriverCompliance();if(a.dataset.section==='sec-driver-payroll'){initPayrollDates();loadDriverPayments();}if(a.dataset.section==='sec-categories')loadCategories();if(a.dataset.section==='sec-rates')loadPlatformSettings();if(a.dataset.section==='sec-transactions')loadAdminTransactions(); });});
   await loadAdminStats(); loadPendingStores(); loadRecentUsers();
   loadUsers(1); loadAdminStores(1); loadAdminOrders(1); loadAdminProducts(1); loadTickets(1);
   MallMap.init(document.getElementById('admin-map'));
@@ -1009,6 +1101,90 @@ async function loadSubscriptions(page=1){
 
 async function updateSubPlan(userId,plan){
   try{await api.admin.updateSubscription(userId,plan);UI.toast('Subscription updated!','success');loadSubscriptions(1);}catch(e){UI.toast(e.message,'error');}
+}
+
+// ---- PLATFORM RATES & FEES ---- //
+const SETTINGS_FIELD_MAP = {
+  'set-delivery-base':        'delivery.base_fee',
+  'set-delivery-perkm':       'delivery.per_km_fee',
+  'set-delivery-perstore':    'delivery.per_store_fee',
+  'set-commission-delivery':  'commission.delivery_percent',
+  'set-commission-free':      'commission.seller_free_percent',
+  'set-commission-business':  'commission.seller_business_percent',
+  'set-commission-enterprise':'commission.seller_enterprise_percent',
+  'set-sub-business':         'subscription.business_price',
+  'set-sub-enterprise':       'subscription.enterprise_price'
+};
+
+async function loadPlatformSettings(){
+  try{
+    const s=await api.admin.getSettings();
+    Object.entries(SETTINGS_FIELD_MAP).forEach(([elId,key])=>{
+      const el=document.getElementById(elId);
+      if(el) el.value=s[key];
+    });
+  }catch(e){UI.toast(e.message,'error');}
+}
+
+function settingsDirty(){
+  const btn=document.querySelector('#sec-rates .section-header .btn');
+  if(btn)btn.style.animation='none';
+}
+
+async function savePlatformSettings(){
+  const updates={};
+  Object.entries(SETTINGS_FIELD_MAP).forEach(([elId,key])=>{
+    const el=document.getElementById(elId);
+    if(el&&el.value!=='') updates[key]=parseFloat(el.value);
+  });
+  if(!Object.keys(updates).length){UI.toast('Nothing to save','warning');return;}
+  try{
+    await api.admin.updateSettings(updates);
+    UI.toast('Rates & fees updated','success');
+  }catch(e){UI.toast(e.message,'error');}
+}
+
+// ---- PAYMENT TRANSACTIONS ---- //
+let txPage=1;
+async function loadAdminTransactions(page=1){
+  txPage=page;
+  const status=document.getElementById('tx-status-filter')?.value||'';
+  const tbody=document.getElementById('transactions-tbody');
+  if(!tbody)return;
+  try{
+    const d=await api.admin.transactions({status,limit:15,offset:(page-1)*15});
+    const rows=Array.isArray(d)?d:(d.transactions||[]);
+    const tot=d.total||rows.length;
+    Dashboard.renderTable(tbody,rows.map(t=>{
+      const statusColor={succeeded:'success',failed:'error',pending:'warning',refunded:'secondary'}[t.status]||'secondary';
+      const method=(t.payment_method||'—').replace('_',' ');
+      return `<tr>
+        <td style="white-space:nowrap;">${new Date(t.created_at).toLocaleString()}</td>
+        <td>${t.order_id?t.order_id.slice(0,8):'—'}</td>
+        <td>${t.order?.customer_name||t.user_id?.slice(0,8)||'—'}</td>
+        <td style="font-weight:700;">${UI.formatCurrency(t.amount)}</td>
+        <td>${method}</td>
+        <td>${UI.badge(t.status,statusColor)}</td>
+        <td>${t.commission?.total!=null?UI.formatCurrency(t.commission.total):'—'}</td>
+        <td style="font-size:11px;color:var(--text-muted);">${t.yoco_payment_id||'—'}</td>
+      </tr>`;
+    }),'No transactions yet');
+    Dashboard.renderPagination('transactions-pagination',page,Math.ceil(tot/15),`(p)=>loadAdminTransactions(p)`);
+    loadTxSummary();
+  }catch(e){UI.toast(e.message,'error');}
+}
+
+async function loadTxSummary(){
+  const el=document.getElementById('tx-summary');
+  if(!el)return;
+  try{
+    const s=await api.admin.transactionsSummary();
+    el.innerHTML=`
+      <div class="stat-card"><div class="stat-icon" style="background:var(--primary-alpha);color:var(--primary);">✅</div><div><div class="stat-value">${s.succeeded||0}</div><div class="stat-label">Succeeded</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:var(--success-alpha, rgba(34,197,94,.12));color:var(--success);">R</div><div><div class="stat-value">${UI.formatCurrency(s.total_revenue||0)}</div><div class="stat-label">Total Revenue</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:var(--warning-alpha, rgba(234,179,8,.12));color:var(--warning);">%</div><div><div class="stat-value">${UI.formatCurrency(s.total_commission||0)}</div><div class="stat-label">Total Commission</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:var(--error-alpha, rgba(239,68,68,.12));color:var(--error);">✗</div><div><div class="stat-value">${s.failed||0}</div><div class="stat-label">Failed</div></div></div>`;
+  }catch(_){}
 }
 
 let gpsMap = null;

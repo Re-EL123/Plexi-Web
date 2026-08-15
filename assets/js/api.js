@@ -141,6 +141,14 @@ const api = (() => {
     report: (params = {})  => get(`/orders?action=report&${new URLSearchParams(params)}`),
   };
 
+  // ======== PAYMENTS (Yoco) ======== //
+  const payments = {
+    status:       (orderId)     => get(`/payments?action=status&order_id=${orderId}`),
+    retry:        (orderId)     => get(`/payments?action=create-checkout&order_id=${orderId}`),
+    webhook:      (data)        => post('/payments?action=webhook', data),
+    transactions: (params = {}) => get(`/payments?action=transactions&${new URLSearchParams(params)}`),
+  };
+
   // ======== CART ======== //
   const cart = {
     get:    ()           => get('/cart'),
@@ -210,6 +218,10 @@ const api = (() => {
     createCategory: (name)     => post('/admin?action=create-category', { name }),
     updateCategory: (categoryId, name) => put(`/admin?action=update-category&category_id=${categoryId}`, { name }),
     deleteCategory: (categoryId) => del(`/admin?action=delete-category&category_id=${categoryId}`),
+    getSettings:      ()       => get('/admin?action=settings'),
+    updateSettings:   (updates) => put('/admin?action=settings-update', { updates }),
+    transactions:     (params={}) => get(`/admin?action=transactions&${new URLSearchParams(params)}`),
+    transactionsSummary: ()   => get('/admin?action=transactions-summary'),
   };
 
   // ======== DRIVER COMPLIANCE (KYC) ======== //
@@ -343,7 +355,7 @@ const api = (() => {
     }
   };
 
-  return { auth, users, stores, products, orders, cart, reviews,
+  return { auth, users, stores, products, orders, payments, cart, reviews,
            notifications, support, subscriptions, admin, map, geocode, delivery, wishlist, upload, banking, verification, driverCompliance, driverPayments };
 })();
 

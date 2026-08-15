@@ -1669,7 +1669,20 @@
     { id: 'tab-tags',        icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>', label: 'Tags' }
   ];
 
-  function openAddProductModal(pd) { productEditData = pd;
+  async function openAddProductModal(pd) {
+    if (!pd) {
+      // Banking gate: sellers must have bank details on file before adding products.
+      try {
+        const bank = await api.banking.get();
+        if (!bank || !bank.id) {
+          UI.toast('Add your banking details first — required before listing products.', 'warning');
+          Dashboard.showSection('section-banking');
+          loadBankingDetails();
+          return;
+        }
+      } catch (_) {}
+    }
+    productEditData = pd;
     productOptionsData = pd?.options ? JSON.parse(JSON.stringify(pd.options)) : [];
     productVariantsData = (pd?.variants || []).map(v => ({
       name: v.name || '',
