@@ -238,13 +238,13 @@ const api = (() => {
     summary:  (params={}) => get(`/admin?action=driver-earnings-summary&${new URLSearchParams(params)}`),
   };
 
-  // ======== MAP ======== //
+  // ======== MAP (served by /api/stores with map-* actions) ======== //
   const map = {
-    stores:  (params = {})  => get(`/map?action=stores&${new URLSearchParams(params)}`),
-    update:  (storeId, coords) => put(`/map?action=update&store_id=${storeId}`, { coordinates: coords }),
-    heartbeat: (storeId)    => post('/map?action=heartbeat', { store_id: storeId }),
-    onlineStatus: (ids)     => get(`/map?action=online-status&store_ids=${ids.join(',')}`),
-    storeLocations: ()      => get('/map?action=store-locations'),
+    stores:  (params = {})  => get(`/stores?action=map-stores&${new URLSearchParams(params)}`),
+    update:  (storeId, coords) => put(`/stores?action=map-update&store_id=${storeId}`, { coordinates: coords }),
+    heartbeat: (storeId)    => post('/stores?action=map-heartbeat', { store_id: storeId }),
+    onlineStatus: (ids)     => get(`/stores?action=map-online-status&store_ids=${ids.join(',')}`),
+    storeLocations: ()      => get('/stores?action=map-store-locations'),
   };
 
   // ======== GEOCODE ======== //
