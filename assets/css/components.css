@@ -641,6 +641,41 @@ select.form-control {
 }
 
 /* ============================================================
+   BREADCRUMBS
+   ============================================================ */
+.breadcrumb { padding: 0 0 var(--space-md); }
+.breadcrumb ol {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.breadcrumb li {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.breadcrumb li + li::before {
+  content: '/';
+  margin: 0 8px;
+  color: var(--border);
+  user-select: none;
+}
+.breadcrumb a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.breadcrumb a:hover { color: var(--primary); text-decoration: underline; }
+.breadcrumb li[aria-current="page"] { color: var(--text-primary); font-weight: 600; }
+
+/* Programmatic focus target after section switches */
+.dash-section:focus { outline: none; }
+
+/* ============================================================
    STARS / RATINGS
    ============================================================ */
 .stars { display: inline-flex; gap: 2px; color: var(--secondary); }

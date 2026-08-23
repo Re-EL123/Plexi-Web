@@ -85,6 +85,76 @@ const Dashboard = (() => {
   }
 
   // ======== PAGE SECTIONS ======== //
+  let currentSectionId = null;
+  const baseTitle = document.title;
+
+  function sectionLabel(id) {
+    const nav = document.querySelector(`[data-section="${id}"]`);
+    if (nav) {
+      // Clone and strip count badges (e.g. cart/notification counters)
+      const clone = nav.cloneNode(true);
+      clone.querySelectorAll('.nav-badge, .badge, span[id]').forEach(el => el.remove());
+      return clone.textContent.trim().replace(/\s+/g, ' ');
+    }
+    return id.replace(/^s(ec|ection)-/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  function isSectionId(id) {
+    return !!id && !!document.getElementById(id)?.classList.contains('dash-section');
+  }
+
+  function ensureBreadcrumb() {
+    let bc = document.getElementById('dash-breadcrumb');
+    if (bc) return bc;
+    const content = document.querySelector('.page-content') || document.querySelector('main');
+    if (!content) return null;
+    content.insertAdjacentHTML('afterbegin', '<nav class="breadcrumb" id="dash-breadcrumb" aria-label="Breadcrumb"><ol></ol></nav>');
+    return document.getElementById('dash-breadcrumb');
+  }
+
+  function renderBreadcrumb(id) {
+    const host = ensureBreadcrumb();
+    if (!host) return;
+    const ol = host.querySelector('ol');
+    const role = Auth.getRole();
+    const rootLabel = role ? role.charAt(0).toUpperCase() + role.slice(1) + ' Dashboard' : 'Dashboard';
+    if (isDefaultSection(id)) {
+      // Overview: Home / <Role> Dashboard (current)
+      ol.innerHTML = `
+        <li><a href="../index.html">Home</a></li>
+        <li aria-current="page">${rootLabel}</li>`;
+    } else {
+      ol.innerHTML = `
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="${location.pathname}" data-breadcrumb-root>${rootLabel}</a></li>
+        <li aria-current="page">${sectionLabel(id)}</li>`;
+    }
+  }
+
+  let defaultSectionId = null;
+  function getDefaultSectionId() {
+    if (!defaultSectionId) {
+      // Captured from the server-rendered markup before any navigation.
+      defaultSectionId = document.querySelector('[data-section].active')?.dataset.section
+        || document.querySelector('.dash-section')?.id;
+    }
+    return defaultSectionId;
+  }
+
+  function isDefaultSection(id) {
+    return !!id && id === getDefaultSectionId();
+  }
+
+  function applySectionChrome(id) {
+    currentSectionId = id;
+    const label = sectionLabel(id);
+    const tt = document.getElementById('topbar-title');
+    if (tt && label) tt.textContent = label;
+    document.title = `${label} · ${baseTitle.split('—').pop().trim()}`;
+    try { history.replaceState(null, '', '#' + id); } catch (_) {}
+    renderBreadcrumb(id);
+  }
+
   function showSection(id) {
     closeDashboardSearch();
     document.querySelectorAll('.dash-section').forEach(el => {
@@ -98,11 +168,25 @@ const Dashboard = (() => {
       target.classList.remove('animate-fadeIn');
       void target.offsetWidth; // force reflow
       target.classList.add('animate-fadeIn');
+      target.focus({ preventScroll: true });
     }
     document.querySelectorAll('[data-section]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.section === id);
+      const isActive = btn.dataset.section === id;
+      btn.classList.toggle('active', isActive);
+      if (isActive) btn.setAttribute('aria-current', 'page');
+      else btn.removeAttribute('aria-current');
     });
+    applySectionChrome(id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function activateSection(id) {
+    if (!isSectionId(id)) return false;
+    const nav = document.querySelector(`[data-section="${id}"]`);
+    if (nav && !isDefaultSection(id)) { nav.click(); return true; }
+    if (nav) { showSection(id); return true; }   // overview: skip redundant loader click
+    showSection(id);
+    return true;
   }
 
   // ======== DATA TABLES ======== //
@@ -287,6 +371,27 @@ const Dashboard = (() => {
     // Section nav
     document.querySelectorAll('[data-section]').forEach(btn => {
       btn.addEventListener('click', () => showSection(btn.dataset.section));
+    });
+
+    // Keyboard focus target for section switches (a11y)
+    document.querySelectorAll('.dash-section').forEach(el => {
+      if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
+    });
+
+    // Restore last section after refresh / deep-link (#section-id, #sec-id)
+    const requested = location.hash.slice(1);
+    if (isSectionId(requested)) {
+      activateSection(requested);
+    } else if (requested) {
+      try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {}
+    }
+    if (!currentSectionId) applySectionChrome(document.querySelector('[data-section].active')?.dataset.section
+      || document.querySelector('.dash-section')?.id);
+
+    // Browser back/forward and manual hash edits navigate sections too
+    window.addEventListener('hashchange', () => {
+      const id = location.hash.slice(1);
+      if (id && id !== currentSectionId && isSectionId(id)) activateSection(id);
     });
 
     // Logout buttons
