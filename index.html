@@ -264,7 +264,7 @@
 <script src="assets/js/config.js?v=2"></script>
 <script src="assets/js/sounds.js?v=2"></script>
 <script src="assets/js/push.js?v=2"></script>
-<script src="assets/js/ui.js?v=2"></script>
+<script src="assets/js/ui.js?v=3"></script>
 <script src="assets/js/api.js?v=2"></script>
 <script src="assets/js/auth.js?v=2"></script>
 <script src="assets/js/state.js?v=2"></script>
@@ -464,7 +464,7 @@ grid.innerHTML=products.map(p=>`
     e.preventDefault();e.stopPropagation();
     if(!Auth.isLoggedIn()){UI.toast('Sign in to add to cart','info');setTimeout(()=>location.href='login.html',800);return;}
     UI.setLoading(btn,true);
-    try{await api.cart.add({product_id:pid,quantity:1});UI.toast('Added to cart 🛒','success');}
+    try{await UI.addToCartModal(pid,{loginPath:'login.html'});}
     catch(err){UI.toast(err.message||'Error','error');}
     finally{UI.setLoading(btn,false,'Add to Cart');}
   }

@@ -152,6 +152,231 @@ const UI = (() => {
     });
   }
 
+  // ======== ADD TO CART — VARIANT/OPTION PICKER MODAL ======== //
+  // Shared quick-add used by index, store, product and dashboards.
+  // Opens a chooser whenever the product has variants or options.
+  async function addToCartModal(productRef, { loginPath = 'login.html' } = {}) {
+    if (!Auth.isLoggedIn()) {
+      toast('Please login to add to cart', 'warning');
+      setTimeout(() => location.href = loginPath, 800);
+      return;
+    }
+    let p = productRef;
+    if (typeof productRef === 'string') {
+      try {
+        const res = await api.products.get(productRef);
+        p = res?.product || res?.body?.product || res;
+      } catch (err) { toast(err.message || 'Could not load product', 'error'); return; }
+    }
+    if (!p || !p.id) { toast('Product not found', 'error'); return; }
+    if (p.sold_out || Number(p.inventory) === 0) { toast('This item is sold out', 'warning'); return; }
+
+    const groups = (Array.isArray(p.variants) ? p.variants : [])
+      .filter(g => g && ((g.values || []).length || (g.options || []).length));
+    const options = (Array.isArray(p.options) ? p.options : [])
+      .filter(o => o.name && Array.isArray(o.values) && o.values.length);
+
+    const finish = async () => {
+      toast(`Added ${state.qty} × ${p.name} to cart! 🛒`, 'success');
+      closeModal('add-to-cart-modal');
+      if (window.Dashboard?.loadCartCount) Dashboard.loadCartCount();
+    };
+
+    // Fast path — nothing to choose, add straight away
+    if (!groups.length && !options.length) {
+      try {
+        await api.cart.add({ product_id: p.id, quantity: 1 });
+        await finish();
+      } catch (err) { toast(err.message || 'Failed to add to cart', 'error'); }
+      return;
+    }
+
+    const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const groupVals = g => (g.values && g.values.length ? g.values : g.options) || [];
+    const valText = v => (v && typeof v === 'object') ? v.value : v;
+    const valPrice = v => (v && typeof v === 'object' && v.price != null) ? Number(v.price) : null;
+    const groupName = (g, i) => (g.name && g.name.trim()) || `Option ${i + 1}`;
+
+    const state = { qty: 1, variants: {}, opts: {} };
+    // Preselect the first value of every variant group
+    groups.forEach((g, gi) => { state.variants[gi] = valText(groupVals(g)[0]); });
+
+    function currentPrice() {
+      let price = null;
+      Object.keys(state.variants).forEach(gi => {
+        const match = groupVals(groups[gi]).find(v => valText(v) === state.variants[gi]);
+        const vp = valPrice(match);
+        if (vp != null && price == null) price = vp;
+      });
+      return price ?? Number(p.price);
+    }
+
+    function refresh() {
+      const priceEl = document.getElementById('acm-price');
+      if (priceEl) priceEl.textContent = formatCurrency(currentPrice());
+      const qtyEl = document.getElementById('acm-qty');
+      if (qtyEl) qtyEl.textContent = state.qty;
+      const sum = document.getElementById('acm-summary');
+      if (sum) {
+        const parts = Object.keys(state.variants)
+          .map(gi => `${groupName(groups[gi], +gi)}: ${state.variants[gi]}`);
+        Object.keys(state.opts).forEach(n => {
+          const v = state.opts[n];
+          if (Array.isArray(v) ? v.length : v !== '' && v != null) parts.push(`${n}: ${Array.isArray(v) ? v.join(', ') : v}`);
+        });
+        sum.textContent = parts.join(' · ');
+      }
+    }
+
+    const maxQty = Math.min(Number(p.inventory) || 99, 99);
+
+    const content = `
+      <div style="display:flex;gap:var(--space-md);margin-bottom:var(--space-md);">
+        <div style="width:72px;height:72px;border-radius:var(--radius-md);background:var(--bg-alt);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+          ${p.images?.[0] ? `<img src="${esc(p.images[0])}" style="width:100%;height:100%;object-fit:cover;">` : '<span style="font-size:30px;">🛍️</span>'}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;">${esc(p.name)}</div>
+          <div id="acm-summary" style="font-size:12px;color:var(--text-muted);margin-top:2px;"></div>
+          <div style="font-size:18px;font-weight:800;color:var(--primary);margin-top:4px;" id="acm-price">${formatCurrency(p.price)}</div>
+        </div>
+      </div>
+
+      ${groups.map((g, gi) => `
+        <div style="margin-bottom:var(--space-sm);">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:6px;">${esc(groupName(g, gi))}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:var(--space-xs);">
+            ${groupVals(g).map(v => {
+              const t = valText(v);
+              const extra = valPrice(v);
+              return `<button type="button" class="btn btn-ghost acm-var" data-g="${gi}" data-v="${esc(t)}" style="padding:6px 12px;font-size:13px;">
+                ${esc(t)}${extra != null ? ` · ${formatCurrency(extra)}` : ''}
+              </button>`;
+            }).join('')}
+          </div>
+        </div>`).join('')}
+
+      ${options.map(opt => {
+        const vals = opt.values || [];
+        const head = `<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:6px;">
+          ${esc(opt.name)}${opt.required ? ' <span style="color:var(--error);">*</span>' : ''}</div>`;
+        const ctl = name => `data-opt-name="${esc(name)}"`;
+        if (opt.type === 'radio') {
+          return `<div style="margin-bottom:var(--space-sm);">${head}
+            <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">${vals.map(v => `
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 10px;border:1px solid var(--border-light);border-radius:var(--radius-sm);background:var(--surface);font-size:13px;">
+                <input type="radio" name="acm-opt-${esc(opt.name)}" ${ctl(opt.name)} value="${esc(v)}" style="accent-color:var(--primary);">${esc(v)}
+              </label>`).join('')}</div></div>`;
+        }
+        if (opt.type === 'checkbox' || opt.type === 'multiselect') {
+          return `<div style="margin-bottom:var(--space-sm);">${head}
+            <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">${vals.map(v => `
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 10px;border:1px solid var(--border-light);border-radius:var(--radius-sm);background:var(--surface);font-size:13px;">
+                <input type="checkbox" ${ctl(opt.name)} value="${esc(v)}" style="accent-color:var(--primary);">${esc(v)}
+              </label>`).join('')}</div></div>`;
+        }
+        return `<div style="margin-bottom:var(--space-sm);">${head}
+          <select class="form-control" style="max-width:280px;" ${ctl(opt.name)}>
+            <option value="">${opt.required ? 'Select…' : 'None'}</option>
+            ${vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('')}
+          </select></div>`;
+      }).join('')}
+
+      <div style="display:flex;align-items:center;gap:var(--space-sm);margin-top:var(--space-md);">
+        <span style="font-size:13px;font-weight:600;">Quantity</span>
+        <button type="button" class="btn btn-ghost btn-icon-sm" id="acm-minus">−</button>
+        <span id="acm-qty" style="font-weight:700;min-width:24px;text-align:center;">1</span>
+        <button type="button" class="btn btn-ghost btn-icon-sm" id="acm-plus">+</button>
+        <span style="font-size:11px;color:var(--text-muted);">(max ${maxQty})</span>
+      </div>
+    `;
+
+    createModal({
+      id: 'add-to-cart-modal',
+      title: 'Choose options',
+      content,
+      footer: `
+        <button class="btn btn-ghost" onclick="UI.closeModal('add-to-cart-modal')">Cancel</button>
+        <button class="btn btn-primary" id="acm-add">Add to Cart</button>`
+    });
+
+    const root = document.getElementById('add-to-cart-modal');
+
+    // Variant pills
+    root.querySelectorAll('.acm-var').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const gi = btn.dataset.g;
+        state.variants[gi] = btn.dataset.v;
+        btn.closest('div').querySelectorAll('.acm-var').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        refresh();
+      });
+    });
+
+    // Options
+    root.querySelectorAll('[data-opt-name]').forEach(input => {
+      input.addEventListener('change', () => {
+        const name = input.dataset.optName;
+        const opt = options.find(o => o.name === name);
+        if (opt && (opt.type === 'checkbox' || opt.type === 'multiselect')) {
+          const checked = [...root.querySelectorAll(`[data-opt-name="${CSS.escape(name)}"]:checked`)].map(i => i.value);
+          state.opts[name] = checked;
+        } else {
+          state.opts[name] = input.value;
+        }
+        refresh();
+      });
+    });
+
+    // Quantity
+    document.getElementById('acm-minus').addEventListener('click', () => { state.qty = Math.max(1, state.qty - 1); refresh(); });
+    document.getElementById('acm-plus').addEventListener('click', () => { state.qty = Math.min(maxQty, state.qty + 1); refresh(); });
+
+    // Confirm
+    document.getElementById('acm-add').addEventListener('click', async () => {
+      for (const opt of options) {
+        if (!opt.required) continue;
+        const v = state.opts[opt.name];
+        if (v === undefined || v === '' || (Array.isArray(v) && !v.length)) {
+          toast(`Please select "${opt.name}"`, 'warning');
+          return;
+        }
+      }
+      const btn = document.getElementById('acm-add');
+      setLoading(btn, true, 'Adding…');
+      try {
+        const sel = {};
+        Object.keys(state.variants).forEach(gi => { sel[groupName(groups[+gi], +gi)] = state.variants[gi]; });
+        const summary = Object.keys(sel).map(n => `${n}: ${sel[n]}`).join(', ');
+        const clean = {};
+        Object.keys(state.opts).forEach(n => {
+          const v = state.opts[n];
+          if (Array.isArray(v) ? v.length : v !== '' && v != null) clean[n] = v;
+        });
+        if (Object.keys(sel).length) clean.__variants = sel;
+        await api.cart.add({
+          product_id: p.id,
+          quantity: state.qty,
+          variant: summary || undefined,
+          options: Object.keys(clean).length ? clean : undefined
+        });
+        await finish();
+      } catch (err) {
+        toast(err.message || 'Failed to add to cart', 'error');
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+
+    // Highlight preselected pills once mounted
+    setTimeout(() => {
+      root.querySelectorAll('.acm-var').forEach(b => {
+        if (state.variants[b.dataset.g] === b.dataset.v) b.classList.add('active');
+      });
+      refresh();
+    }, 30);
+  }
+
   // ======== LOADING ======== //
   function setLoading(btn, loading, text = '') {
     if (!btn) return;
@@ -546,7 +771,7 @@ const UI = (() => {
   }
 
   return {
-    toast, openModal, closeModal, createModal, confirmDialog,
+    toast, openModal, closeModal, createModal, confirmDialog, addToCartModal,
     setLoading, showPageLoader, hidePageLoader,
     formatCurrency, formatDate, formatDateTime, timeAgo,
     badge, statusBadge, stars, avatar, skeleton, skeletonTable, skeletonGrid, skeletonList,
