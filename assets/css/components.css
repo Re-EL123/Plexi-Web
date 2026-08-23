@@ -605,6 +605,9 @@ select.form-control {
 .modal {
   width: 100%;
   max-width: 480px;
+  max-height: calc(100vh - 2 * var(--space-md));
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   border-radius: var(--radius-xl);
   box-shadow: var(--neo-shadow-lg);
@@ -618,6 +621,7 @@ select.form-control {
   justify-content: space-between;
   padding: var(--space-lg);
   border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
 }
 .modal-title { font-size: 18px; }
 .modal-close {
@@ -626,13 +630,14 @@ select.form-control {
   border-radius: var(--radius-sm); transition: color 0.2s, background 0.2s;
 }
 .modal-close:hover { color: var(--text-primary); background: var(--surface-2); }
-.modal-body { padding: var(--space-lg); }
+.modal-body { padding: var(--space-lg); overflow-y: auto; flex: 1; min-height: 0; }
 .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-sm);
   padding: var(--space-md) var(--space-lg);
   border-top: 1px solid var(--border-light);
+  flex-shrink: 0;
 }
 
 /* ============================================================
