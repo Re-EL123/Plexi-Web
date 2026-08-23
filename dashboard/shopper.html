@@ -186,56 +186,18 @@
           <div class="neo-card" id="cart-summary" style="position:sticky;top:calc(var(--header-h) + var(--space-md));">
             <h4 style="margin-bottom:var(--space-md);">Order Summary</h4>
             <div id="cart-summary-lines"></div>
-            <div style="margin:var(--space-md) 0;padding:var(--space-sm) 0;border-top:1px solid var(--border-light);">
-              <label class="form-label" style="font-size:13px;font-weight:700;">Your Details</label>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);">
-                <div class="form-group" style="margin:0;">
-                  <input type="text" id="cust-name" class="form-control" placeholder="First name" style="font-size:13px;" oninput="saveCheckoutDetails()">
-                </div>
-                <div class="form-group" style="margin:0;">
-                  <input type="text" id="cust-surname" class="form-control" placeholder="Surname" style="font-size:13px;" oninput="saveCheckoutDetails()">
-                </div>
-              </div>
-              <div class="form-group" style="margin:var(--space-sm) 0 0;">
-                <input type="tel" id="cust-phone" class="form-control" placeholder="Cellphone number" style="font-size:13px;" oninput="saveCheckoutDetails()">
-              </div>
-              <div class="form-group" style="margin:var(--space-sm) 0 0;">
-                <input type="email" id="cust-email" class="form-control" placeholder="Email address" style="font-size:13px;" oninput="saveCheckoutDetails()">
-              </div>
-            </div>
-            <div style="margin:var(--space-md) 0;">
-              <label class="form-label" style="font-size:13px;">Delivery Address</label>
-              <div class="address-autocomplete" id="delivery-address-ac" style="position:relative;">
-                <input type="text" id="delivery-address" class="form-control" placeholder="Start typing your address…" style="font-size:13px;" autocomplete="off" oninput="saveCheckoutDetails()">
-                <div id="delivery-address-suggestions" class="address-suggestions" style="display:none;"></div>
-              </div>
-              <div id="delivery-status" style="font-size:11px;margin-top:4px;color:var(--text-muted);"></div>
-            </div>
-            <div id="delivery-fee-box" style="display:none;padding:var(--space-sm);background:var(--primary-alpha);border-radius:var(--radius-sm);margin-bottom:var(--space-md);font-size:13px;">
-              <div class="flex-between"><span style="color:var(--text-secondary);">Base delivery</span><span id="delivery-base">R0.00</span></div>
-              <div class="flex-between"><span style="color:var(--text-secondary);">Distance fee</span><span id="delivery-dist">R0.00</span></div>
-              <div class="flex-between"><span style="color:var(--text-secondary);">Collection route</span><span id="delivery-route">—</span></div>
-              <div class="flex-between" style="border-top:1px solid var(--border-light);padding-top:6px;margin-top:6px;"><strong>Delivery Total</strong><strong id="delivery-total" style="color:var(--primary);">R0.00</strong></div>
-            </div>
-            <div style="margin:var(--space-md) 0;">
-              <label class="form-label" style="font-size:13px;">Driver Tip <span style="color:var(--text-muted);font-weight:400;">(optional, % of products)</span></label>
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-xs);" id="tip-options"></div>
-              <div id="tip-custom-row" style="display:none;margin-top:var(--space-xs);">
-                <input type="number" id="tip-custom" class="form-control" min="0" max="100" placeholder="Custom %" style="font-size:13px;" oninput="onTipChange()">
-              </div>
-            </div>
             <div style="border-top:1px solid var(--border);margin:var(--space-md) 0;padding-top:var(--space-md);">
               <div style="display:flex;gap:var(--space-xs);margin-bottom:var(--space-sm);">
                 <input type="text" id="coupon-code" class="form-control" placeholder="Coupon code" style="font-size:13px;text-transform:uppercase;" oninput="onCouponInput()">
                 <button type="button" id="coupon-apply-btn" class="btn btn-primary btn-sm" onclick="applyCoupon()">Apply</button>
               </div>
               <div id="coupon-status" style="display:none;font-size:12px;margin-bottom:var(--space-sm);"></div>
-              <div class="flex-between"><span>Subtotal</span><span id="cart-subtotal">R0.00</span></div>
+              <div class="flex-between"><span>Products subtotal</span><span id="cart-subtotal">R0.00</span></div>
               <div class="flex-between" id="cart-discount-row" style="display:none;margin-top:6px;"><span style="color:var(--success);">Discount</span><span id="cart-discount" style="color:var(--success);">−R0.00</span></div>
-              <div class="flex-between" style="margin-top:6px;"><span>Driver tip</span><span id="cart-tip">R0.00</span></div>
-              <div class="flex-between" style="margin-top:6px;"><strong>Total</strong><strong id="cart-total" style="font-size:20px;color:var(--primary);">R0.00</strong></div>
+              <div class="flex-between" style="margin-top:6px;"><strong>Total before delivery</strong><strong id="cart-total" style="font-size:20px;color:var(--primary);">R0.00</strong></div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Delivery fee is calculated from every store in your cart at checkout — you only pay once it's confirmed.</div>
             </div>
-            <button class="btn btn-primary btn-block" onclick="proceedToCheckout()">Place Order &amp; Pay</button>
+            <button class="btn btn-primary btn-block" onclick="openCheckout()">Checkout — calculate delivery</button>
           </div>
         </div>
       </section>
@@ -397,10 +359,8 @@
       document.getElementById('profile-name').value  = user.metadata?.name || '';
     }
     await loadOverview();
-    loadCheckoutDetails();
     UI.hidePageLoader();
     UI.staggerReveal(document.body);
-    initDeliveryAutocomplete();
     handlePaymentReturn();
   });
 
@@ -411,7 +371,7 @@
       Dashboard.showSection(sec);
       document.getElementById('topbar-title').textContent = a.textContent.trim();
       if (sec === 'section-orders')       loadOrders();
-      if (sec === 'section-cart')         { loadCart(); loadCheckoutDetails(); }
+      if (sec === 'section-cart')         { loadCart(); }
       if (sec === 'section-wishlist')     loadWishlist();
       if (sec === 'section-reviews')      loadReviews();
       if (sec === 'section-following')    loadFollowing();
@@ -488,16 +448,40 @@
     return Math.min(couponDiscount, cartSubtotal);
   }
 
+  // Checkout modal context — the pay button stays disabled until a real
+  // delivery fee has been calculated from ALL stores in the cart.
+  let checkoutCtx = { lat: null, lng: null, address: '', preview: null };
+
+  function grandTotal() {
+    return Math.max(cartSubtotal - discountAmount(), 0) + deliveryFee + tipAmount();
+  }
+
+  function setPayEnabled(on) {
+    const btn = document.getElementById('co-pay-btn');
+    if (btn) btn.disabled = !on;
+  }
+
   function recalcTotals() {
-    const tipEl = document.getElementById('cart-tip');
-    if (tipEl) tipEl.textContent = UI.formatCurrency(tipAmount());
     const discRow = document.getElementById('cart-discount-row');
     if (discRow) {
       discRow.style.display = couponDiscount > 0 ? 'flex' : 'none';
       document.getElementById('cart-discount').textContent = '−' + UI.formatCurrency(discountAmount());
     }
     const totalEl = document.getElementById('cart-total');
-    if (totalEl) totalEl.textContent = UI.formatCurrency(Math.max(cartSubtotal - discountAmount(), 0) + deliveryFee + tipAmount());
+    if (totalEl) totalEl.textContent = UI.formatCurrency(Math.max(cartSubtotal - discountAmount(), 0));
+
+    const mSub = document.getElementById('co-subtotal');
+    if (!mSub) return;
+    mSub.textContent = UI.formatCurrency(cartSubtotal);
+    const mDiscRow = document.getElementById('co-discount-row');
+    if (mDiscRow) {
+      mDiscRow.style.display = couponDiscount > 0 ? 'flex' : 'none';
+      document.getElementById('co-discount').textContent = '−' + UI.formatCurrency(discountAmount());
+      document.getElementById('co-coupon-label').textContent = 'Coupon' + (appliedCoupon ? ` (${appliedCoupon.code})` : '');
+    }
+    document.getElementById('co-fee').textContent = UI.formatCurrency(deliveryFee);
+    document.getElementById('co-tip').textContent = UI.formatCurrency(tipAmount());
+    document.getElementById('co-grand').textContent = UI.formatCurrency(grandTotal());
   }
 
   let couponTimer = null;
@@ -570,10 +554,9 @@
       if (!cartItems.length) {
         el.innerHTML = UI.empty('Cart is Empty','Browse stores to add items!','🛒',`<a href="../index.html" class="btn btn-primary">Shop Now</a>`);
         tipPercent = 0;
-        document.getElementById('cart-total').textContent = 'R0.00';
-        document.getElementById('cart-tip').textContent = 'R0.00';
-        renderTipOptions();
-        document.getElementById('delivery-fee-box').style.display = 'none';
+        deliveryFee = 0;
+        checkoutCtx = { lat: null, lng: null, address: '', preview: null };
+        recalcTotals();
         return;
       }
       cartSubtotal = cartItems.reduce((s,i)=>s+parseFloat(i.subtotal!=null?i.subtotal:((i.product?.price||i.price||0)*i.quantity)),0);
@@ -615,6 +598,8 @@
   let delAcDebounce = null;
   let delAcResults  = [];
 
+  let delAcOutsideBound = false;
+
   function initDeliveryAutocomplete() {
     const input = document.getElementById('delivery-address');
     const list  = document.getElementById('delivery-address-suggestions');
@@ -622,9 +607,17 @@
 
     input.addEventListener('input', () => {
       clearTimeout(delAcDebounce);
-      clearTimeout(deliveryTimer);
+      // Any address edit invalidates the calculated fee — shopper must
+      // recalculate before paying.
+      checkoutCtx = { lat: null, lng: null, address: '', preview: null };
+      deliveryFee = 0;
+      setPayEnabled(false);
+      const box = document.getElementById('co-fee-box');
+      if (box) box.style.display = 'none';
+      const status = document.getElementById('delivery-status');
+      if (status) { status.textContent = ''; }
       const q = input.value.trim();
-      if (q.length < 3) { list.style.display = 'none'; document.getElementById('delivery-fee-box').style.display = 'none'; return; }
+      if (q.length < 3) { list.style.display = 'none'; return; }
       delAcDebounce = setTimeout(() => fetchDeliverySuggestions(q, list), 350);
     });
 
@@ -632,9 +625,14 @@
       if (delAcResults.length && input.value.trim().length >= 3) list.style.display = 'block';
     });
 
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('#delivery-address-ac')) list.style.display = 'none';
-    });
+    if (!delAcOutsideBound) {
+      delAcOutsideBound = true;
+      document.addEventListener('click', (e) => {
+        document.querySelectorAll('.address-suggestions').forEach(l => {
+          if (!e.target.closest('.address-autocomplete')) l.style.display = 'none';
+        });
+      });
+    }
   }
 
   async function fetchDeliverySuggestions(query, listEl) {
@@ -671,107 +669,232 @@
 
   let deliveryTimer = null;
 
+  async function calculateDeliveryFee() {
+    const address = document.getElementById('delivery-address')?.value?.trim();
+    if (!address) { UI.toast('Enter a delivery address first', 'warning'); return; }
+    await updateDeliveryFee(address);
+  }
+
   async function updateDeliveryFee(address) {
     const status = document.getElementById('delivery-status');
-    status.textContent = 'Calculating delivery…';
+    const box = document.getElementById('co-fee-box');
+    const calcBtn = document.getElementById('co-calc-btn');
+    setPayEnabled(false);
+    if (calcBtn) { calcBtn.disabled = true; calcBtn.textContent = 'Calculating…'; }
+    status.textContent = 'Calculating delivery from every store in your cart…';
     status.style.color = 'var(--text-muted)';
     try {
       const coords = await api.geocode.address(address);
       const preview = await api.delivery.preview(coords.latitude, coords.longitude);
+      checkoutCtx = { lat: coords.latitude, lng: coords.longitude, address, preview };
       deliveryFee = preview.delivery_fee || 0;
-      document.getElementById('delivery-base').textContent = UI.formatCurrency(preview.base_fee);
-      document.getElementById('delivery-dist').textContent = UI.formatCurrency(deliveryFee - preview.base_fee);
-      document.getElementById('delivery-total').textContent = UI.formatCurrency(deliveryFee);
-      const storeCount = preview.store_count || (Array.isArray(preview.stops) ? preview.stops.length : 0);
+
+      // Route breakdown — every store in the cart, in collection order.
+      const stops = Array.isArray(preview.stops) ? preview.stops : [];
       const routeKm = parseFloat(preview.route_km) || 0;
-      document.getElementById('delivery-route').textContent =
-        storeCount > 0 ? `${storeCount} store${storeCount !== 1 ? 's' : ''} · ${routeKm.toFixed(1)} km` : '—';
-      document.getElementById('delivery-fee-box').style.display = 'block';
+      const finalLeg = parseFloat(preview.final_leg_km) || 0;
+      const stopList = document.getElementById('co-stops');
+      if (stopList) {
+        stopList.innerHTML = stops.map(s => `
+          <div style="display:flex;justify-content:space-between;padding:1px 0;">
+            <span style="color:var(--text-secondary);">🏬 ${s.sequence}. ${s.store_name}</span>
+            <span style="color:var(--text-muted);font-size:12px;">${s.sequence > 1 ? '+' + (parseFloat(s.leg_km) || 0).toFixed(1) + ' km' : 'start'}</span>
+          </div>`).join('')
+          + `<div style="display:flex;justify-content:space-between;padding:1px 0;">
+              <span style="color:var(--text-secondary);">🚪 Your address</span>
+              <span style="color:var(--text-muted);font-size:12px;">+${finalLeg.toFixed(1)} km</span>
+            </div>`;
+      }
+      document.getElementById('co-base').textContent = UI.formatCurrency(preview.base_fee);
+      document.getElementById('co-dist').textContent = UI.formatCurrency(Math.max(deliveryFee - preview.base_fee, 0));
+      document.getElementById('co-total').textContent = UI.formatCurrency(deliveryFee);
+      document.getElementById('co-route').textContent = stops.length
+        ? `${stops.length} store${stops.length !== 1 ? 's' : ''} · ${routeKm.toFixed(1)} km total`
+        : '—';
+      if (box) box.style.display = 'block';
       recalcTotals();
-      const storeName = preview.nearest_store?.name ? ` (nearest: ${preview.nearest_store.name})` : '';
-      status.textContent = `Delivery calculated${storeName}`;
+      status.textContent = stops.length > 1
+        ? `Route planned across ${stops.length} stores — fee confirmed below.`
+        : 'Delivery calculated.';
       status.style.color = 'var(--success)';
+      setPayEnabled(true);
     } catch (err) {
+      checkoutCtx = { lat: null, lng: null, address: '', preview: null };
       deliveryFee = 0;
-      document.getElementById('delivery-fee-box').style.display = 'none';
+      if (box) box.style.display = 'none';
       recalcTotals();
-      status.textContent = 'Could not calculate delivery';
+      status.textContent = err.message || 'Could not calculate delivery — check the address and try again.';
       status.style.color = 'var(--error)';
+    } finally {
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Calculate delivery fee'; }
     }
   }
 
-  async function proceedToCheckout() {
+  // ============================================================
+  //  CHECKOUT MODAL FLOW
+  //  Sidebar "Checkout" opens a review modal. The shopper only sees
+  //  Pay after the delivery fee has been calculated from EVERY store
+  //  in the cart (backend plans one collection route for all stops).
+  // ============================================================ //
+  function openCheckout() {
+    if (!cartItems.length) { UI.toast('Your cart is empty', 'warning'); return; }
+
+    // Group items per store so the shopper sees exactly who is being visited.
+    const groups = [];
+    const byId = {};
+    cartItems.forEach(it => {
+      const sid = it.product?.store?.id || 'unknown';
+      if (!byId[sid]) {
+        byId[sid] = { name: it.product?.store?.name || 'Store', items: [], subtotal: 0 };
+        groups.push(byId[sid]);
+      }
+      const lineTotal = parseFloat(it.subtotal != null ? it.subtotal : ((it.product?.price || it.price || 0) * it.quantity));
+      byId[sid].items.push({ ...it, lineTotal });
+      byId[sid].subtotal += lineTotal;
+    });
+
+    const storesHtml = groups.map(g => `
+      <div class="neo-inset" style="padding:var(--space-sm) var(--space-md);border-radius:var(--radius-sm);margin-bottom:var(--space-xs);">
+        <div class="flex-between" style="margin-bottom:4px;">
+          <strong style="font-size:13px;">🏬 ${g.name}</strong>
+          <span style="font-size:13px;font-weight:700;">${UI.formatCurrency(g.subtotal)}</span>
+        </div>
+        ${g.items.map(i => `
+          <div style="display:flex;justify-content:space-between;gap:var(--space-sm);font-size:12px;color:var(--text-secondary);padding:1px 0;">
+            <span>${i.quantity} × ${i.product?.name || 'Product'}${i.variant ? ` (${i.variant})` : ''}</span>
+            <span style="white-space:nowrap;">${UI.formatCurrency(i.lineTotal)}</span>
+          </div>`).join('')}
+      </div>`).join('');
+
+    const content = `
+      <div id="co-stores-summary">${storesHtml}</div>
+
+      <h5 style="margin:var(--space-md) 0 var(--space-xs);font-size:14px;font-weight:700;">Contact details</h5>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-xs);">
+        <input type="text" id="cust-name" class="form-control" placeholder="First name" style="font-size:13px;" oninput="saveCheckoutDetails()">
+        <input type="text" id="cust-surname" class="form-control" placeholder="Surname" style="font-size:13px;" oninput="saveCheckoutDetails()">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-xs);margin-top:var(--space-xs);">
+        <input type="tel" id="cust-phone" class="form-control" placeholder="Cellphone number" style="font-size:13px;" oninput="saveCheckoutDetails()">
+        <input type="email" id="cust-email" class="form-control" placeholder="Email address" style="font-size:13px;" oninput="saveCheckoutDetails()">
+      </div>
+
+      <h5 style="margin:var(--space-md) 0 var(--space-xs);font-size:14px;font-weight:700;">Delivery address</h5>
+      <div class="address-autocomplete" id="delivery-address-ac" style="position:relative;">
+        <input type="text" id="delivery-address" class="form-control" placeholder="Start typing your address…" style="font-size:13px;" autocomplete="off">
+        <div id="delivery-address-suggestions" class="address-suggestions" style="display:none;"></div>
+      </div>
+      <div id="delivery-status" style="font-size:11px;margin-top:4px;color:var(--text-muted);min-height:14px;"></div>
+      <button type="button" id="co-calc-btn" class="btn btn-ghost btn-block" style="margin-top:var(--space-2xs);" onclick="calculateDeliveryFee()">Calculate delivery fee</button>
+
+      <div id="co-fee-box" style="display:none;padding:var(--space-sm);background:var(--primary-alpha);border-radius:var(--radius-sm);margin-top:var(--space-xs);font-size:13px;">
+        <div id="co-stops" style="margin-bottom:6px;"></div>
+        <div class="flex-between"><span style="color:var(--text-secondary);">Collection route</span><span id="co-route">—</span></div>
+        <div class="flex-between"><span style="color:var(--text-secondary);">Base delivery</span><span id="co-base">R0.00</span></div>
+        <div class="flex-between"><span style="color:var(--text-secondary);">Distance fee</span><span id="co-dist">R0.00</span></div>
+        <div class="flex-between" style="border-top:1px solid var(--border-light);padding-top:6px;margin-top:6px;"><strong>Delivery fee total</strong><strong id="co-total" style="color:var(--primary);">R0.00</strong></div>
+      </div>
+
+      <h5 style="margin:var(--space-md) 0 var(--space-xs);font-size:14px;font-weight:700;">Driver tip <span style="color:var(--text-muted);font-weight:400;font-size:12px;">(optional, % of products)</span></h5>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-xs);" id="tip-options"></div>
+      <div id="tip-custom-row" style="display:none;margin-top:var(--space-xs);">
+        <input type="number" id="tip-custom" class="form-control" min="0" max="100" placeholder="Custom %" style="font-size:13px;" oninput="onTipChange()">
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin-top:var(--space-md);padding-top:var(--space-md);font-size:13px;">
+        <div class="flex-between"><span>Products (${cartItems.length} item${cartItems.length !== 1 ? 's' : ''})</span><span id="co-subtotal">${UI.formatCurrency(cartSubtotal)}</span></div>
+        <div class="flex-between" id="co-discount-row" style="display:none;">
+          <span style="color:var(--success);" id="co-coupon-label">Coupon</span>
+          <span id="co-discount" style="color:var(--success);">−R0.00</span>
+        </div>
+        <div class="flex-between"><span>Delivery fee</span><span id="co-fee">R0.00</span></div>
+        <div class="flex-between"><span>Driver tip</span><span id="co-tip">R0.00</span></div>
+        <div class="flex-between" style="margin-top:6px;"><strong>Total to pay</strong><strong id="co-grand" style="font-size:18px;color:var(--primary);">${UI.formatCurrency(grandTotal())}</strong></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:var(--space-xs);">🔒 Nothing is charged until you confirm — payment is processed securely via Yoco.</div>
+    `;
+
+    const footer = `
+      <button class="btn btn-ghost" onclick="UI.closeModal('checkout-modal')">Cancel</button>
+      <button class="btn btn-primary" id="co-pay-btn" disabled onclick="confirmOrder()">Place Order &amp; Pay</button>
+    `;
+
+    UI.createModal({ id: 'checkout-modal', title: 'Checkout', content, footer, size: 'modal-lg' });
+
+    // Fresh fee gate every time the modal opens.
+    checkoutCtx = { lat: null, lng: null, address: '', preview: null };
+    deliveryFee = 0;
+    loadCheckoutDetails();
+    renderTipOptions();
+    recalcTotals();
+    initDeliveryAutocomplete();
+
+    // Returning shopper with a saved address? Calculate the fee right away.
+    const saved = document.getElementById('delivery-address')?.value?.trim();
+    if (saved && document.getElementById('cust-name')?.value) updateDeliveryFee(saved);
+  }
+
+  async function confirmOrder() {
     if (!cartItems.length) { UI.toast('Cart is empty', 'warning'); return; }
 
     const name = document.getElementById('cust-name')?.value?.trim();
     const surname = document.getElementById('cust-surname')?.value?.trim();
     const phone = document.getElementById('cust-phone')?.value?.trim();
     const email = document.getElementById('cust-email')?.value?.trim();
-    const address = document.getElementById('delivery-address')?.value?.trim();
 
     if (!name || !surname || !phone || !email) {
       UI.toast('Please fill in your name, surname, phone and email', 'warning');
       return;
     }
-
-    let shipping_lat = null, shipping_lng = null;
-    if (address) {
-      try {
-        const coords = await api.geocode.address(address);
-        shipping_lat = coords.latitude;
-        shipping_lng = coords.longitude;
-      } catch (_) {}
+    if (!checkoutCtx.lat || !checkoutCtx.lng || !deliveryFee) {
+      UI.toast('Calculate the delivery fee before paying', 'warning');
+      return;
     }
 
     saveCheckoutDetails();
 
-    const tip = tipAmount();
-    const grandTotal = Math.max(cartSubtotal - discountAmount(), 0) + deliveryFee + tip;
+    const btn = document.getElementById('co-pay-btn');
+    UI.setLoading(btn, true, 'Placing order…');
+    try {
+      const items = cartItems.map(i => ({ product_id: i.product_id || i.product?.id, quantity: i.quantity, variant: i.variant, options: i.options }));
+      const payload = {
+        items,
+        customer_name: name,
+        customer_surname: surname,
+        customer_phone: phone,
+        customer_email: email,
+        tip_amount: tipAmount(),
+        pay: true,
+        shipping_lat: checkoutCtx.lat,
+        shipping_lng: checkoutCtx.lng,
+        shipping_address: { street: checkoutCtx.address }
+      };
+      if (appliedCoupon) payload.coupon_code = appliedCoupon.code;
 
-    UI.confirmDialog({
-      title: 'Place Order & Pay',
-      message: `Total: ${UI.formatCurrency(grandTotal)}${deliveryFee > 0 ? ' (incl. delivery)' : ''}${tip > 0 ? ` · incl. R${tip.toFixed(2)} driver tip` : ''}${couponDiscount > 0 ? ` · coupon −${UI.formatCurrency(discountAmount())}` : ''}<br><small style="color:var(--text-muted);">Delivering to ${name} ${surname} · ${phone}. You will pay securely via Yoco.</small>`,
-      confirmText: 'Pay Now',
-      onConfirm: async () => {
-        try {
-          const items = cartItems.map(i => ({ product_id: i.product_id || i.product?.id, quantity: i.quantity, variant: i.variant, options: i.options }));
-          const payload = {
-            items,
-            customer_name: name,
-            customer_surname: surname,
-            customer_phone: phone,
-            customer_email: email,
-            tip_amount: tip,
-            pay: true
-          };
-          if (appliedCoupon) payload.coupon_code = appliedCoupon.code;
-          if (shipping_lat && shipping_lng) {
-            payload.shipping_lat = shipping_lat;
-            payload.shipping_lng = shipping_lng;
-            payload.shipping_address = { street: address };
-          }
-          const resp = await api.orders.create(payload);
-          const orderData = resp?.order || resp;
-          if (orderData?.checkout_url) {
-            sessionStorage.setItem('plexi_pending_order', orderData.id || '');
-            window.location.href = orderData.checkout_url;
-            return;
-          }
-          UI.toast('Order placed!', 'success');
-          deliveryFee = 0;
-          tipPercent = 0;
-          appliedCoupon = null;
-          couponDiscount = 0;
-          const cc = document.getElementById('coupon-code');
-          if (cc) cc.value = '';
-          const cs = document.getElementById('coupon-status');
-          if (cs) cs.style.display = 'none';
-          document.getElementById('delivery-fee-box').style.display = 'none';
-          loadCart();
-          loadOverview();
-        } catch (err) { UI.toast(err.message, 'error'); }
+      const resp = await api.orders.create(payload);
+      const orderData = resp?.order || resp;
+      if (orderData?.checkout_url) {
+        sessionStorage.setItem('plexi_pending_order', orderData.id || '');
+        window.location.href = orderData.checkout_url;
+        return;
       }
-    });
+      UI.closeModal('checkout-modal');
+      UI.toast('Order placed!', 'success');
+      deliveryFee = 0;
+      tipPercent = 0;
+      appliedCoupon = null;
+      couponDiscount = 0;
+      const cc = document.getElementById('coupon-code');
+      if (cc) cc.value = '';
+      const cs = document.getElementById('coupon-status');
+      if (cs) cs.style.display = 'none';
+      loadCart();
+      loadOverview();
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    } finally {
+      UI.setLoading(btn, false);
+    }
   }
 
   function handlePaymentReturn() {
