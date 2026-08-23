@@ -72,3 +72,5 @@ Currency is South African Rand — `UI.formatCurrency()` outputs `R123.45`.
 - `api.js` error handling: non-OK responses throw `Error` with `.status` and `.data` attached — always catch and use `err.message` for user-facing toasts
 - Store/product pages use `?id=` query params, not path-based routing
 - The mall map is a 10×10 grid — `MallMap.initPlacement(storeId)` enables click-to-place for sellers
+- **Backend hard limit:** the sibling repo `~/plexi-digital-mall-backend` (Vercel Hobby) allows **max 12 serverless functions** (`api/*.js`). If a new endpoint would make 13, fold it into an existing function as an `?action=` case. See that repo's AGENTS.md.
+- Coupon endpoints live in `/api/cart?action=coupon-*` (folded there for the same reason) — not `/api/coupons`.
