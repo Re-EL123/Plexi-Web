@@ -783,7 +783,7 @@ async function loadAuditLog(page=1){
   Dashboard.skeletonRows(tbody,5,5);
   try{
     const action=document.getElementById('audit-action-filter').value;
-    const d=await api.admin.auditLog({page,limit:20,action});
+    const d=await api.admin.auditLog({page,limit:20,log_action:action});
     const entries=Array.isArray(d)?d:(d.logs||d.entries||[]);
     const total=d.total||entries.length;
     Dashboard.renderTable(tbody,entries.map(l=>`
