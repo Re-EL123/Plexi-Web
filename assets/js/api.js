@@ -335,8 +335,8 @@ const api = (() => {
 
   // ======== COUPONS ======== //
   const coupons = {
-    validate: (code, total) => post('/coupons?action=validate', { code, total }),
-    list:     ()            => get('/coupons?action=available'),
+    validate: (code, total) => post('/cart?action=coupon-validate', { code, total }),
+    list:     ()            => get('/cart?action=coupon-available'),
   };
 
   // ======== DELIVERY ======== //
