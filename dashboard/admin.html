@@ -60,12 +60,16 @@
       <div class="sidebar-section">
         <div class="sidebar-section-label">Support</div>
         <a href="#" data-section="sec-tickets"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Support Tickets<span class="nav-badge" id="open-tickets-count">0</span></a>
+
+        <a href="#" data-section="sec-review-queue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Review Queue<span class="nav-badge" id="flagged-reviews-count" style="display:none;">0</span></a>
+        <a href="#" data-section="sec-coupons"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Coupons</a>
         <a href="#" data-section="sec-map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Mall Map</a>
         <a href="#" data-section="sec-gps"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>GPS Tracker<span class="nav-badge" id="gps-online-nav" style="display:none;">0</span></a>
         <a href="#" data-section="sec-verification"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Verification<span class="nav-badge" id="pending-verify-count" style="display:none;">0</span></a>
         <a href="#" data-section="sec-banking"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Banking</a>
         <a href="#" data-section="sec-rates"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4z"/></svg>Rates &amp; Fees</a>
         <a href="#" data-section="sec-transactions"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Transactions</a>
+        <a href="#" data-section="sec-audit-log"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Audit Log</a>
         <a href="#" data-section="sec-driver-compliance"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>Driver KYC<span class="nav-badge" id="pending-driver-kyc-count" style="display:none;">0</span></a>
         <a href="#" data-section="sec-driver-payroll"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Driver Payroll</a>
       </div>
@@ -115,10 +119,10 @@
       <div id="sec-overview" class="dash-section active">
         <div style="margin-bottom:var(--space-xl);"><h2>Welcome back, <span data-user-name style="color:var(--primary)">Admin</span> 👋</h2><p style="color:var(--text-secondary);">Platform overview for today.</p></div>
         <div class="stats-grid" id="admin-stats">
-          <div class="stat-card primary stagger-child" style="cursor:pointer;" onclick="gotoSection('sec-users')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="stat-label">Total Users</div><div class="stat-value" id="stat-users">—</div></div>
-          <div class="stat-card secondary stagger-child" style="cursor:pointer;" onclick="gotoSection('sec-stores')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="stat-label">Total Stores</div><div class="stat-value" id="stat-stores">—</div></div>
-          <div class="stat-card success stagger-child" style="cursor:pointer;" onclick="gotoSection('sec-orders')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg></div><div class="stat-label">Total Orders</div><div class="stat-value" id="stat-orders">—</div></div>
-          <div class="stat-card info stagger-child" style="cursor:pointer;" onclick="gotoSection('sec-reports')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-label">Revenue</div><div class="stat-value" id="stat-revenue">—</div></div>
+          <div class="stat-card primary stagger-child" style="cursor:pointer;" onclick="gotoSection('sec-users')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="stat-label">Total Users</div><div class="stat-value" id="stat-users">—</div><div class="stat-sub" id="stat-sub-users" style="font-size:11px;color:var(--text-muted);margin-top:4px;"></div></div>
+          <div class="stat-card secondary stagger-child" style="cursor:pointer;" onclick="gotoSection('sec-stores')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="stat-label">Total Stores</div><div class="stat-value" id="stat-stores">—</div><div class="stat-sub" id="stat-sub-stores" style="font-size:11px;color:var(--text-muted);margin-top:4px;"></div></div>
+          <div class="stat-card success stagger-child" style="cursor:pointer;" onclick="gotoSection('sec-orders')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg></div><div class="stat-label">Total Orders</div><div class="stat-value" id="stat-orders">—</div><div class="stat-sub" id="stat-sub-orders" style="font-size:11px;color:var(--text-muted);margin-top:4px;"></div></div>
+          <div class="stat-card info stagger-child" style="cursor:pointer;" onclick="gotoSection('sec-reports')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-label">Revenue</div><div class="stat-value" id="stat-revenue">—</div><canvas id="stat-spark-revenue" width="120" height="28" style="margin-top:4px;width:100%;height:28px;"></canvas></div>
         </div>
         <div class="grid-2 mt-lg">
            <div class="card"><div class="card-header"><h4 style="font-family:var(--font-display);">Pending Approvals</h4><button class="btn btn-ghost btn-sm" onclick="gotoSection('sec-stores')">All Stores</button></div><div class="card-body" style="padding:0;"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Store</th><th>Category</th><th>Banking</th><th>Actions</th></tr></thead><tbody id="pending-stores-tbody"></tbody></table></div></div></div>
@@ -181,6 +185,47 @@
           <select class="form-control" id="ticket-status" style="width:160px;" onchange="loadTickets(1)"><option value="">All</option><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option><option value="closed">Closed</option></select>
         </div>
         <div class="card"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Subject</th><th>Category</th><th>Priority</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="tickets-tbody"></tbody></table></div><div class="card-footer"><div id="tickets-pagination"></div></div></div>
+      </div>
+
+      <!-- REVIEW MODERATION QUEUE -->
+      <div id="sec-review-queue" class="dash-section">
+        <div class="section-header mb-lg"><h2 class="section-title">Review <span>Moderation Queue</span></h2>
+          <select class="form-control" id="flagged-filter" style="width:170px;" onchange="loadFlaggedReviews()">
+            <option value="flagged">Flagged</option>
+            <option value="removed">Removed</option>
+            <option value="all">All</option>
+          </select>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:var(--space-md);">Reviews flagged by users for abuse, spam or inappropriate content. Dismiss returns them to public view; removing hides them permanently.</p>
+        <div id="flagged-reviews-list"></div>
+      </div>
+
+      <!-- COUPONS -->
+      <div id="sec-coupons" class="dash-section">
+        <div class="section-header mb-lg"><h2 class="section-title">Coupon <span>Codes</span></h2>
+          <button class="btn btn-primary" onclick="openCouponModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Coupon
+          </button>
+        </div>
+        <div class="card"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Code</th><th>Discount</th><th>Min Spend</th><th>Usage</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead><tbody id="coupons-tbody"></tbody></table></div></div>
+      </div>
+
+      <!-- AUDIT LOG -->
+      <div id="sec-audit-log" class="dash-section">
+        <div class="section-header mb-lg"><h2 class="section-title">Audit <span>Log</span></h2>
+          <select class="form-control" id="audit-action-filter" style="width:auto;" onchange="loadAuditLog(1)">
+            <option value="">All Actions</option>
+            <option value="ban-user">User Bans</option>
+            <option value="approve-store">Store Approvals</option>
+            <option value="suspend-store">Store Suspensions</option>
+            <option value="moderate-review">Review Moderation</option>
+            <option value="banking-verify">Banking Verifications</option>
+            <option value="driver-compliance-review">Driver KYC Reviews</option>
+          </select>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:var(--space-md);">Every admin action is recorded here with who, what and when.</p>
+        <div class="card"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody id="audit-tbody"></tbody></table></div><div class="card-footer"><div id="audit-pagination"></div></div></div>
       </div>
 
       <!-- MAP -->
@@ -538,9 +583,10 @@ function gotoSection(id){Dashboard.showSection(id);document.querySelectorAll('.s
 
 document.addEventListener('DOMContentLoaded', async()=>{
   Dashboard.init(); UI.hidePageLoader(); document.getElementById('sidebar-toggle').style.display='flex';
-  document.querySelectorAll('[data-section]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();gotoSection(a.dataset.section);if(a.dataset.section==='sec-map')MallMap.render();if(a.dataset.section==='sec-alerts')loadRecentAlerts();if(a.dataset.section==='sec-subscriptions')loadSubscriptions(1);if(a.dataset.section==='sec-gps')loadGPSData();if(a.dataset.section==='sec-reports')loadAdminReport();if(a.dataset.section==='sec-verification')loadVerifyApps();if(a.dataset.section==='sec-banking')loadBankingList();if(a.dataset.section==='sec-driver-compliance')loadDriverCompliance();if(a.dataset.section==='sec-driver-payroll'){initPayrollDates();loadDriverPayments();}if(a.dataset.section==='sec-categories')loadCategories();if(a.dataset.section==='sec-rates')loadPlatformSettings();if(a.dataset.section==='sec-transactions')loadAdminTransactions(); });});
+  document.querySelectorAll('[data-section]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();gotoSection(a.dataset.section);if(a.dataset.section==='sec-map')MallMap.render();if(a.dataset.section==='sec-alerts')loadRecentAlerts();if(a.dataset.section==='sec-subscriptions')loadSubscriptions(1);if(a.dataset.section==='sec-gps')loadGPSData();if(a.dataset.section==='sec-reports')loadAdminReport();if(a.dataset.section==='sec-verification')loadVerifyApps();if(a.dataset.section==='sec-banking')loadBankingList();if(a.dataset.section==='sec-driver-compliance')loadDriverCompliance();if(a.dataset.section==='sec-driver-payroll'){initPayrollDates();loadDriverPayments();}if(a.dataset.section==='sec-categories')loadCategories();if(a.dataset.section==='sec-rates')loadPlatformSettings();if(a.dataset.section==='sec-transactions')loadAdminTransactions();if(a.dataset.section==='sec-review-queue')loadFlaggedReviews();if(a.dataset.section==='sec-coupons')loadCoupons();if(a.dataset.section==='sec-audit-log')loadAuditLog(1); });});
   await loadAdminStats(); loadPendingStores(); loadRecentUsers();
   loadUsers(1); loadAdminStores(1); loadAdminOrders(1); loadAdminProducts(1); loadTickets(1);
+  refreshFlaggedCount();
   MallMap.init(document.getElementById('admin-map'));
   setTimeout(()=>UI.staggerReveal(document.querySelector('.stats-grid')),300);
 });
@@ -554,6 +600,14 @@ async function loadAdminStats(){
     document.getElementById('stat-orders').textContent=ov.totalOrders||0;
     document.getElementById('stat-revenue').textContent=UI.formatCurrency(ov.totalRevenue||0);
     document.getElementById('open-tickets-count').textContent=d.tickets?.open||0;
+    const ra=d.recentActivity||{};
+    const subU=document.getElementById('stat-sub-users');
+    if(subU)subU.innerHTML=ra.newUsers?`<span style="color:var(--success);font-weight:700;">+${ra.newUsers}</span> this week`:'';
+    const subS=document.getElementById('stat-sub-stores');
+    if(subS)subS.innerHTML=ra.newStores?`<span style="color:var(--success);font-weight:700;">+${ra.newStores}</span> this week`:'';
+    const subO=document.getElementById('stat-sub-orders');
+    if(subO)subO.innerHTML=ra.newOrders?`<span style="color:var(--success);font-weight:700;">+${ra.newOrders}</span> this week`:'';
+    renderRevenueSparkline();
     // Analytics
     const aEl=document.getElementById('analytics-stats');
     if(aEl)aEl.innerHTML=`<div class="stat-card primary" style="cursor:pointer;" onclick="gotoSection('sec-users')"><div class="stat-label">Total Users</div><div class="stat-value">${ov.totalUsers||0}</div></div><div class="stat-card secondary" style="cursor:pointer;" onclick="gotoSection('sec-stores')"><div class="stat-label">Sellers</div><div class="stat-value">${(d.subscriptions?.business||0)+(d.subscriptions?.enterprise||0)}</div></div><div class="stat-card success" style="cursor:pointer;" onclick="gotoSection('sec-stores')"><div class="stat-label">Published Stores</div><div class="stat-value">${ov.totalStores||0}</div></div><div class="stat-card info" style="cursor:pointer;" onclick="gotoSection('sec-tickets')"><div class="stat-label">Open Tickets</div><div class="stat-value">${d.tickets?.open||0}</div></div>`;
@@ -562,6 +616,186 @@ async function loadAdminStats(){
     const uEl=document.getElementById('users-chart');
     if(uEl&&d.subscriptions){const subs=d.subscriptions;const tot=Object.values(subs).reduce((s,v)=>s+v,0)||1;const colors={free:'var(--success)',business:'var(--secondary)',enterprise:'var(--primary)',custom:'var(--text-muted)'};uEl.innerHTML=Object.entries(subs).map(([k,v])=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="width:8px;height:8px;border-radius:50%;background:${colors[k]||'var(--gray-300)'};"></div><div style="flex:1;font-size:13px;color:var(--text-secondary);">${k.charAt(0).toUpperCase()+k.slice(1)}</div><strong>${v}</strong><div style="font-size:12px;color:var(--text-muted);">${Math.round(v/tot*100)}%</div></div>`).join('');}
   }catch(e){console.error(e);}
+}
+
+async function renderRevenueSparkline(){
+  const canvas=document.getElementById('stat-spark-revenue');
+  if(!canvas)return;
+  try{
+    const r=await api.admin.reports({days:14});
+    let series=(r.revenue||[]).map(p=>parseFloat(p.revenue||0));
+    if(!series.length){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);return;}
+    const ctx=canvas.getContext('2d');
+    const w=canvas.width,h=canvas.height,max=Math.max(...series,1);
+    ctx.clearRect(0,0,w,h);
+    ctx.beginPath();
+    series.forEach((v,i)=>{
+      const x=(i/(series.length-1))*w;
+      const y=h-6-(v/max)*(h-12);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle='#4361ee';ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
+    ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();
+    const grad=ctx.createLinearGradient(0,0,0,h);
+    grad.addColorStop(0,'rgba(67,97,238,0.25)');grad.addColorStop(1,'rgba(67,97,238,0)');
+    ctx.fillStyle=grad;ctx.fill();
+  }catch(_){}
+}
+
+async function refreshFlaggedCount(){
+  try{
+    const d=await api.admin.flaggedReviews({status:'flagged',limit:1});
+    const n=(Array.isArray(d)?d:(d.reviews||[])).length>0?(d.total||1):0;
+    const badge=document.getElementById('flagged-reviews-count');
+    if(badge){badge.textContent=n>99?'99+':n;badge.style.display=n>0?'flex':'none';}
+  }catch(_){}
+}
+
+async function loadFlaggedReviews(){
+  const el=document.getElementById('flagged-reviews-list');
+  if(!el)return;
+  el.innerHTML=`<div class="card"><div class="card-body">${UI.skeletonList(3)}</div></div>`;
+  try{
+    const status=document.getElementById('flagged-filter').value;
+    const d=await api.admin.flaggedReviews({status});
+    const reviews=Array.isArray(d)?d:(d.reviews||[]);
+    if(!reviews.length){el.innerHTML=`<div class="card"><div class="card-body" style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">Queue clear — no ${status==='all'?'':' '+status} reviews.</div></div>`;return;}
+    el.innerHTML=reviews.map(r=>`
+      <div class="card mb-sm">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-md);">
+            <div style="flex:1;">
+              <div style="display:flex;gap:var(--space-sm);align-items:center;margin-bottom:6px;">
+                ${UI.stars(r.rating)}
+                ${r.flag_count?`<span class="badge badge-error">${r.flag_count}× flagged</span>`:''}
+                ${r.status==='removed'?'<span class="badge badge-gray">Removed</span>':''}
+                <span style="font-size:11px;color:var(--text-muted);">${UI.timeAgo(r.created_at)}</span>
+              </div>
+              <p style="font-size:14px;color:var(--text-secondary);margin-bottom:6px;">${r.comment||'<em>No comment</em>'}</p>
+              <div style="font-size:11px;color:var(--text-muted);">
+                ${r.user?.email||r.reviewer_email||'User'} → ${r.product?.name?`product “${r.product.name}”`:''}${r.store?.name?`store “${r.store.name}”`:''}
+              </div>
+              ${(r.flags||[]).length?`<div style="margin-top:6px;font-size:12px;color:var(--error);">Flags: ${(r.flags||[]).map(f=>f.reason).filter(Boolean).join(' · ')}</div>`:''}
+            </div>
+            <div style="display:flex;flex-direction:column;gap:var(--space-xs);">
+              ${r.status!=='removed'?`
+                <button class="btn btn-danger btn-sm" onclick="moderateReviewAction('${r.id}','remove')">Remove Review</button>
+                <button class="btn btn-ghost btn-sm" onclick="moderateReviewAction('${r.id}','dismiss')">Dismiss Flags</button>`
+              :`<span style="font-size:12px;color:var(--text-muted);">Moderated</span>`}
+            </div>
+          </div>
+        </div>
+      </div>`).join('');
+  }catch(err){
+    el.innerHTML=`<div class="card"><div class="card-body">${UI.empty('Could not load queue',err.message)}</div></div>`;
+  }
+}
+
+async function moderateReviewAction(id,action){
+  const msg=action==='remove'?'Remove this review permanently?':'Dismiss all flags and keep the review public?';
+  UI.confirmDialog({
+    title:action==='remove'?'Remove Review':'Dismiss Flags',
+    message:msg,
+    confirmText:action==='remove'?'Remove':'Dismiss',
+    danger:action==='remove',
+    onConfirm:async()=>{
+      try{
+        await api.admin.moderateReview(id,action);
+        UI.toast(action==='remove'?'Review removed':'Flags dismissed','success');
+        loadFlaggedReviews();refreshFlaggedCount();
+      }catch(e){UI.toast(e.message,'error');}
+    }
+  });
+}
+
+let couponData=[];
+async function loadCoupons(){
+  const tbody=document.getElementById('coupons-tbody');
+  if(!tbody)return;
+  Dashboard.skeletonRows(tbody,7,3);
+  try{
+    const d=await api.admin.coupons();
+    couponData=Array.isArray(d)?d:(d.coupons||[]);
+    Dashboard.renderTable(document.getElementById('coupons-tbody'),couponData.map(c=>{
+      const expired=c.expires_at&&new Date(c.expires_at)<new Date();
+      const exhausted=c.max_redemptions&&c.redemption_count>=c.max_redemptions;
+      return `<tr>
+        <td><strong style="font-family:monospace;">${c.code}</strong></td>
+        <td>${c.discount_type==='percent'?`${c.discount_value}%`:`${UI.formatCurrency(c.discount_value)}`}</td>
+        <td>${c.min_spend?UI.formatCurrency(c.min_spend):'—'}</td>
+        <td>${c.redemption_count||0}${c.max_redemptions?` / ${c.max_redemptions}`:''}</td>
+        <td>${c.expires_at?UI.formatDate(c.expires_at):'Never'}</td>
+        <td>${expired?UI.badge('Expired','gray'):exhausted?UI.badge('Exhausted','warning'):UI.badge('Active','success')}</td>
+        <td class="table-actions"><button class="btn btn-danger btn-sm" onclick="deleteCoupon('${c.id}')">Delete</button></td>
+      </tr>`;
+    }),'No coupons yet — create your first one!');
+  }catch(e){Dashboard.renderTable(document.getElementById('coupons-tbody'),[],e.message);}
+}
+
+function openCouponModal(){
+  UI.createModal({
+    id:'coupon-modal', title:'Create Coupon',
+    content:`<form id="coupon-form" onsubmit="submitCoupon(event)">
+      <div class="form-group"><label class="form-label">Code</label><input type="text" class="form-control" name="code" required placeholder="SAVE10" style="text-transform:uppercase;"></div>
+      <div class="form-group"><label class="form-label">Discount Type</label>
+        <select class="form-control" name="discount_type"><option value="percent">Percentage (%)</option><option value="fixed">Fixed Amount (R)</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Discount Value</label><input type="number" class="form-control" name="discount_value" min="0" step="0.01" required placeholder="10"></div>
+      <div class="form-group"><label class="form-label">Minimum Spend (optional)</label><input type="number" class="form-control" name="min_spend" min="0" step="0.01" placeholder="250"></div>
+      <div class="field-row">
+        <div class="form-group"><label class="form-label">Max Redemptions (optional)</label><input type="number" class="form-control" name="max_redemptions" min="1" placeholder="100"></div>
+        <div class="form-group"><label class="form-label">Expires On (optional)</label><input type="date" class="form-control" name="expires_at"></div>
+      </div>
+    </form>`,
+    footer:`<button class="btn btn-ghost" onclick="UI.closeModal('coupon-modal')">Cancel</button>
+            <button class="btn btn-primary" onclick="document.getElementById('coupon-form').requestSubmit()">Create Coupon</button>`
+  });
+}
+
+async function submitCoupon(e){
+  e.preventDefault();
+  const f=new FormData(e.target);
+  const payload={
+    code:f.get('code').trim().toUpperCase(),
+    discount_type:f.get('discount_type'),
+    discount_value:parseFloat(f.get('discount_value')),
+    min_spend:f.get('min_spend')?parseFloat(f.get('min_spend')):null,
+    max_redemptions:f.get('max_redemptions')?parseInt(f.get('max_redemptions'),10):null,
+    expires_at:f.get('expires_at')||null
+  };
+  try{
+    await api.admin.createCoupon(payload);
+    UI.toast(`Coupon ${payload.code} created!`,'success');
+    UI.closeModal('coupon-modal');
+    loadCoupons();
+  }catch(err){UI.toast(err.message,'error');}
+}
+
+async function deleteCoupon(id){
+  UI.confirmDialog({title:'Delete Coupon',message:'Shoppers will no longer be able to use this code.',confirmText:'Delete',danger:true,
+    onConfirm:async()=>{try{await api.admin.deleteCoupon(id);UI.toast('Coupon deleted','info');loadCoupons();}catch(e){UI.toast(e.message,'error');}}
+  });
+}
+
+async function loadAuditLog(page=1){
+  const tbody=document.getElementById('audit-tbody');
+  if(!tbody)return;
+  Dashboard.skeletonRows(tbody,5,5);
+  try{
+    const action=document.getElementById('audit-action-filter').value;
+    const d=await api.admin.auditLog({page,limit:20,action});
+    const entries=Array.isArray(d)?d:(d.logs||d.entries||[]);
+    const total=d.total||entries.length;
+    Dashboard.renderTable(tbody,entries.map(l=>`
+      <tr>
+        <td style="white-space:nowrap;font-size:12px;">${UI.formatDateTime(l.created_at)}</td>
+        <td style="font-size:13px;">${l.actor_email||l.actor?.email||'—'}</td>
+        <td><span class="badge badge-secondary" style="font-family:monospace;font-size:11px;">${l.action}</span></td>
+        <td style="font-size:13px;">${l.target_label||l.target_id||'—'}</td>
+        <td style="font-size:12px;color:var(--text-muted);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(l.details||'').replace(/"/g,'&quot;')}">${l.details||'—'}</td>
+      </tr>`),'No audit entries recorded yet');
+    Dashboard.renderPagination('audit-pagination',page,Math.ceil(total/20),`(p)=>loadAuditLog(p)`);
+  }catch(e){Dashboard.renderTable(document.getElementById('audit-tbody'),[],e.message);}
 }
 
 async function loadPendingStores(){

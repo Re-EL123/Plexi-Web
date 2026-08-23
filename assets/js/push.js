@@ -149,11 +149,72 @@ const PushManager = (() => {
     try { return sessionStorage.getItem('plexi_push_prompted') !== 'true'; } catch (_) { return true; }
   }
 
+  // ======== PWA INSTALL PROMPT ======== //
+  let deferredInstall = null;
+
+  function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+
+  function wasInstallDismissed() {
+    try { return localStorage.getItem('plexi_install_dismissed') === 'true'; } catch (_) { return false; }
+  }
+
+  function rememberInstallDismissed() {
+    try { localStorage.setItem('plexi_install_dismissed', 'true'); } catch (_) {}
+  }
+
+  function showInstallBanner() {
+    if (!deferredInstall || isStandalone() || document.getElementById('plexi-install-banner')) return;
+    const el = document.createElement('div');
+    el.id = 'plexi-install-banner';
+    el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:9999;' +
+      'display:flex;align-items:center;gap:12px;padding:12px 18px;background:#fff;color:#1a1a2e;' +
+      'border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.18);max-width:min(560px,92vw);font-family:inherit;';
+    el.innerHTML =
+      '<span style="font-size:13px;font-weight:600;line-height:1.4;">Install Plexi Digital Mall for a faster, full-screen experience.</span>' +
+      '<button id="plexi-install-yes" class="btn btn-primary btn-sm" style="flex-shrink:0;">Install</button>' +
+      '<button id="plexi-install-no" class="btn btn-ghost btn-sm" aria-label="Dismiss" style="flex-shrink:0;">&#10005;</button>';
+    el.querySelector('#plexi-install-yes').addEventListener('click', async () => {
+      const prompt = deferredInstall;
+      hideInstallBanner();
+      deferredInstall = null;
+      if (!prompt) return;
+      try { prompt.prompt(); await prompt.userChoice; } catch (_) {}
+    });
+    el.querySelector('#plexi-install-no').addEventListener('click', () => {
+      rememberInstallDismissed();
+      hideInstallBanner();
+    });
+    document.body.appendChild(el);
+  }
+
+  function hideInstallBanner() {
+    const el = document.getElementById('plexi-install-banner');
+    if (el) el.remove();
+  }
+
+  function initInstallPrompt() {
+    if (isStandalone() || wasInstallDismissed()) return;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredInstall = e;
+      setTimeout(showInstallBanner, 6000);
+    });
+    window.addEventListener('appinstalled', () => {
+      hideInstallBanner();
+      deferredInstall = null;
+      if (window.UI && UI.toast) UI.toast('Plexi installed! Open it from your home screen.', 'success');
+    });
+  }
+
   return {
     init, isSupported, getPermissionState, requestPermission,
     subscribe, unsubscribe, getSubscription,
-    showPermissionPrompt, enablePush, dismissPrompt, shouldPrompt
+    showPermissionPrompt, enablePush, dismissPrompt, shouldPrompt,
+    initInstallPrompt, showInstallBanner, hideInstallBanner
   };
 })();
 
 window.PushManager = PushManager;
+if (typeof document !== 'undefined') PushManager.initInstallPrompt();

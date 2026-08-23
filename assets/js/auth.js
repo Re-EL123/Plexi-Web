@@ -5,8 +5,7 @@ const Auth = (() => {
   // Base path of the site. On GitHub Pages project sites the app is served
   // from https://<user>.github.io/<RepoName>/... , so all absolute redirects
   // must be prefixed with /<RepoName>/ instead of just "/".
-  // Adjust REPO_NAME if the repository is ever renamed.
-  const REPO_NAME = 'Plexi-Web';
+  const REPO_NAME = CONFIG.REPO_NAME;
   const BASE_PATH = `/${REPO_NAME}`;
 
   function getToken()     { return localStorage.getItem(CONFIG.TOKEN_KEY); }
@@ -29,7 +28,8 @@ const Auth = (() => {
     const map = {
       admin:   `${BASE_PATH}/dashboard/admin.html`,
       seller:  `${BASE_PATH}/dashboard/seller.html`,
-      shopper: `${BASE_PATH}/dashboard/shopper.html`
+      shopper: `${BASE_PATH}/dashboard/shopper.html`,
+      driver:  `${BASE_PATH}/dashboard/driver.html`
     };
     // Safety check: if role is missing, go to index
     window.location.href = map[role] || `${BASE_PATH}/index.html`;

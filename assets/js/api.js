@@ -93,6 +93,8 @@ const api = (() => {
     signup: (email, password, role)  => post('/auth?action=signup', { email, password, role }),
     logout: ()                       => post('/auth?action=logout'),
     me:     ()                       => get('/auth?action=me'),
+    forgotPassword: (email, redirectTo) => post('/auth?action=forgot-password', { email, redirect_to: redirectTo }),
+    resetPassword:  (tokens, password) => post('/auth?action=reset-password', { ...tokens, password }),
   };
 
   // ======== USERS ======== //
@@ -118,6 +120,7 @@ const api = (() => {
     unfollow: (storeId)              => del(`/stores?action=unfollow&id=${storeId}`),
     followersCount: (storeId)        => get(`/stores?action=followers-count&id=${storeId}`),
     isFollowing: (storeId)           => get(`/stores?action=is-following&id=${storeId}`),
+    followed:    (params = {})       => get(`/stores?action=followed&${new URLSearchParams(params)}`),
     categories: (params = {})        => get(`/stores?action=categories&${new URLSearchParams(params)}`),
   };
 
@@ -164,6 +167,7 @@ const api = (() => {
     create: (data)       => post('/reviews', data),
     delete: (id)         => del(`/reviews?id=${id}`),
     like:   (id)         => post(`/reviews?id=${id}&action=like`),
+    flag:   (id, reason) => post(`/reviews?id=${id}&action=flag`, { reason }),
   };
 
   // ======== NOTIFICATIONS ======== //
@@ -222,6 +226,12 @@ const api = (() => {
     updateSettings:   (updates) => put('/admin?action=settings-update', { updates }),
     transactions:     (params={}) => get(`/admin?action=transactions&${new URLSearchParams(params)}`),
     transactionsSummary: ()   => get('/admin?action=transactions-summary'),
+    auditLog:         (params={}) => get(`/admin?action=audit-log&${new URLSearchParams(params)}`),
+    flaggedReviews:   (params={}) => get(`/admin?action=flagged-reviews&${new URLSearchParams(params)}`),
+    moderateReview:   (id, action, notes) => post('/admin?action=moderate-review', { review_id: id, action, admin_notes: notes }),
+    coupons:          (params={}) => get(`/admin?action=coupons&${new URLSearchParams(params)}`),
+    createCoupon:     (data)      => post('/admin?action=create-coupon', data),
+    deleteCoupon:     (id)        => del(`/admin?action=delete-coupon&id=${id}`),
   };
 
   // ======== DRIVER COMPLIANCE (KYC) ======== //
@@ -236,6 +246,27 @@ const api = (() => {
     generate: (start, end) => post('/admin?action=driver-payments-generate', { period_start: start, period_end: end }),
     process:  (paymentId, action, data={}) => post('/admin?action=driver-payments-process', { payment_id: paymentId, action, ...data }),
     summary:  (params={}) => get(`/admin?action=driver-earnings-summary&${new URLSearchParams(params)}`),
+  };
+
+  // ======== DRIVER (delivery partner) ======== //
+  const driver = {
+    profile:       () => get('/orders?action=driver-profile'),
+    register:      (data) => post('/orders?action=driver-register', data),
+    location:      (latitude, longitude) => post('/orders?action=driver-location', { latitude, longitude }),
+    toggle:        () => post('/orders?action=driver-toggle', {}),
+    offers:        () => get('/orders?action=driver-offers'),
+    accept:        (offerId) => post('/orders?action=driver-accept', { offer_id: offerId }),
+    decline:       (offerId) => post('/orders?action=driver-decline', { offer_id: offerId }),
+    active:        () => get('/orders?action=driver-active'),
+    pickedUp:      () => post('/orders?action=driver-pickup', {}),
+    stopCollected: (deliveryId, sequence) => post('/orders?action=driver-pickup-stop', { delivery_id: deliveryId, sequence }),
+    delivered:     () => post('/orders?action=driver-complete', {}),
+    cancel:        (reason) => post('/orders?action=driver-cancel', { reason }),
+    pickupPhoto:   (deliveryId, photoUrl) => post('/orders?action=driver-pickup-photo', { delivery_id: deliveryId, photo_url: photoUrl }),
+    deliveryPhoto: (deliveryId, photoUrl) => post('/orders?action=driver-delivery-photo', { delivery_id: deliveryId, photo_url: photoUrl }),
+    earnings:      () => get('/orders?action=driver-earnings'),
+    history:       (params = {}) => get(`/orders?action=driver-history&${new URLSearchParams(params)}`),
+    stats:         () => get('/orders?action=driver-stats'),
   };
 
   // ======== MAP (served by /api/stores with map-* actions) ======== //
@@ -302,6 +333,12 @@ const api = (() => {
     },
   };
 
+  // ======== COUPONS ======== //
+  const coupons = {
+    validate: (code, total) => post('/coupons?action=validate', { code, total }),
+    list:     ()            => get('/coupons?action=available'),
+  };
+
   // ======== DELIVERY ======== //
   const delivery = {
     preview: (lat, lng) => get(`/orders?action=delivery-preview&shipping_lat=${lat}&shipping_lng=${lng}`),
@@ -356,7 +393,9 @@ const api = (() => {
   };
 
   return { auth, users, stores, products, orders, payments, cart, reviews,
-           notifications, support, subscriptions, admin, map, geocode, delivery, wishlist, upload, banking, verification, driverCompliance, driverPayments };
+           notifications, support, subscriptions, admin, map, geocode, delivery,
+           wishlist, upload, banking, verification, driverCompliance, driverPayments,
+           driver, coupons };
 })();
 
 window.api = api;

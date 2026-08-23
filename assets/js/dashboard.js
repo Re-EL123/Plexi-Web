@@ -66,6 +66,10 @@ const Dashboard = (() => {
   }
 
   // ======== CART COUNT ======== //
+  function pingCartEcho() {
+    try { localStorage.setItem('plexi_cart_echo', Date.now().toString()); } catch (_) {}
+  }
+
   async function loadCartCount() {
     try {
       const data = await api.cart.get();
@@ -249,11 +253,20 @@ const Dashboard = (() => {
 
   async function updateCartQty(id, qty) {
     if (qty < 1) { await removeCartItem(id); return; }
-    try { await api.cart.update(id, qty); loadCartPanelItems(); loadCartCount(); } catch (e) { UI.toast(e.message, 'error'); }
+    try { await api.cart.update(id, qty); pingCartEcho(); loadCartPanelItems(); loadCartCount(); } catch (e) { UI.toast(e.message, 'error'); }
   }
 
   async function removeCartItem(id) {
-    try { await api.cart.remove(id); UI.toast('Removed', 'info'); loadCartPanelItems(); loadCartCount(); } catch (e) { UI.toast(e.message, 'error'); }
+    try { await api.cart.remove(id); UI.toast('Removed', 'info'); pingCartEcho(); loadCartPanelItems(); loadCartCount(); } catch (e) { UI.toast(e.message, 'error'); }
+  }
+
+  // ======== SKELETON ROWS ======== //
+  function skeletonRows(tbodyEl, cols = 4, rows = 3) {
+    if (!tbodyEl) return;
+    tbodyEl.innerHTML = Array.from({ length: rows }, () =>
+      `<tr>${Array.from({ length: cols }, () => `
+        <td>${UI.skeleton('100%', '14px', '6px')}</td>`).join('')}</tr>`
+    ).join('');
   }
 
   // ======== INIT ======== //
@@ -265,6 +278,11 @@ const Dashboard = (() => {
     if (window.PushManager) PushManager.init().then(() => { if (PushManager.shouldPrompt()) setTimeout(() => PushManager.showPermissionPrompt(), 3000); });
     loadNotifications();
     setInterval(loadNotifications, 60000);
+    loadCartCount();
+
+    window.addEventListener('storage', e => {
+      if (e.key === 'plexi_cart_echo') loadCartCount();
+    });
 
     // Section nav
     document.querySelectorAll('[data-section]').forEach(btn => {
@@ -286,7 +304,7 @@ const Dashboard = (() => {
 
   return {
     init, loadNotifications, markRead, markAllRead, loadCartCount,
-    showSection, renderTable, renderPagination, initSearch,
+    showSection, renderTable, renderPagination, initSearch, skeletonRows,
     openCartPanel, closeCartPanel, loadCartPanelItems, updateCartQty, removeCartItem
   };
 })();

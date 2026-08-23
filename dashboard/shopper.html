@@ -70,6 +70,9 @@
         <a href="#" data-section="section-wishlist">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Wishlist
         </a>
+        <a href="#" data-section="section-following">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Following
+        </a>
         <a href="#" data-section="section-reviews">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>My Reviews
         </a>
@@ -222,7 +225,13 @@
               </div>
             </div>
             <div style="border-top:1px solid var(--border);margin:var(--space-md) 0;padding-top:var(--space-md);">
+              <div style="display:flex;gap:var(--space-xs);margin-bottom:var(--space-sm);">
+                <input type="text" id="coupon-code" class="form-control" placeholder="Coupon code" style="font-size:13px;text-transform:uppercase;" oninput="onCouponInput()">
+                <button type="button" id="coupon-apply-btn" class="btn btn-primary btn-sm" onclick="applyCoupon()">Apply</button>
+              </div>
+              <div id="coupon-status" style="display:none;font-size:12px;margin-bottom:var(--space-sm);"></div>
               <div class="flex-between"><span>Subtotal</span><span id="cart-subtotal">R0.00</span></div>
+              <div class="flex-between" id="cart-discount-row" style="display:none;margin-top:6px;"><span style="color:var(--success);">Discount</span><span id="cart-discount" style="color:var(--success);">−R0.00</span></div>
               <div class="flex-between" style="margin-top:6px;"><span>Driver tip</span><span id="cart-tip">R0.00</span></div>
               <div class="flex-between" style="margin-top:6px;"><strong>Total</strong><strong id="cart-total" style="font-size:20px;color:var(--primary);">R0.00</strong></div>
             </div>
@@ -235,6 +244,18 @@
       <section id="section-wishlist" class="dash-section" style="display:none;">
         <h2 style="margin-bottom:var(--space-lg);">My Wishlist</h2>
         <div id="wishlist-grid" class="grid-auto"></div>
+      </section>
+
+      <!-- FOLLOWING -->
+      <section id="section-following" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);">
+          <h2>Stores You Follow</h2>
+          <button class="btn btn-ghost btn-sm" onclick="loadFollowing()">Refresh</button>
+        </div>
+        <h4 style="margin-bottom:var(--space-md);color:var(--text-secondary);">Followed Stores</h4>
+        <div id="following-stores" class="grid-auto" style="margin-bottom:var(--space-xl);"></div>
+        <h4 style="margin-bottom:var(--space-md);color:var(--text-secondary);">Latest From Them</h4>
+        <div id="following-products" class="grid-auto"></div>
       </section>
 
       <!-- REVIEWS -->
@@ -393,6 +414,7 @@
       if (sec === 'section-cart')         { loadCart(); loadCheckoutDetails(); }
       if (sec === 'section-wishlist')     loadWishlist();
       if (sec === 'section-reviews')      loadReviews();
+      if (sec === 'section-following')    loadFollowing();
       if (sec === 'section-notifications')loadNotifFull();
       if (sec === 'section-support')      loadTickets();
       if (sec === 'section-banking')      loadShopperBanking();
@@ -441,7 +463,8 @@
           <td>${UI.statusBadge(o.status,CONFIG.ORDER_STATUSES)}</td>
           <td>${UI.formatDate(o.created_at)}</td>
           <td class="table-actions">
-            <button class="btn btn-ghost btn-sm" onclick="viewOrderDetail('${o.id}')">Details</button>
+            <button class="btn btn-ghost btn-sm" onclick="viewOrderDetail('${o.id}')">Track</button>
+            ${o.status==='delivered'?`<button class="btn btn-primary btn-sm" onclick="buyAgain('${o.id}')">Buy Again</button>`:''}
             ${o.status==='pending'?`<button class="btn btn-danger btn-sm" onclick="cancelOrder('${o.id}')">Cancel</button>`:''}
           </td>
         </tr>`).join('')
@@ -454,16 +477,65 @@
   let deliveryFee = 0;
   let tipPercent = 0;
   const TIP_PRESETS = [0, 5, 10, 15];
+  let appliedCoupon = null;
+  let couponDiscount = 0;
 
   function tipAmount() {
     return Math.round(cartSubtotal * (tipPercent / 100) * 100) / 100;
   }
 
+  function discountAmount() {
+    return Math.min(couponDiscount, cartSubtotal);
+  }
+
   function recalcTotals() {
     const tipEl = document.getElementById('cart-tip');
     if (tipEl) tipEl.textContent = UI.formatCurrency(tipAmount());
+    const discRow = document.getElementById('cart-discount-row');
+    if (discRow) {
+      discRow.style.display = couponDiscount > 0 ? 'flex' : 'none';
+      document.getElementById('cart-discount').textContent = '−' + UI.formatCurrency(discountAmount());
+    }
     const totalEl = document.getElementById('cart-total');
-    if (totalEl) totalEl.textContent = UI.formatCurrency(cartSubtotal + deliveryFee + tipAmount());
+    if (totalEl) totalEl.textContent = UI.formatCurrency(Math.max(cartSubtotal - discountAmount(), 0) + deliveryFee + tipAmount());
+  }
+
+  let couponTimer = null;
+  function onCouponInput() {
+    clearTimeout(couponTimer);
+    couponTimer = setTimeout(applyCoupon, 600);
+  }
+
+  async function applyCoupon() {
+    const input = document.getElementById('coupon-code');
+    const status = document.getElementById('coupon-status');
+    const btn = document.getElementById('coupon-apply-btn');
+    if (!input || !status) return;
+    const code = input.value.trim().toUpperCase();
+    if (!code) {
+      appliedCoupon = null; couponDiscount = 0;
+      status.style.display = 'none';
+      recalcTotals();
+      return;
+    }
+    btn.disabled = true; btn.textContent = '…';
+    try {
+      const res = await api.coupons.validate(code, cartSubtotal);
+      appliedCoupon = { code, ...res };
+      couponDiscount = parseFloat(res.discount) || 0;
+      status.style.display = 'block';
+      status.style.color = 'var(--success)';
+      status.textContent = res.message || `${code} applied — you save ${UI.formatCurrency(res.discount)}`;
+      UI.toast('Coupon applied!', 'success');
+    } catch (err) {
+      appliedCoupon = null; couponDiscount = 0;
+      status.style.display = 'block';
+      status.style.color = 'var(--error)';
+      status.textContent = err.message || 'Invalid coupon code';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Apply';
+      recalcTotals();
+    }
   }
 
   function renderTipOptions() {
@@ -654,11 +726,11 @@
     saveCheckoutDetails();
 
     const tip = tipAmount();
-    const grandTotal = cartSubtotal + deliveryFee + tip;
+    const grandTotal = Math.max(cartSubtotal - discountAmount(), 0) + deliveryFee + tip;
 
     UI.confirmDialog({
       title: 'Place Order & Pay',
-      message: `Total: ${UI.formatCurrency(grandTotal)}${deliveryFee > 0 ? ' (incl. delivery)' : ''}${tip > 0 ? ` · incl. R${tip.toFixed(2)} driver tip` : ''}<br><small style="color:var(--text-muted);">Delivering to ${name} ${surname} · ${phone}. You will pay securely via Yoco.</small>`,
+      message: `Total: ${UI.formatCurrency(grandTotal)}${deliveryFee > 0 ? ' (incl. delivery)' : ''}${tip > 0 ? ` · incl. R${tip.toFixed(2)} driver tip` : ''}${couponDiscount > 0 ? ` · coupon −${UI.formatCurrency(discountAmount())}` : ''}<br><small style="color:var(--text-muted);">Delivering to ${name} ${surname} · ${phone}. You will pay securely via Yoco.</small>`,
       confirmText: 'Pay Now',
       onConfirm: async () => {
         try {
@@ -672,6 +744,7 @@
             tip_amount: tip,
             pay: true
           };
+          if (appliedCoupon) payload.coupon_code = appliedCoupon.code;
           if (shipping_lat && shipping_lng) {
             payload.shipping_lat = shipping_lat;
             payload.shipping_lng = shipping_lng;
@@ -687,6 +760,12 @@
           UI.toast('Order placed!', 'success');
           deliveryFee = 0;
           tipPercent = 0;
+          appliedCoupon = null;
+          couponDiscount = 0;
+          const cc = document.getElementById('coupon-code');
+          if (cc) cc.value = '';
+          const cs = document.getElementById('coupon-status');
+          if (cs) cs.style.display = 'none';
           document.getElementById('delivery-fee-box').style.display = 'none';
           loadCart();
           loadOverview();
@@ -822,24 +901,138 @@
     });
   }
 
+  async function loadFollowing() {
+    const storesEl = document.getElementById('following-stores');
+    const prodsEl  = document.getElementById('following-products');
+    if (!storesEl) return;
+    storesEl.innerHTML = UI.skeletonGrid(3, '90px');
+    prodsEl.innerHTML  = UI.skeletonGrid(6, '140px');
+    let followed = [];
+    try {
+      const data = await api.stores.followed();
+      followed = Array.isArray(data) ? data : (data.stores || []);
+    } catch (_) {}
+    if (!followed.length) {
+      storesEl.innerHTML = UI.empty('Not Following Any Stores', 'Follow stores to see their latest products here.', '🏬', `<a href="../index.html" class="btn btn-primary">Discover Stores</a>`);
+      prodsEl.innerHTML = '';
+      return;
+    }
+    storesEl.innerHTML = followed.map(s => `
+      <div class="card" style="display:flex;align-items:center;gap:var(--space-md);padding:var(--space-md);">
+        <div style="width:52px;height:52px;border-radius:var(--radius-md);overflow:hidden;background:var(--bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px;">
+          ${s.logo ? `<img src="${s.logo}" style="width:100%;height:100%;object-fit:cover;">` : '🏬'}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+          <div style="font-size:12px;color:var(--text-muted);">${s.category || ''}</div>
+        </div>
+        <a href="../store/store.html?id=${s.id}" class="btn btn-ghost btn-sm">Visit</a>
+      </div>`).join('');
+    const productLists = await Promise.allSettled(followed.slice(0, 8).map(s => api.products.list(s.id, { limit: 4 })));
+    const products = [];
+    productLists.forEach(r => {
+      if (r.status !== 'fulfilled') return;
+      const v = r.value;
+      (Array.isArray(v) ? v : (v.products || v.items || [])).forEach(p => products.push(p));
+    });
+    if (!products.length) { prodsEl.innerHTML = `<p style="color:var(--text-muted);">No products published yet.</p>`; return; }
+    prodsEl.innerHTML = products.map(p => `
+      <div class="product-card">
+        <div class="product-card-img">
+          ${p.images?.[0] ? `<img src="${p.images[0]}" alt="">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--bg);">🛍️</div>'}
+        </div>
+        <div class="product-card-body">
+          <div class="product-card-name">${p.name}</div>
+          <div class="product-card-price">${UI.formatCurrency(p.price||0)}</div>
+        </div>
+        <div class="product-card-footer">
+          <button class="btn btn-primary btn-sm" onclick="addWishToCart('${p.id}')">Add to Cart</button>
+          <a href="../store/product.html?id=${p.id}" class="btn btn-ghost btn-sm">View</a>
+        </div>
+      </div>`).join('');
+  }
+
   async function cancelOrder(id) {
     UI.confirmDialog({ title:'Cancel Order', message:'Cancel this order?', confirmText:'Cancel Order', danger:true,
       onConfirm: async()=>{ try{ await api.orders.cancel(id); UI.toast('Order cancelled','info'); loadOrders(); } catch(e){ UI.toast(e.message,'error'); } }
     });
   }
 
+  const TRACK_STEPS = ['pending', 'processing', 'shipped', 'delivered'];
+
+  function renderTrackTimeline(status) {
+    if (status === 'cancelled') {
+      return `<div style="text-align:center;padding:var(--space-md);color:var(--error);font-weight:700;">✕ This order was cancelled</div>`;
+    }
+    const idx = TRACK_STEPS.indexOf(status);
+    return `<div style="display:flex;align-items:flex-start;margin:var(--space-lg) 0;">
+      ${TRACK_STEPS.map((step, i) => {
+        const done = i <= idx;
+        const isLast = i === TRACK_STEPS.length - 1;
+        const color = done ? 'var(--primary)' : 'var(--gray-300)';
+        return `
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;${isLast ? 'flex:0 0 80px;' : ''}">
+          ${i > 0 ? `<div style="position:absolute;top:14px;right:50%;width:100%;height:3px;background:${i <= idx ? 'var(--primary)' : 'var(--gray-200)'};z-index:0;"></div>` : ''}
+          <div style="width:28px;height:28px;border-radius:50%;background:${color};z-index:1;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;">${done ? '✓' : i + 1}</div>
+          <div style="margin-top:6px;font-size:11px;font-weight:600;color:${done ? 'var(--text-primary)' : 'var(--text-muted)'};text-transform:capitalize;text-align:center;">${step}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  let trackPollTimer = null;
+
   function viewOrderDetail(id) {
     UI.createModal({ id:'order-detail', title:`Order #${id.slice(0,8)}`, content: UI.skeletonList(4) });
-    api.orders.get(id).then(o => {
+    clearInterval(trackPollTimer);
+    const fetchAndRender = () => api.orders.get(id).then(o => {
+      const order = o?.order || o;
+      const items = Array.isArray(order.items) ? order.items
+        : Array.isArray(order.order_items) ? order.order_items
+        : (Array.isArray(o) ? o : []);
+      const inFlight = ['pending','processing','shipped'].includes(order.status);
+      const driver = order.driver || order.delivery?.driver;
       const body = document.querySelector('#order-detail .modal-body');
       if (body) body.innerHTML = `
         <div style="display:grid;gap:var(--space-md);">
-          <div class="flex-between"><span>Status:</span>${UI.statusBadge(o.status,CONFIG.ORDER_STATUSES)}</div>
-          <div class="flex-between"><span>Total:</span><strong style="color:var(--primary);font-size:18px;">${UI.formatCurrency(o.total)}</strong></div>
-          <div class="flex-between"><span>Date:</span>${UI.formatDateTime(o.created_at)}</div>
-          <div><strong>Shipping Address</strong><div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">${JSON.stringify(o.shipping_address)}</div></div>
+          <div class="flex-between"><span>Status:</span>${UI.statusBadge(order.status,CONFIG.ORDER_STATUSES)}</div>
+          ${renderTrackTimeline(order.status)}
+          ${driver ? `<div class="neo-inset" style="padding:var(--space-sm) var(--space-md);border-radius:var(--radius-md);font-size:13px;"><strong>🚚 Driver:</strong> ${driver.name || driver.email || 'Assigned'}${driver.phone ? ` · ${driver.phone}` : ''}${inFlight ? ` <span style="color:var(--text-muted);">(updating live)</span>` : ''}</div>` : ''}
+          <div class="flex-between"><span>Total:</span><strong style="color:var(--primary);font-size:18px;">${UI.formatCurrency(order.total)}</strong></div>
+          <div class="flex-between"><span>Date:</span>${UI.formatDateTime(order.created_at)}</div>
+          <div><strong>Shipping Address</strong><div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">${typeof order.shipping_address === 'string' ? JSON.stringify(order.shipping_address).replace(/"/g,'') : Object.values(order.shipping_address||{}).filter(Boolean).join(', ') || '—'}</div></div>
+          ${items.length ? `
+          <div><strong>Items</strong><div style="max-height:180px;overflow-y:auto;margin-top:6px;display:grid;gap:6px;">
+            ${items.map(it => {
+              const p = it.product || it.products || {};
+              return `<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);">
+                <span>${it.quantity}× ${p.name || it.name || 'Item'}</span><strong>${UI.formatCurrency(it.unit_price != null ? it.unit_price * it.quantity : (p.price || it.price || 0) * it.quantity)}</strong>
+              </div>`; }).join('')}
+          </div></div>` : ''}
         </div>`;
+      if (inFlight) {
+        clearInterval(trackPollTimer);
+        trackPollTimer = setTimeout(fetchAndRender, 12000);
+      }
     }).catch(_=>{});
+    fetchAndRender();
+  }
+
+  async function buyAgain(id) {
+    try {
+      const res = await api.orders.get(id);
+      const o = res?.order || res;
+      const items = Array.isArray(o.items) ? o.items : Array.isArray(o.order_items) ? o.order_items : [];
+      if (!items.length) { UI.toast('No items found on this order', 'warning'); return; }
+      let added = 0;
+      for (const it of items) {
+        const pid = it.product_id || it.product?.id;
+        if (!pid) continue;
+        try { await api.cart.add({ product_id: pid, quantity: it.quantity || 1 }); added++; } catch (_) {}
+      }
+      UI.toast(added ? `${added} item${added !== 1 ? 's' : ''} added to cart!` : 'Could not re-add items — they may be unavailable', added ? 'success' : 'error');
+      if (added) Dashboard.showSection('section-cart'), loadCart();
+    } catch (e) { UI.toast(e.message, 'error'); }
   }
 
   async function loadNotifFull() {

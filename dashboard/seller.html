@@ -573,6 +573,10 @@
           <div class="stat-card stagger-child delay-4" style="background:rgba(142,68,173,0.06);cursor:pointer;" onclick="Dashboard.showSection('section-reports');document.getElementById('topbar-title').textContent='Reports';loadSellerReport()"><div class="stat-icon" style="color:#8E44AD;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="stat-label">Followers</div><div class="stat-value" id="s-stat-followers" style="color:#8E44AD;">—</div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);">
+          <div class="card" style="grid-column:1/-1;">
+            <div class="card-header"><h4>Sales — Last 14 Days</h4><button class="btn btn-ghost btn-sm" onclick="Dashboard.showSection('section-reports');document.getElementById('topbar-title').textContent='Reports';loadSellerReport()">Full Reports</button></div>
+            <div class="card-body"><div style="height:220px;position:relative;"><canvas id="chart-sales-overview"></canvas></div></div>
+          </div>
           <div class="card">
             <div class="card-header"><h4>Recent Orders</h4><button class="btn btn-ghost btn-sm" onclick="Dashboard.showSection('section-orders');loadOrders()">View All</button></div>
             <div id="recent-orders-list"><div style="padding:var(--space-lg);text-align:center;color:var(--text-muted);">Loading…</div></div>
@@ -588,8 +592,12 @@
       <section id="section-products" class="dash-section" style="display:none;">
         <div class="flex-between" style="margin-bottom:var(--space-lg);">
           <h2>Products</h2>
-          <button class="btn btn-primary" onclick="openAddProductModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product</button>
+          <div style="display:flex;gap:var(--space-sm);">
+            <button class="btn btn-ghost" onclick="openBulkStockModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/></svg>Bulk Stock</button>
+            <button class="btn btn-primary" onclick="openAddProductModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product</button>
+          </div>
         </div>
+        <div id="low-stock-banner" style="display:none;"></div>
         <div class="grid-auto" id="products-grid"><div style="grid-column:1/-1;padding:var(--space-xl);text-align:center;color:var(--text-muted);">Select a store to view products</div></div>
       </section>
 
@@ -1242,7 +1250,71 @@
           <div style="display:flex;justify-content:space-between;margin-bottom:4px;">${UI.stars(r.rating)}<span style="font-size:11px;color:var(--text-muted);">${UI.timeAgo(r.created_at)}</span></div>
           <div style="font-size:13px;color:var(--text-secondary);">${r.comment||'No comment'}</div>
         </div>`).join('') || '<div style="padding:var(--space-lg);text-align:center;color:var(--text-muted);">No reviews yet</div>';
+
+      renderSalesOverviewChart(orders);
+
+      const lowStock = prods.filter(p => !p.sold_out && Number(p.inventory) <= 5 && (p.track_inventory !== false));
+      const banner = document.getElementById('low-stock-banner');
+      if (banner) {
+        if (lowStock.length) {
+          const out = lowStock.filter(p => Number(p.inventory) === 0);
+          banner.style.display = 'block';
+          banner.innerHTML = `<div class="alert ${out.length ? 'alert-error' : 'alert-warning'}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span><strong>Inventory alert:</strong> ${out.length ? `${out.length} out of stock` : ''}${out.length && lowStock.length - out.length ? ' · ' : ''}${lowStock.length - out.length ? `${lowStock.length - out.length} running low (≤5 left)` : ''}.
+            <a href="#" onclick="event.preventDefault();openBulkStockModal()" style="font-weight:700;">Restock now →</a></span>
+          </div>`;
+        } else {
+          banner.style.display = 'none';
+        }
+      }
     } catch (_) {}
+  }
+
+  let salesOverviewChart = null;
+  function renderSalesOverviewChart(orders) {
+    const canvas = document.getElementById('chart-sales-overview');
+    if (!canvas || typeof Chart === 'undefined') return;
+    const paid = orders.filter(o => o.status !== 'cancelled');
+    const days = [];
+    const totals = {};
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      days.push(key);
+      totals[key] = 0;
+    }
+    paid.forEach(o => {
+      const key = (o.created_at || '').split('T')[0];
+      if (key in totals) totals[key] += parseFloat(o.total || 0);
+    });
+    const labels = days.map(k => new Date(k + 'T00:00:00').toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' }));
+    if (salesOverviewChart) salesOverviewChart.destroy();
+    salesOverviewChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Revenue (R)',
+          data: days.map(k => totals[k].toFixed(2)),
+          borderColor: '#6C63FF',
+          backgroundColor: 'rgba(108,99,255,0.08)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 2,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { font: { size: 11 }, callback: v => 'R' + v } },
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 0, autoSkipPadding: 12 } }
+        }
+      }
+    });
   }
 
   async function loadProducts() {
@@ -1260,11 +1332,16 @@
           </div>
           <div class="card-body">
             <div style="font-weight:700;margin-bottom:4px;">${p.name}</div>
-            <div style="font-size:18px;font-weight:800;color:var(--primary);font-family:var(--font-display);">${UI.formatCurrency(p.price)}</div>
+            <div style="font-size:18px;font-weight:800;color:var(--primary);font-family:var(--font-display);">
+              ${UI.formatCurrency(p.price)}
+              ${p.original_price && p.original_price > p.price ? '<span class="badge badge-error" style="margin-left:6px;font-size:10px;">SALE</span>' : ''}
+            </div>
             ${p.original_price && p.original_price > p.price ? `<div style="font-size:12px;color:var(--text-muted);text-decoration:line-through;">${UI.formatCurrency(p.original_price)}</div>` : ''}
             <div style="display:flex;justify-content:space-between;margin-top:var(--space-sm);">
-              <span style="font-size:12px;color:var(--text-muted);">Stock: ${p.inventory}</span>
-              ${p.sold_out ? '<span class="badge badge-error">✗ Sold Out</span>' : `<span class="badge badge-gray">${p.category}</span>`}
+              ${!p.sold_out && Number(p.inventory) === 0 ? '<span class="badge badge-error">✗ Out of Stock</span>'
+                : !p.sold_out && Number(p.inventory) <= 5 ? `<span class="badge badge-warning">⚠ Low · ${p.inventory} left</span>`
+                : p.sold_out ? '<span class="badge badge-error">✗ Sold Out</span>' : `<span class="badge badge-gray">${p.category}</span>`}
+              ${(!p.sold_out && Number(p.inventory) > 5) || p.sold_out ? `<span style="font-size:12px;color:var(--text-muted);">Stock: ${p.inventory}</span>` : ''}
             </div>
             ${p.sku ? `<div style="font-size:11px;color:var(--text-muted);">SKU: ${p.sku}</div>` : ''}
             ${p.tags && p.tags.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">${p.tags.map(t => `<span class="badge badge-secondary">${t}</span>`).join('')}</div>` : ''}
@@ -1276,6 +1353,53 @@
           </div>
         </div>`).join('');
     } catch (err) { grid.innerHTML = UI.empty('Error', err.message); }
+  }
+
+  async function openBulkStockModal() {
+    if (!currentStore) { UI.toast('Select a store first','warning'); return; }
+    UI.createModal({
+      id:'bulk-stock', title:'Bulk Edit Stock',
+      content: UI.skeletonList(5),
+      footer:`<button class="btn btn-ghost" onclick="UI.closeModal('bulk-stock')">Cancel</button>
+              <button class="btn btn-primary" onclick="saveBulkStock()">Save All</button>`
+    });
+    try {
+      const data = await api.products.list(currentStore.id);
+      const prods = Array.isArray(data) ? data : (data.products || []);
+      const body = document.querySelector('#bulk-stock .modal-body');
+      if (!prods.length) {
+        if (body) body.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:var(--space-lg);">No products yet.</p>';
+        return;
+      }
+      if (body) body.innerHTML = `
+        <div style="display:grid;gap:var(--space-sm);max-height:380px;overflow-y:auto;">
+          ${prods.map(p => `
+            <div style="display:flex;align-items:center;gap:var(--space-md);padding:var(--space-sm) var(--space-md);background:var(--bg);border-radius:var(--radius-md);">
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+                <div style="font-size:11px;color:${Number(p.inventory) <= 5 ? 'var(--error)' : 'var(--text-muted)'};">Current: ${p.inventory}${p.sold_out ? ' · marked sold out' : ''}</div>
+              </div>
+              <input type="number" min="0" class="form-control bulk-stock-input" data-id="${p.id}" value="${p.inventory}" style="width:90px;font-size:13px;">
+            </div>`).join('')}
+        </div>`;
+    } catch (err) {
+      const body = document.querySelector('#bulk-stock .modal-body');
+      if (body) body.innerHTML = `<p style="color:var(--error);">${err.message}</p>`;
+    }
+  }
+
+  async function saveBulkStock() {
+    const inputs = document.querySelectorAll('#bulk-stock .bulk-stock-input');
+    const updates = [];
+    inputs.forEach(inp => {
+      updates.push(api.products.update(inp.dataset.id, { inventory: Math.max(parseInt(inp.value, 10) || 0, 0) }));
+    });
+    const results = await Promise.allSettled(updates);
+    const failed = results.filter(r => r.status === 'rejected').length;
+    if (failed) UI.toast(`${failed} update${failed !== 1 ? 's' : ''} failed`, 'error');
+    else UI.toast('Stock updated!', 'success');
+    UI.closeModal('bulk-stock');
+    loadProducts();
   }
 
   async function loadOrders() {

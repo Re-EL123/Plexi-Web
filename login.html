@@ -211,7 +211,12 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
           <span id="error-text">Something went wrong</span>
         </div>
+        <div id="info-alert" class="alert alert-info" style="display:none;margin-bottom:var(--space-md);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span id="info-text"></span>
+        </div>
 
+        <div id="view-login">
         <form id="login-form" onsubmit="handleLogin(event)">
           <div class="form-group">
             <label class="form-label">Email Address</label>
@@ -237,13 +242,67 @@
           </div>
 
           <div style="display:flex;justify-content:flex-end;margin-bottom:var(--space-lg);">
-            <a href="#" style="font-size:13px;">Forgot password?</a>
+            <a href="#" onclick="showForgot(event)" style="font-size:13px;">Forgot password?</a>
           </div>
 
           <button type="submit" id="login-btn" class="btn btn-primary btn-block btn-lg">
             Sign In
           </button>
         </form>
+        </div>
+
+        <div id="view-forgot" style="display:none;">
+          <p style="color:var(--text-secondary);font-size:14px;margin-bottom:var(--space-lg);">
+            Enter your account email and we'll send you a password reset link.
+          </p>
+          <form onsubmit="handleForgot(event)">
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <div class="input-group">
+                <span class="input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </span>
+                <input type="email" id="forgot-email" class="form-control" placeholder="name@example.com" required autocomplete="email">
+              </div>
+            </div>
+            <button type="submit" id="forgot-btn" class="btn btn-primary btn-block btn-lg" style="margin-top:var(--space-md);">
+              Send Reset Link
+            </button>
+          </form>
+          <div style="text-align:center;margin-top:var(--space-lg);">
+            <a href="#" onclick="showLogin(event)" style="font-size:13px;font-weight:700;color:var(--primary);">← Back to sign in</a>
+          </div>
+        </div>
+
+        <div id="view-reset" style="display:none;">
+          <h2 class="auth-header" style="margin-bottom:var(--space-md);text-align:center;"><span style="font-family:var(--font-display);font-size:24px;font-weight:800;">Set a new password</span></h2>
+          <form onsubmit="handleReset(event)">
+            <div class="form-group">
+              <label class="form-label">New Password</label>
+              <div class="input-group has-right">
+                <span class="input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </span>
+                <input type="password" id="reset-password" class="form-control" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password">
+                <span class="input-icon-right" onclick="togglePassword('reset-password', this)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirm Password</label>
+              <div class="input-group">
+                <span class="input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </span>
+                <input type="password" id="reset-confirm" class="form-control" placeholder="Repeat new password" required minlength="8" autocomplete="new-password">
+              </div>
+            </div>
+            <button type="submit" id="reset-btn" class="btn btn-primary btn-block btn-lg" style="margin-top:var(--space-md);">
+              Update Password
+            </button>
+          </form>
+        </div>
 
         <div class="divider">or</div>
 
@@ -266,8 +325,104 @@
   <script src="assets/js/api.js?v=2"></script>
   <script src="assets/js/auth.js?v=2"></script>
   <script>
-    // Redirect if already logged in
-    if (Auth.isLoggedIn()) Auth.redirect(Auth.getRole());
+    // Redirect if already logged in — but not during a password recovery flow
+    const _hash = new URLSearchParams(location.hash.substring(1));
+    if (Auth.isLoggedIn() && _hash.get('type') !== 'recovery') Auth.redirect(Auth.getRole());
+
+    function showAlert(elId, textId, msg) {
+      const alert = document.getElementById(elId);
+      document.getElementById(textId).textContent = msg;
+      alert.style.display = 'flex';
+      alert.classList.add('animate-scaleIn');
+    }
+    function hideAlerts() {
+      ['error-alert','info-alert'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    }
+
+    function showView(name) {
+      ['view-login','view-forgot','view-reset'].forEach(v => {
+        const el = document.getElementById(v);
+        if (el) el.style.display = v === name ? 'block' : 'none';
+      });
+      hideAlerts();
+    }
+
+    function showForgot(e) {
+      if (e) e.preventDefault();
+      showView('view-forgot');
+      setTimeout(() => document.getElementById('forgot-email')?.focus(), 50);
+    }
+
+    function showLogin(e) {
+      if (e) e.preventDefault();
+      history.replaceState(null, '', location.pathname + location.search);
+      showView('view-login');
+    }
+
+    async function handleForgot(e) {
+      e.preventDefault();
+      const btn = document.getElementById('forgot-btn');
+      hideAlerts();
+      const email = document.getElementById('forgot-email').value.trim();
+      if (!email) return;
+      UI.setLoading(btn, true, 'Sending…');
+      try {
+        await api.auth.forgotPassword(email, `${location.origin}${location.pathname}`);
+        document.getElementById('view-forgot').querySelector('form').reset();
+        showAlert('info-alert', 'info-text', 'If an account exists for that email, a reset link has been sent. Check your inbox.');
+      } catch (err) {
+        showAlert('error-alert', 'error-text', err.message || 'Could not send reset email.');
+      } finally {
+        UI.setLoading(btn, false, 'Send Reset Link');
+      }
+    }
+
+    let recoveryTokens = null;
+
+    async function handleReset(e) {
+      e.preventDefault();
+      const btn = document.getElementById('reset-btn');
+      hideAlerts();
+      const password = document.getElementById('reset-password').value;
+      const confirm  = document.getElementById('reset-confirm').value;
+      if (password !== confirm) {
+        showAlert('error-alert', 'error-text', 'Passwords do not match.');
+        return;
+      }
+      if (!recoveryTokens) {
+        showAlert('error-alert', 'error-text', 'Reset link expired. Please request a new one.');
+        return;
+      }
+      UI.setLoading(btn, true, 'Updating…');
+      try {
+        await api.auth.resetPassword(recoveryTokens, password);
+        UI.toast('Password updated! You can now sign in.', 'success');
+        history.replaceState(null, '', location.pathname + location.search);
+        recoveryTokens = null;
+        showView('view-login');
+      } catch (err) {
+        showAlert('error-alert', 'error-text', err.message || 'Could not update password.');
+      } finally {
+        UI.setLoading(btn, false, 'Update Password');
+      }
+    }
+
+    function initRecoveryFlow() {
+      const hash = new URLSearchParams(location.hash.substring(1));
+      const params = new URLSearchParams(location.search);
+      if (hash.get('type') === 'recovery' && hash.get('access_token')) {
+        recoveryTokens = {
+          access_token: hash.get('access_token'),
+          refresh_token: hash.get('refresh_token') || ''
+        };
+        showView('view-reset');
+      } else if (params.get('code')) {
+        recoveryTokens = { code: params.get('code') };
+        history.replaceState(null, '', location.pathname);
+        showView('view-reset');
+      }
+    }
+    initRecoveryFlow();
 
     function togglePassword(fieldId, iconEl) {
       const input = document.getElementById(fieldId);
