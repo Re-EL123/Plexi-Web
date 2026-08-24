@@ -398,7 +398,7 @@
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=3"></script>
+<script src="../assets/js/ui.js?v=4"></script>
 <script src="../assets/js/api.js?v=2"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
@@ -523,7 +523,7 @@
     UI.shareDialog({
       title: s?.name ? `${s.name} | Plexi Digital Mall` : 'Plexi Digital Mall',
       text: s?.description ? s.description.slice(0, 140) : `Check out ${s?.name || 'this store'} on Plexi Digital Mall`,
-      url: UI.currentUrl(),
+      url: storeId ? UI.shareProxyUrl('store', storeId) : UI.currentUrl(),
       image: s?.banner || s?.logo || ''
     });
   }

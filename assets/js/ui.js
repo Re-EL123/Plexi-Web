@@ -515,6 +515,12 @@ const UI = (() => {
     return location.origin + location.pathname + location.search;
   }
 
+  // Crawler-friendly share link: the backend renders real OG/Twitter
+  // tags server-side (static Pages HTML can't), then redirects humans.
+  function shareProxyUrl(type, id) {
+    return `${CONFIG.API_URL}/products?action=share&type=${type}&id=${id}`;
+  }
+
   function setMeta(attr, key, content) {
     if (content === undefined || content === null || content === '') return;
     let el = document.head.querySelector(`meta[${attr}="${key}"]`);
@@ -776,7 +782,7 @@ const UI = (() => {
     formatCurrency, formatDate, formatDateTime, timeAgo,
     badge, statusBadge, stars, avatar, skeleton, skeletonTable, skeletonGrid, skeletonList,
     empty, errorState, notifHeader,
-    currentUrl, updateMeta, updateJsonLd, shareDialog, copyText,
+    currentUrl, shareProxyUrl, updateMeta, updateJsonLd, shareDialog, copyText,
     staggerReveal, initDropdowns, initTabs, initSidebarToggle, addRipple,
     fetchCategories, populateCategories
   };
