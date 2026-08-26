@@ -1461,10 +1461,10 @@
               <input type="text" class="form-control" id="custom-store-category" name="custom_category" placeholder="Specify your category" style="margin-top:var(--space-sm);display:${s.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(s.category)?'block':'none'};" value="${s.category && !CONFIG.CATEGORIES.map(c=>c.toLowerCase()).includes(s.category)?s.category:''}">
             </div>
             <div class="form-group"><label class="form-label">Store Address</label>
-              <div class="address-autocomplete" id="store-address-ac" style="position:relative;">
+              <div class="address-autocomplete store-ac" id="store-address-ac" style="position:relative;" data-lat-id="store-latitude" data-lng-id="store-longitude" data-status-id="geocode-status">
                 <div style="display:flex;gap:var(--space-sm);">
                   <input type="text" class="form-control" name="address" id="store-address-input" value="${s.address||''}" placeholder="Start typing an address…" style="flex:1;" autocomplete="off">
-                  <button type="button" class="btn btn-ghost btn-sm" onclick="geocodeStoreAddress()" id="geocode-btn">
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="geocodeStoreAddress(this)" id="geocode-btn">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>
                     Locate
                   </button>
@@ -1527,80 +1527,96 @@
   let acDebounce = null;
   let acResults  = [];
 
+  // Wrapper-scoped address autocomplete — supports multiple instances
+  // (create-store modal AND edit-store form) without id collisions.
   function initAddressAutocomplete() {
-    const input  = document.getElementById('store-address-input');
-    const list   = document.getElementById('store-address-suggestions');
-    if (!input || !list) return;
-
-    input.addEventListener('input', () => {
-      clearTimeout(acDebounce);
-      const q = input.value.trim();
-      if (q.length < 3) { list.style.display = 'none'; return; }
-      acDebounce = setTimeout(() => fetchAddressSuggestions(q, list), 350);
-    });
-
-    input.addEventListener('focus', () => {
-      if (acResults.length && input.value.trim().length >= 3) list.style.display = 'block';
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.address-autocomplete')) list.style.display = 'none';
-    });
-  }
-
-  async function fetchAddressSuggestions(query, listEl) {
-    listEl.innerHTML = '<div class="ac-loading">Searching addresses…</div>';
-    listEl.style.display = 'block';
-    try {
-      acResults = await api.geocode.search(query, 6);
-      if (!acResults.length) {
-        listEl.innerHTML = '<div class="ac-empty">No results found</div>';
-        return;
-      }
-      listEl.innerHTML = acResults.map((r, i) => `
-        <button type="button" class="ac-item" onclick="selectAddress(${i})">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>
-          <div style="flex:1;overflow:hidden;">
-            <div class="ac-label">${r.name || r.label.split(',')[0]}</div>
-            <div class="ac-sub">${[r.city, r.state, r.country].filter(Boolean).join(', ')}</div>
-          </div>
-          <span class="ac-source">${r.source}</span>
-        </button>
-      `).join('');
-    } catch (err) {
-      listEl.innerHTML = '<div class="ac-empty">Search failed — try again</div>';
+    if (!window.__addrOutsideWired) {
+      window.__addrOutsideWired = true;
+      document.addEventListener('click', (e) => {
+        const item = e.target.closest('.ac-item[data-addr-index]');
+        if (item) { pickStoreAddress(item); return; }
+        if (!e.target.closest('.address-autocomplete'))
+          document.querySelectorAll('.address-suggestions').forEach(l => l.style.display = 'none');
+      });
     }
+    document.querySelectorAll('.address-autocomplete.store-ac').forEach(wrap => {
+      if (wrap._wired) return;
+      wrap._wired = true;
+      const input = wrap.querySelector('input[name="address"]');
+      const list  = wrap.querySelector('.address-suggestions');
+      if (!input || !list) return;
+
+      input.addEventListener('input', () => {
+        clearTimeout(acDebounce);
+        const q = input.value.trim();
+        if (q.length < 3) {
+          list.style.display = 'none';
+          setAddrStatus(wrap, '');
+          return;
+        }
+        acDebounce = setTimeout(async () => {
+          list.innerHTML = '<div class="ac-loading">Searching addresses…</div>';
+          list.style.display = 'block';
+          try {
+            const rs = await api.geocode.search(q, 6);
+            wrap._results = rs;
+            list.innerHTML = rs.length ? rs.map((r, i) => `
+              <button type="button" class="ac-item" data-addr-index="${i}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>
+                <div style="flex:1;overflow:hidden;">
+                  <div class="ac-label">${r.name || r.label.split(',')[0]}</div>
+                  <div class="ac-sub">${[r.city, r.state, r.country].filter(Boolean).join(', ')}</div>
+                </div>
+                <span class="ac-source">${r.source}</span>
+              </button>`).join('') : '<div class="ac-empty">No results found</div>';
+          } catch (_) {
+            list.innerHTML = '<div class="ac-empty">Search failed — try again</div>';
+          }
+        }, 350);
+      });
+
+      input.addEventListener('focus', () => {
+        if ((wrap._results || []).length && input.value.trim().length >= 3) list.style.display = 'block';
+      });
+    });
   }
 
-  function selectAddress(index) {
-    const r = acResults[index];
+  function addrLatEl(wrap)  { return document.getElementById(wrap.dataset.latId); }
+  function addrLngEl(wrap)  { return document.getElementById(wrap.dataset.lngId); }
+  function setAddrStatus(wrap, text, color) {
+    const el = document.getElementById(wrap.dataset.statusId);
+    if (!el) return;
+    el.textContent = text || '';
+    el.style.color = color || 'var(--text-muted)';
+  }
+
+  function pickStoreAddress(itemBtn) {
+    const wrap = itemBtn.closest('.address-autocomplete');
+    const r = (wrap._results || [])[+itemBtn.dataset.addrIndex];
     if (!r) return;
-    document.getElementById('store-address-input').value = r.label;
-    document.getElementById('store-latitude').value = r.lat;
-    document.getElementById('store-longitude').value = r.lng;
-    const status = document.getElementById('geocode-status');
-    status.textContent = `✓ ${r.lat.toFixed(5)}, ${r.lng.toFixed(5)} — ${r.source}`;
-    status.style.color = 'var(--success)';
-    document.getElementById('store-address-suggestions').style.display = 'none';
+    wrap.querySelector('input[name="address"]').value = r.label;
+    wrap.querySelector('.address-suggestions').style.display = 'none';
+    const lat = addrLatEl(wrap), lng = addrLngEl(wrap);
+    if (lat) lat.value = r.lat;
+    if (lng) lng.value = r.lng;
+    setAddrStatus(wrap, `\u2713 ${r.lat.toFixed(5)}, ${r.lng.toFixed(5)} \u2014 ${r.source}`, 'var(--success)');
   }
 
-  async function geocodeStoreAddress() {
-    const input  = document.getElementById('store-address-input');
-    const status = document.getElementById('geocode-status');
-    const btn    = document.getElementById('geocode-btn');
+  async function geocodeStoreAddress(btn) {
+    const wrap = btn.closest('.address-autocomplete');
+    const input = wrap.querySelector('input[name="address"]');
     const address = input?.value?.trim();
-    if (!address) { status.textContent = 'Enter an address first'; status.style.color = 'var(--error)'; return; }
+    if (!address) { setAddrStatus(wrap, 'Enter an address first', 'var(--error)'); return; }
     UI.setLoading(btn, true, 'Locating…');
-    status.textContent = 'Searching…'; status.style.color = 'var(--text-muted)';
+    setAddrStatus(wrap, 'Searching…');
     try {
       const coords = await api.geocode.address(address);
-      document.getElementById('store-latitude').value = coords.latitude;
-      document.getElementById('store-longitude').value = coords.longitude;
-      status.textContent = `✓ ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`;
-      status.style.color = 'var(--success)';
+      const lat = addrLatEl(wrap), lng = addrLngEl(wrap);
+      if (lat) lat.value = coords.latitude;
+      if (lng) lng.value = coords.longitude;
+      setAddrStatus(wrap, `\u2713 ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`, 'var(--success)');
     } catch (err) {
-      status.textContent = 'Address not found — try picking from suggestions';
-      status.style.color = 'var(--error)';
+      setAddrStatus(wrap, 'Address not found \u2014 try picking from suggestions', 'var(--error)');
     }
     finally { UI.setLoading(btn, false, 'Locate'); }
   }
@@ -2772,6 +2788,22 @@
           </select>
           <input type="text" class="form-control" id="custom-create-category" name="custom_category" placeholder="Specify your category" style="margin-top:var(--space-sm);display:none;">
         </div>
+        <div class="form-group"><label class="form-label">Store Address</label>
+          <div class="address-autocomplete store-ac" style="position:relative;" data-lat-id="create-store-latitude" data-lng-id="create-store-longitude" data-status-id="create-store-geo-status">
+            <div style="display:flex;gap:var(--space-sm);">
+              <input type="text" class="form-control" name="address" placeholder="Start typing an address…" required style="flex:1;" autocomplete="off">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="geocodeStoreAddress(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>
+                Locate
+              </button>
+            </div>
+            <div class="address-suggestions" style="display:none;"></div>
+          </div>
+          <div id="create-store-geo-status" style="font-size:12px;margin-top:4px;color:var(--text-muted);"></div>
+          <input type="hidden" name="latitude" id="create-store-latitude">
+          <input type="hidden" name="longitude" id="create-store-longitude">
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Used for delivery routing and your position on the mall map.</div>
+        </div>
         <div class="form-group"><label class="form-label">Store Logo</label>
           <div id="logo-upload-area" style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:24px;text-align:center;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('logo-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--primary)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="event.preventDefault();this.style.borderColor='var(--border)';handleLogoDrop(event)">
             <div id="logo-preview" style="display:none;margin-bottom:8px"><img id="logo-preview-img" style="max-height:80px;max-width:160px;border-radius:var(--radius-sm);object-fit:cover"></div>
@@ -2785,6 +2817,7 @@
               <button class="btn btn-primary" id="create-store-btn" onclick="document.getElementById('create-store-form').requestSubmit()">Create Store</button>`
     });
     refreshCategoryDropdown('#create-store-form [name="category"]', '#custom-create-category', '');
+    initAddressAutocomplete();
   }
 
   let selectedLogoFile = null;
@@ -2858,8 +2891,10 @@
         const uploadResult = await api.upload.file(selectedLogoFile, 'stores');
         data.logo = uploadResult.url;
       }
-      delete data[''];
-      await api.stores.create({ ...data, status:'draft' });
+    delete data[''];
+    if (data.latitude) data.latitude = parseFloat(data.latitude);
+    if (data.longitude) data.longitude = parseFloat(data.longitude);
+    await api.stores.create({ ...data, status:'draft' });
       UI.toast('Store created! Awaiting approval.','success');
       UI.closeModal('create-store-modal');
       selectedLogoFile = null;

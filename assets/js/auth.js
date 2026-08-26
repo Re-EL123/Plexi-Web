@@ -47,8 +47,8 @@ const Auth = (() => {
     }
     throw new Error(response.error || 'Login failed: Invalid credentials');
   }
-  async function signup(email, password, role) {
-    const response = await api.auth.signup(email, password, role);
+  async function signup(email, password, role, metadata = {}) {
+    const response = await api.auth.signup(email, password, role, metadata);
     
     // BACKEND CHECK: response.data contains { user, session }
     const result = response.data || response;

@@ -944,9 +944,14 @@
   function loadCheckoutDetails() {
     try {
       const saved = JSON.parse(localStorage.getItem('plexi_checkout_details') || '{}');
+      // Fall back to the signed-in user's profile (phone captured at signup)
+      const meta = Auth.getUser()?.metadata || {};
       if (saved.name) document.getElementById('cust-name').value = saved.name;
+      else if (meta.name) document.getElementById('cust-name').value = meta.name;
       if (saved.surname) document.getElementById('cust-surname').value = saved.surname;
+      else if (meta.surname) document.getElementById('cust-surname').value = meta.surname;
       if (saved.phone) document.getElementById('cust-phone').value = saved.phone;
+      else if (meta.phone) document.getElementById('cust-phone').value = meta.phone;
       if (saved.email) document.getElementById('cust-email').value = saved.email;
       if (saved.address) document.getElementById('delivery-address').value = saved.address;
     } catch (_) {}

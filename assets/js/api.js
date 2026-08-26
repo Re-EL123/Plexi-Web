@@ -90,7 +90,7 @@ const api = (() => {
   // ======== AUTH ======== //
   const auth = {
     login:  (email, password)        => post('/auth?action=login', { email, password }),
-    signup: (email, password, role)  => post('/auth?action=signup', { email, password, role }),
+    signup: (email, password, role, metadata = {})  => post('/auth?action=signup', { email, password, role, metadata }),
     logout: ()                       => post('/auth?action=logout'),
     me:     ()                       => get('/auth?action=me'),
     forgotPassword: (email, redirectTo) => post('/auth?action=forgot-password', { email, redirect_to: redirectTo }),

@@ -164,6 +164,16 @@
           </div>
 
           <div class="form-group">
+            <label class="form-label">Cellphone Number</label>
+            <div class="input-group">
+              <span class="input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              </span>
+              <input type="tel" id="phone" class="form-control" placeholder="e.g. 082 123 4567" required minlength="9" maxlength="15" autocomplete="tel">
+            </div>
+          </div>
+
+          <div class="form-group">
             <label class="form-label">Password</label>
             <div class="input-group has-right">
               <span class="input-icon">
@@ -269,12 +279,18 @@
       errorAlert.style.display = 'none';
 
       const email    = document.getElementById('email').value.trim();
+      const phone    = document.getElementById('phone').value.trim();
       const password = document.getElementById('password').value;
       const confirm  = document.getElementById('confirm-password').value;
       const role     = document.getElementById('role').value;
 
-      if (!email || !password || !confirm) {
+      if (!email || !phone || !password || !confirm) {
         errorText.textContent = 'Please fill in all fields.';
+        errorAlert.style.display = 'flex'; return;
+      }
+      const digits = phone.replace(/\D/g, '');
+      if (digits.length < 9 || digits.length > 15) {
+        errorText.textContent = 'Please enter a valid cellphone number.';
         errorAlert.style.display = 'flex'; return;
       }
       if (password !== confirm) {
@@ -288,7 +304,7 @@
 
       UI.setLoading(btn, true, 'Creating account…');
       try {
-        const user = await Auth.signup(email, password, role);
+        const user = await Auth.signup(email, password, role, { phone: phone.trim() });
         UI.toast('Account created! Welcome to Plexi Mall 🎉', 'success', 4000);
         setTimeout(() => Auth.redirect(user.role), 1000);
       } catch (err) {
