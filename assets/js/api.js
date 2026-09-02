@@ -272,6 +272,12 @@ const api = (() => {
     earnings:      () => get('/orders?action=driver-earnings'),
     history:       (params = {}) => get(`/orders?action=driver-history&${new URLSearchParams(params)}`),
     stats:         () => get('/orders?action=driver-stats'),
+    compliance:    () => get('/orders?action=driver-compliance'),
+    submitCompliance: (data) => post('/orders?action=driver-submit-compliance', data),
+    uploadDoc:     (file, filename, contentType, doc_type) =>
+      post('/orders?action=driver-upload-doc', { file, filename, contentType, doc_type }),
+    faceVerify:    (photo_url, face_data) =>
+      post('/orders?action=driver-face-verify', { photo_url, face_data }),
   };
 
   // ======== MAP (served by /api/stores with map-* actions) ======== //
