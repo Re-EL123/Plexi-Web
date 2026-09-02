@@ -4,6 +4,12 @@
 
 Pure vanilla HTML/CSS/JS frontend for "Plexi Digital Mall." No build step, no framework, no bundler. Every file is served as-is.
 
+Plexi is three sibling repos — always treat them as one system:
+
+- Public mall site (this repo): `/home/akani/Plexi-Web`
+- API (secrets, Vercel): `/home/akani/plexi-digital-mall-backend`
+- Driver app (Expo): `/home/akani/Plexi-Driver`
+
 ## Running locally
 
 ```bash
@@ -72,5 +78,7 @@ Currency is South African Rand — `UI.formatCurrency()` outputs `R123.45`.
 - `api.js` error handling: non-OK responses throw `Error` with `.status` and `.data` attached — always catch and use `err.message` for user-facing toasts
 - Store/product pages use `?id=` query params, not path-based routing
 - The mall map is a 10×10 grid — `MallMap.initPlacement(storeId)` enables click-to-place for sellers
-- **Backend hard limit:** the sibling repo `~/plexi-digital-mall-backend` (Vercel Hobby) allows **max 12 serverless functions** (`api/*.js`). If a new endpoint would make 13, fold it into an existing function as an `?action=` case. See that repo's AGENTS.md.
-- Coupon endpoints live in `/api/cart?action=coupon-*` (folded there for the same reason) — not `/api/coupons`.
+- **Backend hard limit:** `/home/akani/plexi-digital-mall-backend` (Vercel Hobby) allows **max 12 serverless functions** (`api/*.js`). Currently at 12. If a new endpoint would make 13, fold it into an existing function as an `?action=` case. Never add a 13th `api/*.js` file. See that repo's AGENTS.md.
+- Coupon endpoints live in `/api/cart?action=coupon-*` (folded there for the same reason) — not `/api/coupons`. Place Order sends `coupon_code`; the backend applies the discount to the product subtotal before creating the Yoco checkout.
+- Driver app: `/home/akani/Plexi-Driver` — same API origin and `{ body: ... }` response wrap. Driver tables are in backend `database/` migrations, not `schema.sql`.
+- Checkout: shoppers are redirected to Yoco (`redirectUrl`). Unpaid orders stay visible with **Pay now** until the session expires. Run backend `migrations/017_order_coupons.sql` so coupon columns exist on `orders`.

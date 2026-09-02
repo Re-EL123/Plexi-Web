@@ -336,7 +336,7 @@
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
 <script src="../assets/js/ui.js?v=4"></script>
-<script src="../assets/js/api.js?v=2"></script>
+<script src="../assets/js/api.js?v=3"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
 <script src="../assets/js/dashboard.js?v=3"></script>
@@ -402,7 +402,7 @@
         ${orders.slice(0,5).map(o=>`<tr>
           <td style="font-family:monospace;font-size:12px;">#${o.id.slice(0,8)}</td>
           <td><strong>${UI.formatCurrency(o.total)}</strong></td>
-          <td>${UI.statusBadge(o.status,CONFIG.ORDER_STATUSES)}</td>
+          <td>${o.payment_status==='unpaid' ? '<span class="badge" style="background:var(--warning);color:#fff;">Awaiting payment</span>' : UI.statusBadge(o.status,CONFIG.ORDER_STATUSES)}</td>
           <td>${UI.formatDate(o.created_at)}</td>
         </tr>`).join('')}
       </tbody></table></div>`;
@@ -416,18 +416,25 @@
     try {
       const data   = await api.orders.list({ status });
       const orders = Array.isArray(data) ? data : (data.orders || []);
-      tbody.innerHTML = orders.length ? orders.map(o=>`
+      tbody.innerHTML = orders.length ? orders.map(o=>{
+        const unpaid = o.payment_status === 'unpaid';
+        const statusHtml = unpaid
+          ? `<span class="badge" style="background:var(--warning);color:#fff;">Awaiting payment</span>`
+          : UI.statusBadge(o.status,CONFIG.ORDER_STATUSES);
+        return `
         <tr>
           <td style="font-family:monospace;font-size:12px;">#${o.id.slice(0,8)}</td>
           <td><strong>${UI.formatCurrency(o.total)}</strong></td>
-          <td>${UI.statusBadge(o.status,CONFIG.ORDER_STATUSES)}</td>
+          <td>${statusHtml}</td>
           <td>${UI.formatDate(o.created_at)}</td>
           <td class="table-actions">
+            ${unpaid?`<button class="btn btn-primary btn-sm" onclick="resumePayment('${o.id}')">Pay now</button>`:''}
             <button class="btn btn-ghost btn-sm" onclick="viewOrderDetail('${o.id}')">Track</button>
             ${o.status==='delivered'?`<button class="btn btn-primary btn-sm" onclick="buyAgain('${o.id}')">Buy Again</button>`:''}
-            ${o.status==='pending'?`<button class="btn btn-danger btn-sm" onclick="cancelOrder('${o.id}')">Cancel</button>`:''}
+            ${o.status==='pending'||unpaid?`<button class="btn btn-danger btn-sm" onclick="cancelOrder('${o.id}')">Cancel</button>`:''}
           </td>
-        </tr>`).join('')
+        </tr>`;
+      }).join('')
       : '<tr><td colspan="5" style="text-align:center;padding:var(--space-xl);">No orders found</td></tr>';
     } catch (_) {}
   }
@@ -555,7 +562,13 @@
         el.innerHTML = UI.empty('Cart is Empty','Browse stores to add items!','🛒',`<a href="../index.html" class="btn btn-primary">Shop Now</a>`);
         tipPercent = 0;
         deliveryFee = 0;
+        appliedCoupon = null;
+        couponDiscount = 0;
         checkoutCtx = { lat: null, lng: null, address: '', preview: null };
+        const cc = document.getElementById('coupon-code');
+        if (cc) cc.value = '';
+        const cs = document.getElementById('coupon-status');
+        if (cs) cs.style.display = 'none';
         recalcTotals();
         return;
       }
@@ -664,7 +677,10 @@
     if (!r) return;
     document.getElementById('delivery-address').value = r.label;
     document.getElementById('delivery-address-suggestions').style.display = 'none';
-    updateDeliveryFee(r.label);
+    const lat = r.lat ?? r.latitude;
+    const lng = r.lng ?? r.longitude;
+    if (lat != null && lng != null) updateDeliveryFee(r.label, { latitude: lat, longitude: lng });
+    else updateDeliveryFee(r.label);
   }
 
   let deliveryTimer = null;
@@ -675,7 +691,7 @@
     await updateDeliveryFee(address);
   }
 
-  async function updateDeliveryFee(address) {
+  async function updateDeliveryFee(address, coordsOverride) {
     const status = document.getElementById('delivery-status');
     const box = document.getElementById('co-fee-box');
     const calcBtn = document.getElementById('co-calc-btn');
@@ -684,9 +700,12 @@
     status.textContent = 'Calculating delivery from every store in your cart…';
     status.style.color = 'var(--text-muted)';
     try {
-      const coords = await api.geocode.address(address);
-      const preview = await api.delivery.preview(coords.latitude, coords.longitude);
-      checkoutCtx = { lat: coords.latitude, lng: coords.longitude, address, preview };
+      const coords = coordsOverride || await api.geocode.address(address);
+      const lat = Number(coords.latitude ?? coords.lat);
+      const lng = Number(coords.longitude ?? coords.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error('Could not locate that address');
+      const preview = await api.delivery.preview(lat, lng);
+      checkoutCtx = { lat, lng, address, preview };
       deliveryFee = preview.delivery_fee || 0;
 
       // Route breakdown — every store in the cart, in collection order.
@@ -846,7 +865,7 @@
       UI.toast('Please fill in your name, surname, phone and email', 'warning');
       return;
     }
-    if (!checkoutCtx.lat || !checkoutCtx.lng || !deliveryFee) {
+    if (!checkoutCtx.lat || !checkoutCtx.lng || !checkoutCtx.preview) {
       UI.toast('Calculate the delivery fee before paying', 'warning');
       return;
     }
@@ -873,23 +892,13 @@
 
       const resp = await api.orders.create(payload);
       const orderData = resp?.order || resp;
-      if (orderData?.checkout_url) {
+      const payUrl = api.payments.checkoutUrl(orderData);
+      if (payUrl) {
         sessionStorage.setItem('plexi_pending_order', orderData.id || '');
-        window.location.href = orderData.checkout_url;
+        window.location.href = payUrl;
         return;
       }
-      UI.closeModal('checkout-modal');
-      UI.toast('Order placed!', 'success');
-      deliveryFee = 0;
-      tipPercent = 0;
-      appliedCoupon = null;
-      couponDiscount = 0;
-      const cc = document.getElementById('coupon-code');
-      if (cc) cc.value = '';
-      const cs = document.getElementById('coupon-status');
-      if (cs) cs.style.display = 'none';
-      loadCart();
-      loadOverview();
+      UI.toast('Payment could not be started. Please try again.', 'error');
     } catch (err) {
       UI.toast(err.message, 'error');
     } finally {
@@ -897,11 +906,36 @@
     }
   }
 
+  async function resumePayment(orderId) {
+    if (!orderId) return;
+    try {
+      UI.toast('Opening payment…', 'info');
+      const res = await api.payments.retry(orderId);
+      if (res?.already_paid) {
+        UI.toast('This order is already paid', 'success');
+        loadOrders();
+        loadOverview();
+        return;
+      }
+      const url = api.payments.checkoutUrl(res);
+      if (!url) { UI.toast('Could not start payment. Please try again.', 'error'); return; }
+      sessionStorage.setItem('plexi_pending_order', orderId);
+      window.location.href = url;
+    } catch (err) {
+      UI.toast(err.message || 'Could not start payment', 'error');
+    }
+  }
+
   function handlePaymentReturn() {
-    const outcome = new URLSearchParams(location.search).get('payment');
+    const params = new URLSearchParams(location.search);
+    const outcome = params.get('payment');
     const orderId = sessionStorage.getItem('plexi_pending_order');
+    if (outcome) {
+      params.delete('payment');
+      const qs = params.toString();
+      history.replaceState({}, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+    }
     if (!outcome || !orderId) return;
-    sessionStorage.removeItem('plexi_pending_order');
 
     if (outcome === 'success') {
       let attempts = 0;
@@ -912,21 +946,31 @@
           const o = (res && res.order) || res;
           if (o?.payment_status === 'paid') {
             clearInterval(poll);
+            sessionStorage.removeItem('plexi_pending_order');
             UI.toast('Payment confirmed! Your order is on its way.', 'success');
             loadCart();
             loadOverview();
+            loadOrders();
           } else if (attempts >= 15) {
             clearInterval(poll);
-            UI.toast('Payment received — your order is being confirmed.', 'info');
+            UI.toast('Still confirming payment — use Pay now on Orders if you were charged.', 'info');
+            Dashboard.showSection('section-orders');
+            loadOrders();
           }
         } catch (_) {
-          if (attempts >= 15) clearInterval(poll);
+          if (attempts >= 15) {
+            clearInterval(poll);
+            Dashboard.showSection('section-orders');
+            loadOrders();
+          }
         }
       }, 2000);
-    } else if (outcome === 'cancelled') {
-      UI.toast('Payment cancelled. Your order was not placed.', 'warning');
     } else {
-      UI.toast('Payment failed. Please try again.', 'error');
+      UI.toast(outcome === 'cancelled'
+        ? 'Payment cancelled. You can complete it from Orders.'
+        : 'Payment failed. You can try again from Orders.', 'warning');
+      Dashboard.showSection('section-orders');
+      loadOrders();
     }
   }
 
@@ -953,6 +997,7 @@
       if (saved.phone) document.getElementById('cust-phone').value = saved.phone;
       else if (meta.phone) document.getElementById('cust-phone').value = meta.phone;
       if (saved.email) document.getElementById('cust-email').value = saved.email;
+      else if (Auth.getUser()?.email) document.getElementById('cust-email').value = Auth.getUser().email;
       if (saved.address) document.getElementById('delivery-address').value = saved.address;
     } catch (_) {}
   }
@@ -1118,14 +1163,20 @@
       const items = Array.isArray(order.items) ? order.items
         : Array.isArray(order.order_items) ? order.order_items
         : (Array.isArray(o) ? o : []);
-      const inFlight = ['pending','processing','shipped'].includes(order.status);
+      const inFlight = ['pending','processing','shipped'].includes(order.status) && order.payment_status !== 'unpaid';
+      const unpaid = order.payment_status === 'unpaid';
       const driver = order.driver || order.delivery?.driver;
+      const disc = parseFloat(order.discount_amount) || 0;
       const body = document.querySelector('#order-detail .modal-body');
       if (body) body.innerHTML = `
         <div style="display:grid;gap:var(--space-md);">
-          <div class="flex-between"><span>Status:</span>${UI.statusBadge(order.status,CONFIG.ORDER_STATUSES)}</div>
-          ${renderTrackTimeline(order.status)}
+          <div class="flex-between"><span>Status:</span>${unpaid ? '<span class="badge" style="background:var(--warning);color:#fff;">Awaiting payment</span>' : UI.statusBadge(order.status,CONFIG.ORDER_STATUSES)}</div>
+          ${unpaid ? `<div class="neo-inset" style="padding:var(--space-sm) var(--space-md);border-radius:var(--radius-md);font-size:13px;">Pay to confirm this order. Nothing is dispatched until Yoco confirms payment.</div>
+            <button class="btn btn-primary btn-block" onclick="UI.closeModal('order-detail');resumePayment('${order.id}')">Pay now</button>` : renderTrackTimeline(order.status)}
           ${driver ? `<div class="neo-inset" style="padding:var(--space-sm) var(--space-md);border-radius:var(--radius-md);font-size:13px;"><strong>🚚 Driver:</strong> ${driver.name || driver.email || 'Assigned'}${driver.phone ? ` · ${driver.phone}` : ''}${inFlight ? ` <span style="color:var(--text-muted);">(updating live)</span>` : ''}</div>` : ''}
+          ${disc > 0 ? `<div class="flex-between"><span>Discount${order.coupon_code ? ` (${order.coupon_code})` : ''}:</span><span style="color:var(--success);">−${UI.formatCurrency(disc)}</span></div>` : ''}
+          ${order.delivery_fee != null ? `<div class="flex-between"><span>Delivery:</span>${UI.formatCurrency(order.delivery_fee)}</div>` : ''}
+          ${order.tip_amount > 0 ? `<div class="flex-between"><span>Tip:</span>${UI.formatCurrency(order.tip_amount)}</div>` : ''}
           <div class="flex-between"><span>Total:</span><strong style="color:var(--primary);font-size:18px;">${UI.formatCurrency(order.total)}</strong></div>
           <div class="flex-between"><span>Date:</span>${UI.formatDateTime(order.created_at)}</div>
           <div><strong>Shipping Address</strong><div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">${typeof order.shipping_address === 'string' ? JSON.stringify(order.shipping_address).replace(/"/g,'') : Object.values(order.shipping_address||{}).filter(Boolean).join(', ') || '—'}</div></div>

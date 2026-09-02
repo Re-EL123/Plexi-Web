@@ -138,7 +138,7 @@ const api = (() => {
   const orders = {
     list:   (params = {})  => get(`/orders?${new URLSearchParams(params)}`),
     get:    (id)           => get(`/orders?id=${id}`),
-    create: (data)         => post('/orders', data),
+    create: (data)         => post('/orders', data, { timeout: 30000 }),
     update: (id, data)     => put(`/orders?id=${id}`, data),
     cancel: (id)           => put(`/orders?id=${id}`, { status: 'cancelled' }),
     report: (params = {})  => get(`/orders?action=report&${new URLSearchParams(params)}`),
@@ -147,9 +147,14 @@ const api = (() => {
   // ======== PAYMENTS (Yoco) ======== //
   const payments = {
     status:       (orderId)     => get(`/payments?action=status&order_id=${orderId}`),
-    retry:        (orderId)     => get(`/payments?action=create-checkout&order_id=${orderId}`),
+    retry:        (orderId)     => get(`/payments?action=create-checkout&order_id=${orderId}`, { timeout: 30000 }),
     webhook:      (data)        => post('/payments?action=webhook', data),
     transactions: (params = {}) => get(`/payments?action=transactions&${new URLSearchParams(params)}`),
+    checkoutUrl:  (data)        => {
+      if (!data || typeof data !== 'object') return '';
+      return data.checkout_url || data.redirectUrl || data.redirect_url || data.url
+        || data.order?.checkout_url || data.order?.redirectUrl || '';
+    }
   };
 
   // ======== CART ======== //
