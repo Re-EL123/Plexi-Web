@@ -961,12 +961,12 @@
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=4"></script>
+<script src="../assets/js/ui.js?v=5"></script>
 <script src="../assets/js/api.js?v=2"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
 <script src="../assets/js/map.js?v=2"></script>
-<script src="../assets/js/dashboard.js?v=3"></script>
+<script src="../assets/js/dashboard.js?v=4"></script>
 <script>
   function toggleSound(){
     const on=SoundManager.toggle();
@@ -988,6 +988,7 @@
     State.init();
     await loadMyStores();
     loadVerificationStatus();
+    startNeededActionsPoller();
     UI.hidePageLoader();
     UI.staggerReveal(document.body);
   });
@@ -3268,6 +3269,8 @@
       await api.banking.save(payload);
       UI.toast('Banking details saved!', 'success');
       loadBankingDetails();
+      Dashboard.neededActions?.snooze('banking', 10 * 60 * 1000);
+      UI.closeModal('needed-banking-modal');
     } catch (err) {
       UI.toast(err.message, 'error');
     } finally {
@@ -3397,12 +3400,71 @@
       await api.verification.apply(payload);
       UI.toast('Application submitted! We\'ll review it within 1-3 business days.', 'success');
       loadVerificationStatus();
+      Dashboard.neededActions?.snooze('verification', 10 * 60 * 1000);
+      UI.closeModal('needed-verification-modal');
     } catch (err) {
       UI.toast(err.message, 'error');
     } finally {
       btn.disabled = false;
       btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Submit Verification Application — R29/month';
     }
+  }
+</script>
+<script>
+  // Needed actions: prompt for missing store / banking / KYC, close on submit.
+  function startNeededActionsPoller() {
+    if (!Dashboard.neededActions) return;
+    Dashboard.neededActions.start([
+      {
+        key: 'store',
+        modalId: 'create-store-modal',
+        run: async () => {
+          if (Array.isArray(myStores) && myStores.length) return false;
+          openCreateStoreModal();
+          return true;
+        }
+      },
+      {
+        key: 'banking',
+        modalId: 'needed-banking-modal',
+        run: async () => {
+          let data = null;
+          try { data = await api.banking.get(); } catch (_) {}
+          if (data && data.account_holder) return false;
+          await loadBankingDetails();
+          const form = document.getElementById('banking-form');
+          if (!form) return false;
+          return Dashboard.neededActions.open({
+            id: 'needed-banking-modal',
+            title: 'Banking details required',
+            intro: 'Add your bank account so we can pay out your sales.',
+            hostEl: form
+          });
+        }
+      },
+      {
+        key: 'verification',
+        modalId: 'needed-verification-modal',
+        run: async () => {
+          let data = null;
+          try { data = await api.verification.status(); } catch (_) {}
+          const status = data && data.status;
+          if (status === 'approved' || status === 'pending') return false;
+          loadVerificationStatus();
+          const card = document.getElementById('verify-form-card');
+          if (!card) return false;
+          card.style.display = 'block';
+          return Dashboard.neededActions.open({
+            id: 'needed-verification-modal',
+            title: status === 'rejected' ? 'Verification needs an update' : 'Verification application needed',
+            intro: status === 'rejected'
+              ? 'Your previous application was rejected. Please update your documents and resubmit.'
+              : 'Upload your verification documents to enable your seller badge.',
+            hostEl: card
+          });
+        }
+      }
+    ]);
   }
 </script>
 <script>

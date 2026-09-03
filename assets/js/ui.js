@@ -102,6 +102,9 @@ const UI = (() => {
   }
 
   function closeModal(id) {
+    try {
+      document.dispatchEvent(new CustomEvent('plexi-modal-close', { detail: { id } }));
+    } catch (_) {}
     const overlay = document.getElementById(id);
     if (!overlay) return;
     overlay.classList.remove('show');

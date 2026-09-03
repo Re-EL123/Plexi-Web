@@ -353,6 +353,133 @@ const Dashboard = (() => {
     ).join('');
   }
 
+  // ======== NEEDED ACTIONS (periodic input/action modals) ======== //
+  // Dashboards call neededActions.start([{ key, modalId, run }]).
+  // `run` should open a modal and return true, or return false to try the next check.
+  const neededActions = (() => {
+    const INTERVAL_MS = 60000;
+    const SNOOZE_MS = 10 * 60 * 1000;
+    let timer = null;
+    let running = false;
+    let visibilityBound = false;
+    let checks = [];
+    const snoozeUntil = Object.create(null);
+    const hosted = Object.create(null);
+
+    function isModalOpen(id) {
+      const el = document.getElementById(id);
+      return !!(el && el.classList.contains('show'));
+    }
+
+    function anyModalOpen() {
+      return !!document.querySelector('.modal-overlay.show');
+    }
+
+    function patchClose() {
+      if (patchClose.done) return;
+      patchClose.done = true;
+      document.addEventListener('plexi-modal-close', (e) => {
+        onModalClose(e.detail && e.detail.id);
+      });
+    }
+
+    function finderForModal(id) {
+      return checks.find(c => c && (c.modalId === id || id === `needed-${c.key}-modal`));
+    }
+
+    function onModalClose(id) {
+      restoreHosted(id);
+      const check = finderForModal(id);
+      if (check) snoozeUntil[check.key] = Date.now() + SNOOZE_MS;
+    }
+
+    function restoreHosted(id) {
+      const h = hosted[id];
+      if (!h) return;
+      try {
+        if (h.el && h.parent) {
+          h.el.style.display = h.display || '';
+          if (h.next && h.next.parentNode === h.parent) {
+            h.parent.insertBefore(h.el, h.next);
+          } else {
+            h.parent.appendChild(h.el);
+          }
+        }
+      } catch (_) {}
+      delete hosted[id];
+    }
+
+    function snooze(key, ms) {
+      snoozeUntil[key] = Date.now() + (ms == null ? SNOOZE_MS : ms);
+    }
+
+    function isSnoozed(key) {
+      return Date.now() < (snoozeUntil[key] || 0);
+    }
+
+    function open({ id, title, content, footer, size, hostEl, intro }) {
+      restoreHosted(id);
+      let body = content || '';
+      if (hostEl) {
+        hosted[id] = {
+          el: hostEl,
+          parent: hostEl.parentNode,
+          next: hostEl.nextSibling,
+          display: hostEl.style.display
+        };
+        const introHtml = intro
+          ? `<div style="color:var(--text-secondary);font-size:13px;margin-bottom:var(--space-md);">${intro}</div>`
+          : '';
+        body = `${introHtml}<div id="${id}-slot"></div>`;
+      }
+      UI.createModal({ id, title, content: body, footer: footer || '', size: size || 'modal-lg' });
+      if (hostEl) {
+        const slot = document.getElementById(id + '-slot');
+        if (slot) {
+          hostEl.style.display = '';
+          slot.appendChild(hostEl);
+        }
+      }
+      return true;
+    }
+
+    function close(id) {
+      if (window.UI) UI.closeModal(id);
+    }
+
+    async function tick() {
+      if (running || anyModalOpen() || document.hidden) return;
+      running = true;
+      try {
+        for (const check of checks) {
+          if (!check || !check.key || typeof check.run !== 'function') continue;
+          if (isSnoozed(check.key)) continue;
+          if (check.modalId && isModalOpen(check.modalId)) return;
+          const opened = await check.run();
+          if (opened) return;
+        }
+      } catch (_) {
+      } finally {
+        running = false;
+      }
+    }
+
+    function start(list) {
+      patchClose();
+      checks = Array.isArray(list) ? list : [];
+      tick();
+      if (!timer) timer = setInterval(tick, INTERVAL_MS);
+      if (!visibilityBound) {
+        visibilityBound = true;
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) tick();
+        });
+      }
+    }
+
+    return { start, open, close, snooze, isSnoozed, isModalOpen, tick };
+  })();
+
   // ======== INIT ======== //
   function init() {
     Auth.populateUserUI();
@@ -410,7 +537,8 @@ const Dashboard = (() => {
   return {
     init, loadNotifications, markRead, markAllRead, loadCartCount,
     showSection, renderTable, renderPagination, initSearch, skeletonRows,
-    openCartPanel, closeCartPanel, loadCartPanelItems, updateCartQty, removeCartItem
+    openCartPanel, closeCartPanel, loadCartPanelItems, updateCartQty, removeCartItem,
+    neededActions
   };
 })();
 

@@ -335,11 +335,11 @@
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=4"></script>
+<script src="../assets/js/ui.js?v=5"></script>
 <script src="../assets/js/api.js?v=3"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
-<script src="../assets/js/dashboard.js?v=3"></script>
+<script src="../assets/js/dashboard.js?v=4"></script>
 <script>
   function toggleSound(){
     const on=SoundManager.toggle();
@@ -362,6 +362,7 @@
     UI.hidePageLoader();
     UI.staggerReveal(document.body);
     handlePaymentReturn();
+    startNeededActionsPoller();
   });
 
   document.querySelectorAll('[data-section]').forEach(a => {
@@ -938,6 +939,7 @@
     if (!outcome || !orderId) return;
 
     if (outcome === 'success') {
+      Dashboard.neededActions?.snooze('payment', 45000);
       let attempts = 0;
       const poll = setInterval(async () => {
         attempts++;
@@ -972,6 +974,63 @@
       Dashboard.showSection('section-orders');
       loadOrders();
     }
+  }
+
+  // ============================================================
+  // Needed actions poller (periodic modal prompts)
+  // ============================================================
+  const NEEDED_PAYMENT_MODAL_ID = 'needed-payment-modal';
+
+  function startNeededActionsPoller() {
+    if (!Dashboard.neededActions) return;
+    Dashboard.neededActions.start([
+      {
+        key: 'payment',
+        modalId: NEEDED_PAYMENT_MODAL_ID,
+        run: async () => {
+          const unpaid = await getFirstUnpaidOrder();
+          if (!unpaid?.id) return false;
+          const shortId = unpaid.id?.slice ? unpaid.id.slice(0, 8) : unpaid.id;
+          Dashboard.neededActions.open({
+            id: NEEDED_PAYMENT_MODAL_ID,
+            title: 'Payment needed',
+            content: `
+              <div style="display:flex;gap:var(--space-md);align-items:flex-start;">
+                <div style="width:44px;height:44px;border-radius:14px;background:var(--warning-alpha);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--warning);font-size:20px;">💳</div>
+                <div>
+                  <div style="font-weight:800;margin-bottom:6px;">Order ${shortId}</div>
+                  <div style="color:var(--text-secondary);font-size:13px;">
+                    This order is awaiting payment. Complete payment to proceed.
+                  </div>
+                </div>
+              </div>
+            `,
+            footer: `
+              <button class="btn btn-ghost" type="button" onclick="UI.closeModal('${NEEDED_PAYMENT_MODAL_ID}')">Not now</button>
+              <button class="btn btn-primary" type="button" onclick="startNeededPayment('${unpaid.id}')">Pay now</button>
+            `
+          });
+          return true;
+        }
+      }
+    ]);
+  }
+
+  async function getFirstUnpaidOrder() {
+    try {
+      const data = await api.orders.list();
+      const orders = Array.isArray(data) ? data : (data.orders || []);
+      // Candidate note: we don't currently have a clear "Yoco session still live" field
+      // on the frontend payload, so we prompt based on payment_status === 'unpaid'.
+      return orders.find(o => o?.payment_status === 'unpaid') || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function startNeededPayment(orderId) {
+    UI.closeModal(NEEDED_PAYMENT_MODAL_ID);
+    await resumePayment(orderId);
   }
 
   function saveCheckoutDetails() {
