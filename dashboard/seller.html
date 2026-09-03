@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#4361ee">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Seller Dashboard — Plexi Digital Mall</title>
-  <link rel="stylesheet" href="../assets/css/variables.css?v=2">
+  <link rel="stylesheet" href="../assets/css/variables.css?v=3">
   <link rel="stylesheet" href="../assets/css/base.css?v=2">
   <link rel="stylesheet" href="../assets/css/neomorphism.css?v=2">
   <link rel="stylesheet" href="../assets/css/components.css?v=3">
@@ -961,12 +961,12 @@
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=5"></script>
+<script src="../assets/js/ui.js?v=6"></script>
 <script src="../assets/js/api.js?v=2"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
 <script src="../assets/js/map.js?v=2"></script>
-<script src="../assets/js/dashboard.js?v=4"></script>
+<script src="../assets/js/dashboard.js?v=5"></script>
 <script>
   function toggleSound(){
     const on=SoundManager.toggle();
@@ -986,11 +986,14 @@
   document.addEventListener('DOMContentLoaded', async () => {
     Dashboard.init();
     State.init();
-    await loadMyStores();
-    loadVerificationStatus();
-    startNeededActionsPoller();
-    UI.hidePageLoader();
-    UI.staggerReveal(document.body);
+    try {
+      await loadMyStores();
+      loadVerificationStatus();
+    } finally {
+      UI.hidePageLoader();
+      UI.staggerReveal(document.body);
+      startNeededActionsPoller();
+    }
   });
 
   document.querySelectorAll('[data-section]').forEach(a => {

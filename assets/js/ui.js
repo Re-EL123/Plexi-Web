@@ -133,6 +133,7 @@ const UI = (() => {
       </div>
     `;
     document.body.appendChild(el);
+    el.style.zIndex = '10050';
     el.addEventListener('click', e => { if (e.target === el) closeModal(id); });
     setTimeout(() => openModal(id), 10);
     return el;

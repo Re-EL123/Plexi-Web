@@ -101,8 +101,8 @@
   /* Z-Index */
   --z-base:    1;
   --z-dropdown:100;
-  --z-modal:   200;
-  --z-toast:   300;
+  --z-modal:   10050;
+  --z-toast:   10060;
   --z-overlay: 150;
 
   /* Sidebar */

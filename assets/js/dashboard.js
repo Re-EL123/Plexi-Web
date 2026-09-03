@@ -357,9 +357,12 @@ const Dashboard = (() => {
   // Dashboards call neededActions.start([{ key, modalId, run }]).
   // `run` should open a modal and return true, or return false to try the next check.
   const neededActions = (() => {
-    const INTERVAL_MS = 60000;
+    const INTERVAL_MS = 15000;
+    const FIRST_DELAY_MS = 600;
+    const BUSY_RETRY_MS = 2000;
     const SNOOZE_MS = 10 * 60 * 1000;
     let timer = null;
+    let retryTimer = null;
     let running = false;
     let visibilityBound = false;
     let checks = [];
@@ -371,8 +374,22 @@ const Dashboard = (() => {
       return !!(el && el.classList.contains('show'));
     }
 
-    function anyModalOpen() {
-      return !!document.querySelector('.modal-overlay.show');
+    function neededModalOpen() {
+      return checks.some(c => c && c.modalId && isModalOpen(c.modalId));
+    }
+
+    function unrelatedModalOpen() {
+      const el = document.querySelector('.modal-overlay.show');
+      if (!el) return false;
+      return !checks.some(c => c && (c.modalId === el.id || el.id === `needed-${c.key}-modal`));
+    }
+
+    function scheduleRetry(ms) {
+      if (retryTimer) return;
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        tick();
+      }, ms);
     }
 
     function patchClose() {
@@ -433,6 +450,11 @@ const Dashboard = (() => {
         body = `${introHtml}<div id="${id}-slot"></div>`;
       }
       UI.createModal({ id, title, content: body, footer: footer || '', size: size || 'modal-lg' });
+      const overlay = document.getElementById(id);
+      if (overlay) {
+        overlay.classList.add('needed-action-modal');
+        overlay.style.zIndex = '10050';
+      }
       if (hostEl) {
         const slot = document.getElementById(id + '-slot');
         if (slot) {
@@ -448,7 +470,12 @@ const Dashboard = (() => {
     }
 
     async function tick() {
-      if (running || anyModalOpen() || document.hidden) return;
+      if (running || document.hidden) return;
+      if (neededModalOpen()) return;
+      if (unrelatedModalOpen()) {
+        scheduleRetry(BUSY_RETRY_MS);
+        return;
+      }
       running = true;
       try {
         for (const check of checks) {
@@ -467,12 +494,16 @@ const Dashboard = (() => {
     function start(list) {
       patchClose();
       checks = Array.isArray(list) ? list : [];
-      tick();
-      if (!timer) timer = setInterval(tick, INTERVAL_MS);
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
+      scheduleRetry(FIRST_DELAY_MS);
+      if (!timer) timer = setInterval(() => tick(), INTERVAL_MS);
       if (!visibilityBound) {
         visibilityBound = true;
         document.addEventListener('visibilitychange', () => {
-          if (!document.hidden) tick();
+          if (!document.hidden) scheduleRetry(300);
         });
       }
     }
@@ -486,7 +517,13 @@ const Dashboard = (() => {
     UI.initDropdowns();
     UI.initSidebarToggle();
     if (window.SoundManager) SoundManager.init();
-    if (window.PushManager) PushManager.init().then(() => { if (PushManager.shouldPrompt()) setTimeout(() => PushManager.showPermissionPrompt(), 3000); });
+    if (window.PushManager) PushManager.init().then(() => {
+      if (!PushManager.shouldPrompt()) return;
+      setTimeout(() => {
+        if (document.querySelector('.needed-action-modal.show')) return;
+        PushManager.showPermissionPrompt();
+      }, 8000);
+    });
     loadNotifications();
     setInterval(loadNotifications, 60000);
     loadCartCount();

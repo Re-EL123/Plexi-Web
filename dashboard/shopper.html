@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#4361ee">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Account — Plexi Digital Mall</title>
-  <link rel="stylesheet" href="../assets/css/variables.css?v=2">
+  <link rel="stylesheet" href="../assets/css/variables.css?v=3">
   <link rel="stylesheet" href="../assets/css/base.css?v=2">
   <link rel="stylesheet" href="../assets/css/neomorphism.css?v=2">
   <link rel="stylesheet" href="../assets/css/components.css?v=3">
@@ -335,11 +335,11 @@
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=5"></script>
+<script src="../assets/js/ui.js?v=6"></script>
 <script src="../assets/js/api.js?v=3"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
-<script src="../assets/js/dashboard.js?v=4"></script>
+<script src="../assets/js/dashboard.js?v=5"></script>
 <script>
   function toggleSound(){
     const on=SoundManager.toggle();
@@ -358,11 +358,14 @@
       document.getElementById('profile-email').value = user.email || '';
       document.getElementById('profile-name').value  = user.metadata?.name || '';
     }
-    await loadOverview();
-    UI.hidePageLoader();
-    UI.staggerReveal(document.body);
-    handlePaymentReturn();
-    startNeededActionsPoller();
+    try {
+      await loadOverview();
+      handlePaymentReturn();
+    } finally {
+      UI.hidePageLoader();
+      UI.staggerReveal(document.body);
+      startNeededActionsPoller();
+    }
   });
 
   document.querySelectorAll('[data-section]').forEach(a => {
@@ -1012,6 +1015,24 @@
           });
           return true;
         }
+      },
+      {
+        key: 'banking',
+        modalId: 'needed-banking-modal',
+        run: async () => {
+          let data = null;
+          try { data = await api.banking.get(); } catch (_) {}
+          if (data && data.account_holder) return false;
+          await loadShopperBanking();
+          const form = document.getElementById('shopper-banking-form');
+          if (!form) return false;
+          return Dashboard.neededActions.open({
+            id: 'needed-banking-modal',
+            title: 'Banking details required',
+            intro: 'Add your bank account so we can pay refunds if needed.',
+            hostEl: form
+          });
+        }
       }
     ]);
   }
@@ -1440,6 +1461,8 @@
       await api.banking.save(payload);
       UI.toast('Banking details saved!', 'success');
       loadShopperBanking();
+      Dashboard.neededActions?.snooze('banking', 10 * 60 * 1000);
+      UI.closeModal('needed-banking-modal');
     } catch (err) {
       UI.toast(err.message, 'error');
     } finally {
