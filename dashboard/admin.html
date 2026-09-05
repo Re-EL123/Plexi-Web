@@ -6,7 +6,7 @@
   <link rel="manifest" href="../manifest.json?v=2">
   <meta name="theme-color" content="#4361ee">
   <title>Admin Dashboard — Plexi Digital Mall</title>
-  <link rel="stylesheet" href="../assets/css/variables.css?v=2">
+  <link rel="stylesheet" href="../assets/css/variables.css?v=3">
   <link rel="stylesheet" href="../assets/css/base.css?v=2">
   <link rel="stylesheet" href="../assets/css/neomorphism.css?v=2">
   <link rel="stylesheet" href="../assets/css/components.css?v=3">
@@ -564,12 +564,12 @@
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=4"></script>
+<script src="../assets/js/ui.js?v=6"></script>
 <script src="../assets/js/api.js?v=2"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
 <script src="../assets/js/map.js?v=2"></script>
-<script src="../assets/js/dashboard.js?v=3"></script>
+<script src="../assets/js/dashboard.js?v=5"></script>
 <script>
 function toggleSound(){
   const on=SoundManager.toggle();
@@ -582,13 +582,18 @@ function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f
 function gotoSection(id){Dashboard.showSection(id);document.querySelectorAll('.sidebar-nav a').forEach(a=>a.classList.toggle('active',a.dataset.section===id));}
 
 document.addEventListener('DOMContentLoaded', async()=>{
-  Dashboard.init(); UI.hidePageLoader(); document.getElementById('sidebar-toggle').style.display='flex';
+  Dashboard.init(); document.getElementById('sidebar-toggle').style.display='flex';
   document.querySelectorAll('[data-section]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();gotoSection(a.dataset.section);if(a.dataset.section==='sec-map')MallMap.render();if(a.dataset.section==='sec-alerts')loadRecentAlerts();if(a.dataset.section==='sec-subscriptions')loadSubscriptions(1);if(a.dataset.section==='sec-gps')loadGPSData();if(a.dataset.section==='sec-reports')loadAdminReport();if(a.dataset.section==='sec-verification')loadVerifyApps();if(a.dataset.section==='sec-banking')loadBankingList();if(a.dataset.section==='sec-driver-compliance')loadDriverCompliance();if(a.dataset.section==='sec-driver-payroll'){initPayrollDates();loadDriverPayments();}if(a.dataset.section==='sec-categories')loadCategories();if(a.dataset.section==='sec-rates')loadPlatformSettings();if(a.dataset.section==='sec-transactions')loadAdminTransactions();if(a.dataset.section==='sec-review-queue')loadFlaggedReviews();if(a.dataset.section==='sec-coupons')loadCoupons();if(a.dataset.section==='sec-audit-log')loadAuditLog(1); });});
-  await loadAdminStats(); loadPendingStores(); loadRecentUsers();
-  loadUsers(1); loadAdminStores(1); loadAdminOrders(1); loadAdminProducts(1); loadTickets(1);
-  refreshFlaggedCount();
-  MallMap.init(document.getElementById('admin-map'));
-  setTimeout(()=>UI.staggerReveal(document.querySelector('.stats-grid')),300);
+  try {
+    await loadAdminStats(); loadPendingStores(); loadRecentUsers();
+    loadUsers(1); loadAdminStores(1); loadAdminOrders(1); loadAdminProducts(1); loadTickets(1);
+    refreshFlaggedCount();
+    MallMap.init(document.getElementById('admin-map'));
+    setTimeout(()=>UI.staggerReveal(document.querySelector('.stats-grid')),300);
+  } finally {
+    UI.hidePageLoader();
+    startNeededActionsPoller();
+  }
 });
 
 async function loadAdminStats(){
@@ -2174,6 +2179,162 @@ setInterval(loadGPSData, 30000);
       const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       startEl.value = first.toISOString().split('T')[0];
       endEl.value = last.toISOString().split('T')[0];
+    }
+  }
+</script>
+<script>
+  const NEEDED_ADMIN_MODAL_ID = 'needed-admin-modal';
+
+  function asAdminList(data, keys) {
+    if (Array.isArray(data)) return data;
+    for (const k of keys || []) {
+      if (Array.isArray(data?.[k])) return data[k];
+    }
+    return [];
+  }
+
+  function escAdmin(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  }
+
+  function startNeededActionsPoller() {
+    if (!Dashboard.neededActions) return;
+    Dashboard.neededActions.start([{
+      key: 'admin-review',
+      modalId: NEEDED_ADMIN_MODAL_ID,
+      run: async () => {
+        const item = await getNextAdminNeededAction();
+        if (!item) return false;
+        openAdminNeededModal(item);
+        return true;
+      }
+    }]);
+  }
+
+  async function getNextAdminNeededAction() {
+    const [storesR, kycR, driverR, bankR] = await Promise.allSettled([
+      api.admin.stores({ status: 'draft', limit: 5 }),
+      api.verification.admin.list('pending'),
+      api.driverCompliance.list('submitted'),
+      api.admin.banking({ verified: 'false', limit: 10 })
+    ]);
+    const stores = asAdminList(storesR.status === 'fulfilled' ? storesR.value : null, ['stores']);
+    if (stores[0]?.id) return { type: 'store', data: stores[0] };
+
+    const kyc = asAdminList(kycR.status === 'fulfilled' ? kycR.value : null, ['applications', 'data']);
+    const pendingKyc = kyc.find(a => !a.status || a.status === 'pending');
+    if (pendingKyc?.id) return { type: 'kyc', data: pendingKyc };
+
+    const drivers = asAdminList(driverR.status === 'fulfilled' ? driverR.value : null, ['data']);
+    const pendingDriver = drivers.find(c => c.status === 'submitted');
+    if (pendingDriver?.id) return { type: 'driver', data: pendingDriver };
+
+    const banks = asAdminList(bankR.status === 'fulfilled' ? bankR.value : null, ['banking', 'data']);
+    const pendingBank = banks.find(b => b && !b.account_verified);
+    if (pendingBank?.id) return { type: 'banking', data: pendingBank };
+
+    return null;
+  }
+
+  function openAdminNeededModal(item) {
+    const later = `<button class="btn btn-ghost" type="button" onclick="UI.closeModal('${NEEDED_ADMIN_MODAL_ID}')">Later</button>`;
+    if (item.type === 'store') {
+      const st = item.data;
+      Dashboard.neededActions.open({
+        id: NEEDED_ADMIN_MODAL_ID,
+        title: 'Store approval needed',
+        content: `<div style="font-weight:800;margin-bottom:6px;">${escAdmin(st.name)}</div>
+          <div style="color:var(--text-secondary);font-size:13px;">${escAdmin(st.category || '')}${st.owner?.email ? ' · ' + escAdmin(st.owner.email) : ''}</div>
+          ${st.description ? `<p style="margin-top:var(--space-md);font-size:13px;color:var(--text-secondary);">${escAdmin(st.description)}</p>` : ''}`,
+        footer: `${later}
+          <button class="btn btn-danger" type="button" onclick="submitAdminNeeded('store','${st.id}','reject')">Reject</button>
+          <button class="btn btn-primary" type="button" onclick="submitAdminNeeded('store','${st.id}','approve')">Approve</button>`
+      });
+      return;
+    }
+    if (item.type === 'kyc') {
+      const a = item.data;
+      const docs = [
+        a.id_document_url && `<a href="${escAdmin(a.id_document_url)}" target="_blank">ID document</a>`,
+        a.proof_of_address_url && `<a href="${escAdmin(a.proof_of_address_url)}" target="_blank">Proof of address</a>`,
+        a.cipc_certificate_url && `<a href="${escAdmin(a.cipc_certificate_url)}" target="_blank">CIPC</a>`,
+        a.tax_clearance_url && `<a href="${escAdmin(a.tax_clearance_url)}" target="_blank">Tax clearance</a>`
+      ].filter(Boolean).join(' · ');
+      Dashboard.neededActions.open({
+        id: NEEDED_ADMIN_MODAL_ID,
+        title: 'Seller verification needed',
+        content: `<div style="font-weight:800;margin-bottom:6px;">${escAdmin(a.full_name)}</div>
+          <div style="color:var(--text-secondary);font-size:13px;">ID ${escAdmin(a.id_number || '—')} · ${escAdmin(a.city || '')} ${escAdmin(a.province || '')}</div>
+          ${a.business_name ? `<div style="font-size:13px;margin-top:6px;">${escAdmin(a.business_name)}</div>` : ''}
+          ${docs ? `<div style="margin-top:var(--space-sm);font-size:13px;">${docs}</div>` : ''}
+          <div class="form-group" style="margin-top:var(--space-md);"><label class="form-label">Notes (optional for approve, required to reject)</label>
+            <input type="text" class="form-control" id="needed-admin-notes" placeholder="Admin notes"></div>`,
+        footer: `${later}
+          <button class="btn btn-danger" type="button" onclick="submitAdminNeeded('kyc','${a.id}','reject')">Reject</button>
+          <button class="btn btn-primary" type="button" onclick="submitAdminNeeded('kyc','${a.id}','approve')">Approve</button>`
+      });
+      return;
+    }
+    if (item.type === 'driver') {
+      const c = item.data;
+      const d = c.driver || {};
+      const docs = [c.id_front_url, c.id_back_url, c.license_url, c.prdp_url, c.vehicle_reg_url, c.dekra_url, c.insurance_url, c.proof_of_address_url, c.profile_photo_url].filter(Boolean).length;
+      Dashboard.neededActions.open({
+        id: NEEDED_ADMIN_MODAL_ID,
+        title: 'Driver KYC needed',
+        content: `<div style="font-weight:800;margin-bottom:6px;">${escAdmin(d.full_name || ('Driver #' + String(c.driver_id || '').slice(0, 8)))}</div>
+          <div style="color:var(--text-secondary);font-size:13px;">${escAdmin(d.email || '')}${d.vehicle_type ? ' · ' + escAdmin(d.vehicle_type) : ''} · ${docs}/9 documents</div>
+          <div class="form-group" style="margin-top:var(--space-md);"><label class="form-label">Reject reason (required to reject)</label>
+            <input type="text" class="form-control" id="needed-admin-notes" placeholder="e.g. Blurry ID"></div>`,
+        footer: `${later}
+          <button class="btn btn-danger" type="button" onclick="submitAdminNeeded('driver','${c.id}','reject')">Reject</button>
+          <button class="btn btn-primary" type="button" onclick="submitAdminNeeded('driver','${c.id}','approve')">Approve</button>`
+      });
+      return;
+    }
+    if (item.type === 'banking') {
+      const b = item.data;
+      Dashboard.neededActions.open({
+        id: NEEDED_ADMIN_MODAL_ID,
+        title: 'Bank account verification needed',
+        content: `<div style="font-weight:800;margin-bottom:6px;">${escAdmin(b.account_holder)}</div>
+          <div style="color:var(--text-secondary);font-size:13px;">${escAdmin(b.bank_name)} · ${escAdmin(b.account_type || '')} · ${escAdmin(b.account_number)}</div>
+          ${b.proof_url ? `<div style="margin-top:var(--space-sm);"><a href="${escAdmin(b.proof_url)}" target="_blank">View proof of account</a></div>` : ''}`,
+        footer: `${later}
+          <button class="btn btn-primary" type="button" onclick="submitAdminNeeded('banking','${b.id}','approve')">Verify</button>`
+      });
+    }
+  }
+
+  async function finishAdminNeeded() {
+    UI.closeModal(NEEDED_ADMIN_MODAL_ID);
+    Dashboard.neededActions?.snooze('admin-review', 0);
+    try { loadPendingStores(); } catch (_) {}
+    Dashboard.neededActions?.tick();
+  }
+
+  async function submitAdminNeeded(type, id, action) {
+    const notes = document.getElementById('needed-admin-notes')?.value?.trim() || '';
+    try {
+      if (type === 'store' && action === 'approve') await api.admin.approveStore(id);
+      else if (type === 'store') await api.admin.rejectStore(id, notes || 'Does not meet requirements');
+      else if (type === 'kyc') {
+        if (action === 'reject' && !notes) { UI.toast('Add a reject reason','warning'); return; }
+        await api.verification.admin.review(id, action, notes);
+      } else if (type === 'driver') {
+        if (action === 'reject') {
+          if (!notes) { UI.toast('Add a reject reason','warning'); return; }
+          await api.driverCompliance.review(id, 'reject', notes, '');
+        } else {
+          await api.driverCompliance.review(id, 'approve');
+        }
+      } else if (type === 'banking') {
+        await api.admin.verifyBanking(id, true);
+      }
+      UI.toast(action === 'approve' ? 'Approved' : 'Rejected', action === 'approve' ? 'success' : 'info');
+      await finishAdminNeeded();
+    } catch (err) {
+      UI.toast(err.message || 'Could not complete review', 'error');
     }
   }
 </script>
