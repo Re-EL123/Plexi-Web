@@ -505,6 +505,35 @@ const UI = (() => {
       </a>`;
   }
 
+  function dealAisleCard(p, hrefPrefix) {
+    if (!p) return '';
+    const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const href = productHref(p, hrefPrefix);
+    const img = p.images?.[0]
+      ? `<img src="${esc(p.images[0])}" alt="${esc(p.name)}" loading="lazy">`
+      : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--bg);">📦</div>`;
+    const sale = Number(p.original_price) > Number(p.price);
+    const storeName = p.store?.name || p.store_name || '';
+    return `
+      <article class="deal-aisle-card">
+        <a href="${esc(href)}" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;height:100%;">
+          <div class="deal-aisle-img">
+            ${img}
+            ${sale ? '<span class="badge badge-error deal-aisle-sale">Sale</span>' : ''}
+          </div>
+          <div class="deal-aisle-body">
+            <div class="product-card-name">${esc(p.name)}</div>
+            <div class="product-card-price">
+              ${sale ? `<span class="deal-was">${formatCurrency(p.original_price)}</span> ` : ''}
+              <span class="deal-now">${formatCurrency(p.price)}</span>
+            </div>
+            ${storeName ? `<div class="deal-store">${esc(storeName)}</div>` : ''}
+          </div>
+        </a>
+        <button class="btn btn-primary btn-sm" onclick="event.preventDefault();event.stopPropagation();UI.addToCartModal('${esc(p.id)}')" ${p.inventory === 0 || p.sold_out ? 'disabled' : ''}>Add</button>
+      </article>`;
+  }
+
   // ======== LOADING ======== //
   function setLoading(btn, loading, text = '') {
     if (!btn) return;
@@ -908,7 +937,7 @@ const UI = (() => {
 
   return {
     toast, openModal, closeModal, createModal, confirmDialog, addToCartModal,
-    productCard, recentlyViewed: { get: recentlyViewedGet, push: recentlyViewedPush },
+    productCard, dealAisleCard, recentlyViewed: { get: recentlyViewedGet, push: recentlyViewedPush },
     setLoading, showPageLoader, hidePageLoader,
     formatCurrency, formatDate, formatDateTime, timeAgo,
     badge, statusBadge, stars, avatar, skeleton, skeletonTable, skeletonGrid, skeletonList,
