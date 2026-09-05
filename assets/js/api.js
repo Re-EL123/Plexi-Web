@@ -123,6 +123,7 @@ const api = (() => {
     isFollowing: (storeId)           => get(`/stores?action=is-following&id=${storeId}`),
     followed:    (params = {})       => get(`/stores?action=followed&${new URLSearchParams(params)}`),
     categories: (params = {})        => get(`/stores?action=categories&${new URLSearchParams(params)}`),
+    ads:        (params = {})        => get(`/stores?action=ads&${new URLSearchParams(params)}`),
   };
 
   // ======== PRODUCTS ======== //
@@ -241,6 +242,11 @@ const api = (() => {
     coupons:          (params={}) => get(`/admin?action=coupons&${new URLSearchParams(params)}`),
     createCoupon:     (data)      => post('/admin?action=create-coupon', data),
     deleteCoupon:     (id)        => del(`/admin?action=delete-coupon&id=${id}`),
+    ads:              ()          => get('/admin?action=ads'),
+    createAd:         (data)      => post('/admin?action=ads', data),
+    updateAd:         (data)      => put('/admin?action=ads', data),
+    deleteAd:         (id)        => del(`/admin?action=ads&id=${id}`),
+    signAdUpload:     (data)      => post('/admin?action=ads-upload-url', data),
   };
 
   // ======== DRIVER COMPLIANCE (KYC) ======== //

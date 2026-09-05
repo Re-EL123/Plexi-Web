@@ -68,9 +68,29 @@
     .hero-blob-2{width:400px;height:400px;background:radial-gradient(circle,rgba(243,156,18,0.08),transparent);bottom:-100px;left:-100px;}
     .hero-inner{
       max-width:1280px;margin:0 auto;padding:0 var(--space-lg);
-      display:block;position:relative;z-index:1;
+      display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-xl);
+      align-items:center;position:relative;z-index:1;
     }
+    .hero-inner.has-ads{grid-template-columns:minmax(0,1fr) minmax(260px,400px);}
     .hero-content{max-width:720px;}
+    .hero-ad{
+      display:none;position:relative;border-radius:var(--radius-xl);overflow:hidden;
+      background:#1a1a1a;box-shadow:var(--neo-shadow-lg);min-height:280px;aspect-ratio:4/5;max-height:460px;
+    }
+    .hero-inner.has-ads .hero-ad{display:block;}
+    .hero-ad-media{position:absolute;inset:0;}
+    .hero-ad-media img,.hero-ad-media video{width:100%;height:100%;object-fit:cover;display:block;}
+    .hero-ad-badge{
+      position:absolute;top:12px;left:12px;z-index:2;
+      background:rgba(0,0,0,0.55);color:#fff;font-size:10px;font-weight:700;
+      letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px;
+    }
+    .hero-ad-dots{position:absolute;bottom:12px;left:0;right:0;z-index:2;display:flex;justify-content:center;gap:6px;}
+    .hero-ad-dots button{
+      width:8px;height:8px;border-radius:50%;border:none;padding:0;cursor:pointer;
+      background:rgba(255,255,255,0.4);
+    }
+    .hero-ad-dots button.is-on{background:#fff;transform:scale(1.15);}
     #mall-map-grid{overflow:visible;}
     .hero-eyebrow{
       display:inline-flex;align-items:center;gap:8px;
@@ -106,7 +126,8 @@
 
     @media(max-width:1024px){
       .nav-inner{padding:0 var(--space-md);}
-      .hero-inner{grid-template-columns:1fr;gap:var(--space-xl);}
+      .hero-inner,.hero-inner.has-ads{grid-template-columns:1fr;gap:var(--space-xl);}
+      .hero-ad{max-height:220px;min-height:180px;aspect-ratio:16/9;}
       .hero-visual{display:none;}
       .footer-inner{grid-template-columns:1fr 1fr;}
     }
@@ -171,6 +192,11 @@
         <div class="hero-stat stagger-child"><div class="hero-stat-val" id="stat-products">—</div><div class="hero-stat-label">Products</div></div>
       </div>
     </div>
+    <aside class="hero-ad" id="hero-ad" hidden aria-label="Advertisement">
+      <span class="hero-ad-badge">Ad</span>
+      <div class="hero-ad-media" id="hero-ad-media"></div>
+      <div class="hero-ad-dots" id="hero-ad-dots" hidden></div>
+    </aside>
   </div>
 </section>
 
@@ -308,7 +334,7 @@
 <script src="assets/js/sounds.js?v=2"></script>
 <script src="assets/js/push.js?v=2"></script>
 <script src="assets/js/ui.js?v=10"></script>
-<script src="assets/js/api.js?v=5"></script>
+<script src="assets/js/api.js?v=6"></script>
 <script src="assets/js/auth.js?v=2"></script>
 <script src="assets/js/state.js?v=2"></script>
 <script src="assets/js/map.js?v=7"></script>
@@ -779,6 +805,88 @@ grid.innerHTML=products.map(p=>`
     }
   }
 
+  function escAdUrl(s) {
+    return String(s ?? '').replace(/"/g, '%22').replace(/</g, '');
+  }
+
+  function initHeroAds() {
+    const host = document.getElementById('hero-ad');
+    const inner = document.querySelector('.hero-inner');
+    if (!host || !api.stores?.ads) return;
+    api.stores.ads().then((data) => {
+      const ads = (Array.isArray(data) ? data : (data.ads || []))
+        .filter((a) => a && a.media_url && (a.media_type === 'image' || a.media_type === 'video'));
+      if (!ads.length) {
+        host.hidden = true;
+        inner?.classList.remove('has-ads');
+        return;
+      }
+      inner?.classList.add('has-ads');
+      host.hidden = false;
+      playHeroAds(host, ads);
+    }).catch(() => {
+      host.hidden = true;
+      inner?.classList.remove('has-ads');
+    });
+  }
+
+  function playHeroAds(host, ads) {
+    const mediaEl = document.getElementById('hero-ad-media');
+    const dotsEl = document.getElementById('hero-ad-dots');
+    if (!mediaEl) return;
+    const reduced = UI.prefersReducedMotion && UI.prefersReducedMotion();
+    let i = 0;
+    let timer = 0;
+    let gen = 0;
+    const show = (idx) => {
+      const my = ++gen;
+      clearTimeout(timer);
+      i = (idx + ads.length) % ads.length;
+      const ad = ads[i];
+      const href = ad.href ? escAdUrl(ad.href) : '';
+      const src = escAdUrl(ad.media_url);
+      if (ad.media_type === 'video') {
+        mediaEl.innerHTML = `<video src="${src}" ${href ? `data-href="${href}"` : ''} muted playsinline ${reduced ? 'controls' : 'autoplay'} style="cursor:${href ? 'pointer' : 'default'};"></video>`;
+        const video = mediaEl.querySelector('video');
+        if (video && !reduced) {
+          video.addEventListener('ended', () => { if (my === gen) show(i + 1); }, { once: true });
+          video.play?.().catch(() => { if (my === gen) show(i + 1); });
+        }
+      } else {
+        mediaEl.innerHTML = `<img src="${src}" alt="${String(ad.title || 'Advertisement').replace(/"/g, '&quot;')}" ${href ? `data-href="${href}"` : ''} style="cursor:${href ? 'pointer' : 'default'};">`;
+        if (!reduced && ads.length > 1) {
+          const ms = Math.max(3, Number(ad.duration_seconds) || 6) * 1000;
+          timer = setTimeout(() => { if (my === gen) show(i + 1); }, ms);
+        }
+      }
+      if (dotsEl && ads.length > 1) {
+        dotsEl.hidden = false;
+        dotsEl.innerHTML = ads.map((_, d) => `<button type="button" class="${d === i ? 'is-on' : ''}" aria-label="Ad ${d + 1}"></button>`).join('');
+        dotsEl.querySelectorAll('button').forEach((btn, d) => {
+          btn.addEventListener('click', () => show(d));
+        });
+      }
+    };
+    if (!mediaEl.dataset.bound) {
+      mediaEl.dataset.bound = '1';
+      mediaEl.addEventListener('click', (e) => {
+        const node = e.target.closest('[data-href]');
+        const href = node?.getAttribute('data-href');
+        if (href) location.href = href;
+      });
+    }
+    document.addEventListener('visibilitychange', () => {
+      const video = mediaEl.querySelector('video');
+      if (document.hidden) {
+        clearTimeout(timer);
+        video?.pause();
+      } else if (!reduced && video) {
+        video.play?.().catch(() => {});
+      }
+    });
+    show(0);
+  }
+
   paintHeroGreeting();
 
   async function loadSpecials() {
@@ -846,6 +954,7 @@ grid.innerHTML=products.map(p=>`
     Dashboard.initMallChrome();
     paintHeroGreeting();
     loadHeroProductCount();
+    initHeroAds();
     UI.hidePageLoader();
     if (window.SoundManager) SoundManager.init();
     initSearchBar();
