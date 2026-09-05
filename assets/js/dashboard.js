@@ -41,7 +41,11 @@ const Dashboard = (() => {
       needed_admin_store: 'admin-review',
       needed_admin_kyc: 'admin-review',
       needed_admin_driver: 'admin-review',
-      needed_admin_banking: 'admin-review'
+      needed_admin_banking: 'admin-review',
+      needed_catalog: 'catalog',
+      needed_store_look: 'store-look',
+      needed_map_pin: 'map-pin',
+      needed_deal: 'deal'
     };
     return map[type] || null;
   }
@@ -98,6 +102,9 @@ const Dashboard = (() => {
         neededActions.snooze(key, 0);
         neededActions.tick();
       }
+      if (type === 'needed_wishlist' || type === 'needed_wishlist_sale' || type === 'needed_wishlist_stock') {
+        activateSection('section-wishlist');
+      }
     } catch (_) {}
   }
 
@@ -123,6 +130,11 @@ const Dashboard = (() => {
   }
 
   async function loadCartCount() {
+    if (!(window.Auth && typeof Auth.isLoggedIn === 'function' && Auth.isLoggedIn())) {
+      const badge = document.getElementById('cart-badge');
+      if (badge) badge.style.display = 'none';
+      return;
+    }
     try {
       const data = await api.cart.get();
       const items = Array.isArray(data) ? data : (data.items || []);
@@ -290,8 +302,25 @@ const Dashboard = (() => {
   }
 
   // ======== CART PANEL ======== //
+  function mallRoot() {
+    return /\/(store|dashboard)\//.test(location.pathname) ? '../' : '';
+  }
+
+  function shopperCartHref() {
+    return mallRoot() + 'dashboard/shopper.html#section-cart';
+  }
+
   function openCartPanel() {
+    if (!Auth.isLoggedIn()) {
+      UI.toast('Sign in to view your cart', 'info');
+      setTimeout(() => { location.href = mallRoot() + 'login.html'; }, 800);
+      return;
+    }
     let panel = document.getElementById('cart-slide-panel');
+    if (panel && !document.getElementById('cart-panel-coupon')) {
+      panel.remove();
+      panel = null;
+    }
     if (!panel) {
       panel = document.createElement('div');
       panel.id = 'cart-slide-panel';
@@ -304,8 +333,15 @@ const Dashboard = (() => {
           </div>
           <div id="cart-panel-items" style="flex:1;overflow-y:auto;padding:var(--space-md) var(--space-lg);"></div>
           <div style="padding:var(--space-md) var(--space-lg);border-top:1px solid var(--border-light);">
+            <div id="cart-panel-free" style="display:none;font-size:12px;font-weight:600;margin-bottom:var(--space-sm);padding:8px 10px;border-radius:var(--radius-md);background:var(--primary-alpha);color:var(--primary);"></div>
+            <div style="display:flex;gap:var(--space-xs);margin-bottom:6px;">
+              <input type="text" id="cart-panel-coupon" class="form-control" placeholder="Coupon code" style="font-size:13px;text-transform:uppercase;">
+              <button type="button" class="btn btn-primary btn-sm" onclick="Dashboard.applyCartPanelCoupon()">Apply</button>
+            </div>
+            <div id="cart-panel-coupon-hint" style="font-size:11px;color:var(--text-muted);margin-bottom:var(--space-sm);"></div>
             <div class="flex-between" style="margin-bottom:var(--space-md);"><span style="color:var(--text-secondary);">Total</span><strong id="cart-panel-total" style="font-size:20px;color:var(--primary);">R0.00</strong></div>
-            <button class="btn btn-primary btn-block" onclick="Dashboard.closeCartPanel();location.href='../dashboard/shopper.html';document.querySelector('[data-section=section-cart]')?.click();">View Full Cart</button>
+            <button class="btn btn-primary btn-block" onclick="Dashboard.goToFullCart()">Checkout</button>
+            <button class="btn btn-ghost btn-block" style="margin-top:6px;" onclick="Dashboard.goToFullCart()">View Full Cart</button>
           </div>
         </div>`;
       document.body.appendChild(panel);
@@ -317,6 +353,11 @@ const Dashboard = (() => {
     requestAnimationFrame(() => { overlay.style.opacity = '1'; });
     initCartPanelKeys();
     loadCartPanelItems();
+  }
+
+  function goToFullCart() {
+    closeCartPanel();
+    location.href = shopperCartHref();
   }
 
   function closeCartPanel() {
@@ -350,6 +391,10 @@ const Dashboard = (() => {
       if (!items.length) {
         el.innerHTML = '<div style="text-align:center;padding:var(--space-2xl);color:var(--text-muted);"><div style="font-size:48px;margin-bottom:var(--space-md);">🛒</div><p>Your cart is empty</p></div>';
         if (totalEl) totalEl.textContent = UI.formatCurrency(0);
+        const freeEl = document.getElementById('cart-panel-free');
+        if (freeEl) freeEl.style.display = 'none';
+        const hintEl = document.getElementById('cart-panel-coupon-hint');
+        if (hintEl) hintEl.textContent = '';
         return;
       }
       el.innerHTML = items.map(item => {
@@ -376,8 +421,83 @@ const Dashboard = (() => {
           </div>`;
       }).join('');
       if (totalEl) totalEl.textContent = UI.formatCurrency(total);
+      const savedCode = sessionStorage.getItem('plexi_coupon_code') || '';
+      const couponInput = document.getElementById('cart-panel-coupon');
+      if (couponInput && !couponInput.value && savedCode) couponInput.value = savedCode;
+      refreshCartPanelConversion(total);
     } catch (err) {
       el.innerHTML = `<div style="text-align:center;padding:var(--space-xl);color:var(--error);">${err.message || 'Could not load cart'}</div>`;
+    }
+  }
+
+  async function refreshCartPanelConversion(subtotal) {
+    const freeEl = document.getElementById('cart-panel-free');
+    const hintEl = document.getElementById('cart-panel-coupon-hint');
+    const totalEl = document.getElementById('cart-panel-total');
+    let net = Number(subtotal) || 0;
+    const code = (document.getElementById('cart-panel-coupon')?.value || sessionStorage.getItem('plexi_coupon_code') || '').trim().toUpperCase();
+    if (code && net > 0) {
+      try {
+        const res = await api.coupons.validate(code, net);
+        const disc = parseFloat(res.discount) || 0;
+        if (disc > 0) {
+          net = Math.max(net - disc, 0);
+          if (totalEl) totalEl.textContent = UI.formatCurrency(net);
+          sessionStorage.setItem('plexi_coupon_code', code);
+          if (hintEl) hintEl.textContent = `${code} applied (−${UI.formatCurrency(disc)})`;
+        }
+      } catch (err) {
+        if (hintEl && document.getElementById('cart-panel-coupon')?.value) {
+          hintEl.textContent = err.message || 'Invalid coupon';
+        }
+      }
+    }
+    if (!code && hintEl) {
+      try {
+        const avail = await api.coupons.list();
+        const codes = Array.isArray(avail) ? avail : (avail.coupons || []);
+        const first = codes[0];
+        hintEl.textContent = first?.code
+          ? `Try ${first.code}` + (first.discount_type === 'percent' ? ` (${first.discount_value}% off)` : first.discount_value ? ` (${UI.formatCurrency(first.discount_value)} off)` : '')
+          : '';
+      } catch (_) {
+        hintEl.textContent = '';
+      }
+    }
+    if (!freeEl) return;
+    try {
+      const preview = await api.delivery.preview(-33.9249, 18.4241, net);
+      const threshold = Number(preview.free_threshold) || 0;
+      if (threshold <= 0) { freeEl.style.display = 'none'; return; }
+      freeEl.style.display = 'block';
+      if (preview.free_delivery) freeEl.textContent = 'Free delivery unlocked';
+      else freeEl.textContent = `Add ${UI.formatCurrency(preview.amount_to_free)} more for free delivery`;
+    } catch (_) {
+      freeEl.style.display = 'none';
+    }
+  }
+
+  async function applyCartPanelCoupon() {
+    const input = document.getElementById('cart-panel-coupon');
+    const hintEl = document.getElementById('cart-panel-coupon-hint');
+    const code = (input?.value || '').trim().toUpperCase();
+    if (!code) {
+      sessionStorage.removeItem('plexi_coupon_code');
+      if (hintEl) hintEl.textContent = '';
+      loadCartPanelItems();
+      return;
+    }
+    try {
+      const data = await api.cart.get();
+      const items = Array.isArray(data) ? data : (data.items || []);
+      const total = data.total || items.reduce((s, i) => s + (i.product?.price || 0) * (i.quantity || 1), 0);
+      const res = await api.coupons.validate(code, total);
+      sessionStorage.setItem('plexi_coupon_code', code);
+      UI.toast(`${code} applied`, 'success');
+      if (hintEl) hintEl.textContent = `${code} applied (−${UI.formatCurrency(res.discount || 0)})`;
+      refreshCartPanelConversion(total);
+    } catch (err) {
+      UI.toast(err.message || 'Invalid coupon', 'error');
     }
   }
 
@@ -563,6 +683,71 @@ const Dashboard = (() => {
     return { start, open, close, snooze, isSnoozed, isModalOpen, tick };
   })();
 
+  // ======== PUBLIC MALL CHROME (no needed-action popups) ======== //
+  function injectMallChrome() {
+    const cartSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>';
+    const bellSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+
+    const cartBtn = document.getElementById('cart-btn');
+    if (cartBtn) {
+      cartBtn.style.display = 'flex';
+      cartBtn.setAttribute('onclick', 'Dashboard.openCartPanel()');
+    }
+    const navCart = document.getElementById('nav-cart-btn');
+    if (navCart) navCart.style.display = 'block';
+
+    if (!document.getElementById('cart-badge')) {
+      const host = document.getElementById('nav-auth') || document.querySelector('.navbar-nav');
+      if (host) {
+        const wrap = document.createElement('div');
+        wrap.id = 'mall-chrome-cart';
+        wrap.style.cssText = 'position:relative;display:flex;align-items:center;';
+        wrap.innerHTML = `<button type="button" class="btn btn-ghost btn-icon" onclick="Dashboard.openCartPanel()" aria-label="Cart">${cartSvg}<span id="cart-badge" class="badge badge-error" style="position:absolute;top:-6px;right:-6px;display:none;width:18px;height:18px;padding:0;align-items:center;justify-content:center;font-size:10px;">0</span></button>`;
+        host.insertBefore(wrap, host.firstChild);
+      }
+    }
+
+    if (Auth.isLoggedIn() && !document.getElementById('notif-badge')) {
+      const after = document.getElementById('mall-chrome-cart')
+        || document.getElementById('nav-cart-btn')
+        || document.getElementById('cart-btn')?.parentElement;
+      const parent = after?.parentNode;
+      if (parent) {
+        const wrap = document.createElement('div');
+        wrap.className = 'dropdown';
+        wrap.id = 'mall-chrome-bell';
+        wrap.innerHTML = `
+          <button type="button" class="btn btn-ghost btn-icon" data-dropdown="mall-notif-drop" style="position:relative;" aria-label="Notifications">
+            ${bellSvg}
+            <span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:var(--primary);color:white;font-size:9px;font-weight:700;align-items:center;justify-content:center;"></span>
+          </button>
+          <div class="dropdown-menu" id="mall-notif-drop" style="right:0;min-width:300px;max-height:360px;overflow-y:auto;">
+            <div style="padding:var(--space-sm) var(--space-md);border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-weight:700;font-size:14px;">Notifications</span>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="Dashboard.markAllRead()">Mark all read</button>
+            </div>
+            <div id="notif-panel"></div>
+          </div>`;
+        parent.insertBefore(wrap, after.nextSibling);
+      }
+    }
+  }
+
+  function initMallChrome() {
+    if (window.Auth && typeof Auth.populateUserUI === 'function') Auth.populateUserUI();
+    injectMallChrome();
+    UI.initDropdowns();
+    if (window.Auth && typeof Auth.isLoggedIn === 'function' && Auth.isLoggedIn()) {
+      loadCartCount();
+      loadNotifications();
+      setInterval(loadNotifications, 60000);
+      syncNeededNotifications();
+    }
+    window.addEventListener('storage', e => {
+      if (e.key === 'plexi_cart_echo') loadCartCount();
+    });
+  }
+
   // ======== INIT ======== //
   function init() {
     Auth.populateUserUI();
@@ -626,9 +811,10 @@ const Dashboard = (() => {
   }
 
   return {
-    init, loadNotifications, markRead, markAllRead, loadCartCount,
+    init, initMallChrome, loadNotifications, markRead, markAllRead, loadCartCount,
     showSection, renderTable, renderPagination, initSearch, skeletonRows,
     openCartPanel, closeCartPanel, loadCartPanelItems, updateCartQty, removeCartItem,
+    applyCartPanelCoupon, goToFullCart,
     neededActions
   };
 })();

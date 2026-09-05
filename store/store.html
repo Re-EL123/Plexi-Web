@@ -391,6 +391,13 @@
     </div>
   </div>
 
+  <section id="store-recent-section" style="display:none;margin-top:var(--space-2xl);">
+    <div class="section-header">
+      <h2 class="section-title">Recently <span>viewed</span></h2>
+    </div>
+    <div id="store-recent-grid" class="grid-auto"></div>
+  </section>
+
 </main>
 
 <div id="toast-container"></div>
@@ -398,11 +405,11 @@
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=4"></script>
-<script src="../assets/js/api.js?v=2"></script>
+<script src="../assets/js/ui.js?v=7"></script>
+<script src="../assets/js/api.js?v=5"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
-<script src="../assets/js/dashboard.js?v=3"></script>
+<script src="../assets/js/dashboard.js?v=9"></script>
 <script>
   const params  = new URLSearchParams(location.search);
   const storeId = params.get('id');
@@ -419,10 +426,11 @@
 
   document.addEventListener('DOMContentLoaded', async () => {
     initNav();
-    UI.initDropdowns();
+    Dashboard.initMallChrome();
     await loadStore();
     loadFollowersCount();
     loadFollowState();
+    renderStoreRecentlyViewed();
     UI.hidePageLoader();
   });
 
@@ -982,6 +990,17 @@
     const ampm = h >= 12 ? 'PM' : 'AM';
     const hr = h % 12 || 12;
     return `${hr}:${String(m).padStart(2,'0')} ${ampm}`;
+  }
+
+  function renderStoreRecentlyViewed() {
+    const section = document.getElementById('store-recent-section');
+    const grid = document.getElementById('store-recent-grid');
+    if (!section || !grid) return;
+    const items = UI.recentlyViewed.get();
+    if (!items.length) { section.style.display = 'none'; return; }
+    section.style.display = '';
+    grid.innerHTML = items.map(p => UI.productCard(p, 'product.html?id=')).join('');
+    UI.staggerReveal(grid);
   }
 
   // Store heartbeat — pings backend every 60s to show online status

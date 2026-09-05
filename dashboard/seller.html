@@ -961,12 +961,12 @@
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=6"></script>
-<script src="../assets/js/api.js?v=4"></script>
+<script src="../assets/js/ui.js?v=7"></script>
+<script src="../assets/js/api.js?v=5"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
-<script src="../assets/js/map.js?v=2"></script>
-<script src="../assets/js/dashboard.js?v=6"></script>
+<script src="../assets/js/map.js?v=3"></script>
+<script src="../assets/js/dashboard.js?v=9"></script>
 <script>
   function toggleSound(){
     const on=SoundManager.toggle();
@@ -3464,6 +3464,82 @@
               ? 'Your previous application was rejected. Please update your documents and resubmit.'
               : 'Upload your verification documents to enable your seller badge.',
             hostEl: card
+          });
+        }
+      },
+      {
+        key: 'catalog',
+        modalId: 'needed-catalog-modal',
+        run: async () => {
+          if (!Array.isArray(myStores) || !myStores.length) return false;
+          let total = 0;
+          try {
+            const data = await api.products.list(myStores[0].id, { limit: 1 });
+            total = data.total ?? (data.products || []).length;
+          } catch (_) { return false; }
+          if (total >= 5) return false;
+          return Dashboard.neededActions.open({
+            id: 'needed-catalog-modal',
+            title: 'Add more products',
+            content: `<p style="color:var(--text-secondary);font-size:14px;">Your store has ${total} product${total === 1 ? '' : 's'}. List at least 5 so shoppers have something to browse.</p>`,
+            footer: `<button class="btn btn-ghost" type="button" onclick="UI.closeModal('needed-catalog-modal')">Not now</button>
+              <button class="btn btn-primary" type="button" onclick="UI.closeModal('needed-catalog-modal');Dashboard.showSection('section-products');setTimeout(openAddProductModal,150)">Add a product</button>`
+          });
+        }
+      },
+      {
+        key: 'store-look',
+        modalId: 'needed-store-look-modal',
+        run: async () => {
+          const store = Array.isArray(myStores) && myStores[0];
+          if (!store) return false;
+          if (store.logo && store.banner) return false;
+          return Dashboard.neededActions.open({
+            id: 'needed-store-look-modal',
+            title: 'Finish your store look',
+            content: `<p style="color:var(--text-secondary);font-size:14px;">Add a logo and cover banner so your storefront looks open for business.</p>`,
+            footer: `<button class="btn btn-ghost" type="button" onclick="UI.closeModal('needed-store-look-modal')">Not now</button>
+              <button class="btn btn-primary" type="button" onclick="UI.closeModal('needed-store-look-modal');Dashboard.showSection('section-store-settings')">Open store settings</button>`
+          });
+        }
+      },
+      {
+        key: 'map-pin',
+        modalId: 'needed-map-pin-modal',
+        run: async () => {
+          const store = Array.isArray(myStores) && myStores[0];
+          if (!store) return false;
+          const c = store.coordinates && typeof store.coordinates === 'object' ? store.coordinates : {};
+          const x = Number(c.x);
+          const y = Number(c.y);
+          if (Number.isFinite(x) && Number.isFinite(y) && !(x === 0 && y === 0)) return false;
+          return Dashboard.neededActions.open({
+            id: 'needed-map-pin-modal',
+            title: 'Place your store on the mall map',
+            content: `<p style="color:var(--text-secondary);font-size:14px;">Pick a unit on the 10×10 mall grid so shoppers can find you while they walk the floor.</p>`,
+            footer: `<button class="btn btn-ghost" type="button" onclick="UI.closeModal('needed-map-pin-modal')">Not now</button>
+              <button class="btn btn-primary" type="button" onclick="UI.closeModal('needed-map-pin-modal');Dashboard.showSection('section-map-placement');setTimeout(initPlacementMap,200)">Place on map</button>`
+          });
+        }
+      },
+      {
+        key: 'deal',
+        modalId: 'needed-deal-modal',
+        run: async () => {
+          if (!Array.isArray(myStores) || !myStores.length) return false;
+          let prods = [];
+          try {
+            const data = await api.products.list(myStores[0].id, { limit: 40 });
+            prods = Array.isArray(data) ? data : (data.products || []);
+          } catch (_) { return false; }
+          if (prods.some(p => Number(p.original_price) > Number(p.price))) return false;
+          const first = prods[0];
+          return Dashboard.neededActions.open({
+            id: 'needed-deal-modal',
+            title: 'Add a live deal',
+            content: `<p style="color:var(--text-secondary);font-size:14px;">Set a compare-at price on at least one product so it can appear in Today's specials.</p>`,
+            footer: `<button class="btn btn-ghost" type="button" onclick="UI.closeModal('needed-deal-modal')">Not now</button>
+              <button class="btn btn-primary" type="button" onclick="UI.closeModal('needed-deal-modal');Dashboard.showSection('section-products');${first ? `setTimeout(()=>editProduct('${first.id}'),150)` : 'setTimeout(openAddProductModal,150)'}">Set a compare-at price</button>`
           });
         }
       }

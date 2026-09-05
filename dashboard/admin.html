@@ -488,6 +488,11 @@
                 <label class="form-label">Per store on route (R)</label>
                 <input type="number" step="0.01" min="0" class="form-control" id="set-delivery-perstore" oninput="settingsDirty()">
               </div>
+              <div class="form-group">
+                <label class="form-label">Free delivery from (R)</label>
+                <input type="number" step="1" min="0" class="form-control" id="set-delivery-free" oninput="settingsDirty()">
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Shoppers get free delivery once the product subtotal (after coupon) reaches this amount. Use 0 to turn it off.</div>
+              </div>
             </div>
           </div>
           <div class="card">
@@ -564,12 +569,12 @@
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=6"></script>
-<script src="../assets/js/api.js?v=4"></script>
+<script src="../assets/js/ui.js?v=7"></script>
+<script src="../assets/js/api.js?v=5"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
-<script src="../assets/js/map.js?v=2"></script>
-<script src="../assets/js/dashboard.js?v=6"></script>
+<script src="../assets/js/map.js?v=3"></script>
+<script src="../assets/js/dashboard.js?v=9"></script>
 <script>
 function toggleSound(){
   const on=SoundManager.toggle();
@@ -1347,6 +1352,7 @@ const SETTINGS_FIELD_MAP = {
   'set-delivery-base':        'delivery.base_fee',
   'set-delivery-perkm':       'delivery.per_km_fee',
   'set-delivery-perstore':    'delivery.per_store_fee',
+  'set-delivery-free':        'delivery.free_threshold',
   'set-commission-delivery':  'commission.delivery_percent',
   'set-commission-free':      'commission.seller_free_percent',
   'set-commission-business':  'commission.seller_business_percent',

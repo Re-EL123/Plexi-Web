@@ -159,10 +159,11 @@ const UI = (() => {
   // ======== ADD TO CART — VARIANT/OPTION PICKER MODAL ======== //
   // Shared quick-add used by index, store, product and dashboards.
   // Opens a chooser whenever the product has variants or options.
-  async function addToCartModal(productRef, { loginPath = 'login.html' } = {}) {
+  async function addToCartModal(productRef, { loginPath } = {}) {
+    const loginHref = loginPath || (/\/(store|dashboard)\//.test(location.pathname) ? '../login.html' : 'login.html');
     if (!Auth.isLoggedIn()) {
       toast('Please login to add to cart', 'warning');
-      setTimeout(() => location.href = loginPath, 800);
+      setTimeout(() => location.href = loginHref, 800);
       return;
     }
     let p = productRef;
@@ -180,17 +181,15 @@ const UI = (() => {
     const options = (Array.isArray(p.options) ? p.options : [])
       .filter(o => o.name && Array.isArray(o.values) && o.values.length);
 
-    const finish = async () => {
-      toast(`Added ${state.qty} × ${p.name} to cart! 🛒`, 'success');
-      closeModal('add-to-cart-modal');
-      if (window.Dashboard?.loadCartCount) Dashboard.loadCartCount();
+    const finish = async (qty = 1) => {
+      await showCartAddOns(p, qty);
     };
 
     // Fast path — nothing to choose, add straight away
     if (!groups.length && !options.length) {
       try {
         await api.cart.add({ product_id: p.id, quantity: 1 });
-        await finish();
+        await finish(1);
       } catch (err) { toast(err.message || 'Failed to add to cart', 'error'); }
       return;
     }
@@ -364,7 +363,7 @@ const UI = (() => {
           variant: summary || undefined,
           options: Object.keys(clean).length ? clean : undefined
         });
-        await finish();
+        await finish(state.qty);
       } catch (err) {
         toast(err.message || 'Failed to add to cart', 'error');
       } finally {
@@ -379,6 +378,131 @@ const UI = (() => {
       });
       refresh();
     }, 30);
+  }
+
+  async function showCartAddOns(p, qty) {
+    toast(`Added ${qty} × ${p.name} to cart! 🛒`, 'success');
+    if (window.Dashboard?.loadCartCount) Dashboard.loadCartCount();
+    let addons = [];
+    try {
+      if (p.store_id) {
+        const data = await api.products.list(p.store_id, { limit: 8 });
+        addons = (Array.isArray(data) ? data : (data.products || []))
+          .filter(x => x.id !== p.id && !x.sold_out && Number(x.inventory) !== 0)
+          .slice(0, 3);
+      }
+    } catch (_) {}
+    if (!addons.length) {
+      closeModal('add-to-cart-modal');
+      return;
+    }
+    const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    createModal({
+      id: 'add-to-cart-modal',
+      title: 'Added to cart',
+      content: `
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:var(--space-md);">Complete the look with these from the same store:</p>
+        <div style="display:grid;gap:var(--space-sm);">
+          ${addons.map(a => `
+            <div style="display:flex;gap:var(--space-sm);align-items:center;padding:var(--space-sm);border:1px solid var(--border-light);border-radius:var(--radius-md);">
+              <div style="width:48px;height:48px;border-radius:var(--radius-sm);overflow:hidden;background:var(--bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                ${a.images?.[0] ? `<img src="${esc(a.images[0])}" style="width:100%;height:100%;object-fit:cover;">` : '🛍️'}
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(a.name)}</div>
+                <div style="font-size:13px;font-weight:700;color:var(--primary);">${formatCurrency(a.price)}</div>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm acm-addon" data-id="${esc(a.id)}">Add</button>
+            </div>`).join('')}
+        </div>`,
+      footer: `
+        <button class="btn btn-ghost" type="button" onclick="UI.closeModal('add-to-cart-modal')">Continue shopping</button>
+        <button class="btn btn-primary" type="button" onclick="Dashboard.openCartPanel();UI.closeModal('add-to-cart-modal')">View cart</button>`
+    });
+    document.querySelectorAll('.acm-addon').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        setLoading(btn, true, 'Adding…');
+        try {
+          await api.cart.add({ product_id: btn.dataset.id, quantity: 1 });
+          toast('Added', 'success');
+          btn.textContent = 'Added';
+          btn.disabled = true;
+          if (window.Dashboard?.loadCartCount) Dashboard.loadCartCount();
+        } catch (err) {
+          toast(err.message || 'Could not add', 'error');
+          setLoading(btn, false, 'Add');
+        }
+      });
+    });
+  }
+
+  const RV_KEY = 'plexi_recently_viewed';
+
+  function recentlyViewedGet() {
+    try {
+      const list = JSON.parse(localStorage.getItem(RV_KEY) || '[]');
+      return Array.isArray(list) ? list : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function recentlyViewedPush(product) {
+    if (!product?.id) return recentlyViewedGet();
+    const entry = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      original_price: product.original_price,
+      images: Array.isArray(product.images) ? product.images.slice(0, 1) : [],
+      store_id: product.store_id,
+      category: product.category,
+      inventory: product.inventory,
+      sold_out: product.sold_out
+    };
+    const list = recentlyViewedGet().filter(x => x.id !== product.id);
+    list.unshift(entry);
+    const trimmed = list.slice(0, 12);
+    try { localStorage.setItem(RV_KEY, JSON.stringify(trimmed)); } catch (_) {}
+    return trimmed;
+  }
+
+  function productHref(p, hrefPrefix) {
+    if (hrefPrefix) return hrefPrefix + p.id;
+    return (/\/store\//.test(location.pathname) ? 'product.html?id=' : 'store/product.html?id=') + p.id;
+  }
+
+  function productCard(p, hrefPrefix) {
+    if (!p) return '';
+    const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const href = productHref(p, hrefPrefix);
+    const img = p.images?.[0]
+      ? `<img src="${esc(p.images[0])}" alt="${esc(p.name)}" loading="lazy">`
+      : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:40px;background:var(--bg);">📦</div>`;
+    const sale = Number(p.original_price) > Number(p.price);
+    const low = Number(p.inventory) > 0 && Number(p.inventory) < 5;
+    return `
+      <a href="${esc(href)}" style="text-decoration:none;" class="stagger-child">
+        <div class="product-card">
+          <div class="product-card-img">
+            ${img}
+            ${p.sold_out ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><span class="badge badge-error">Sold Out</span></div>` : ''}
+            ${p.category ? `<span class="product-card-badge"><span class="badge badge-primary">${esc(p.category)}</span></span>` : ''}
+            ${sale ? `<span class="badge badge-error" style="position:absolute;top:8px;left:8px;">Sale</span>` : ''}
+          </div>
+          <div class="product-card-body">
+            <div class="product-card-name">${esc(p.name)}</div>
+            <div class="product-card-price">
+              ${sale ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:14px;">${formatCurrency(p.original_price)}</span> ` : ''}
+              ${formatCurrency(p.price)}
+              ${low ? `<span style="font-size:11px;color:var(--warning);font-weight:600;margin-left:8px;">Only ${p.inventory} left</span>` : ''}
+            </div>
+          </div>
+          <div class="product-card-footer">
+            <button class="btn btn-primary btn-sm" onclick="event.preventDefault();event.stopPropagation();UI.addToCartModal('${esc(p.id)}')" ${p.inventory === 0 || p.sold_out ? 'disabled' : ''}>Add to Cart</button>
+          </div>
+        </div>
+      </a>`;
   }
 
   // ======== LOADING ======== //
@@ -666,6 +790,8 @@ const UI = (() => {
   }
 
   function initDropdowns() {
+    if (initDropdowns.bound) return;
+    initDropdowns.bound = true;
     document.addEventListener('click', e => {
       const trigger = e.target.closest('[data-dropdown]');
       document.querySelectorAll('.dropdown-menu.show').forEach(m => {
@@ -782,6 +908,7 @@ const UI = (() => {
 
   return {
     toast, openModal, closeModal, createModal, confirmDialog, addToCartModal,
+    productCard, recentlyViewed: { get: recentlyViewedGet, push: recentlyViewedPush },
     setLoading, showPageLoader, hidePageLoader,
     formatCurrency, formatDate, formatDateTime, timeAgo,
     badge, statusBadge, stars, avatar, skeleton, skeletonTable, skeletonGrid, skeletonList,

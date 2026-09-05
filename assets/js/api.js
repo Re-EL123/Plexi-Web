@@ -53,7 +53,8 @@ const api = (() => {
         localStorage.removeItem(CONFIG.TOKEN_KEY);
         localStorage.removeItem(CONFIG.USER_KEY);
         UI.toast('Session expired. Please login again.', 'warning');
-        setTimeout(() => { window.location.href = '../login.html'; }, 1200);
+        const loginPath = /\/(dashboard|store)\//.test(location.pathname) ? '../login.html' : 'login.html';
+        setTimeout(() => { window.location.href = loginPath; }, 1200);
         throw new Error('Unauthorized');
       }
 
@@ -126,9 +127,11 @@ const api = (() => {
 
   // ======== PRODUCTS ======== //
   const products = {
-    list:   (storeId, p={})  => get(`/products?store_id=${storeId}&${new URLSearchParams(p)}`),
-    all:    (params = {})    => get(`/products?${new URLSearchParams(params)}`),
-    get:    (id)             => get(`/products?id=${id}`),
+    list:    (storeId, p={})  => get(`/products?store_id=${storeId}&${new URLSearchParams(p)}`),
+    all:     (params = {})    => get(`/products?${new URLSearchParams(params)}`),
+    get:     (id)             => get(`/products?id=${id}`),
+    specials:(params = {})    => get(`/products?action=specials&${new URLSearchParams(params)}`),
+    related: (id)             => get(`/products?action=related&id=${encodeURIComponent(id)}`),
     create: (data)           => post('/products', data),
     update: (id, data)       => put(`/products?id=${id}`, data),
     delete: (id)             => del(`/products?id=${id}`),
@@ -353,7 +356,11 @@ const api = (() => {
 
   // ======== DELIVERY ======== //
   const delivery = {
-    preview: (lat, lng) => get(`/orders?action=delivery-preview&shipping_lat=${lat}&shipping_lng=${lng}`),
+    preview: (lat, lng, subtotal) => {
+      const q = new URLSearchParams({ shipping_lat: lat, shipping_lng: lng });
+      if (subtotal != null && subtotal !== '') q.set('subtotal', subtotal);
+      return get(`/orders?action=delivery-preview&${q}`);
+    },
   };
 
   // ======== WISHLIST ======== //

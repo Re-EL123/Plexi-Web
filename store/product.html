@@ -408,6 +408,17 @@
     </div>
   </div>
 
+  <div class="related-products" id="also-like-section" style="margin-top:var(--space-2xl);display:none;">
+    <div class="section-header">
+      <h2 class="section-title">You might also <span>like</span></h2>
+    </div>
+    <div id="also-like-grid" class="grid-auto"></div>
+  </div>
+
+  <div style="margin-top:var(--space-xl);text-align:center;">
+    <a href="../index.html#mall-map" class="btn btn-outline">← Back to the mall</a>
+  </div>
+
 </main>
 
 <div id="toast-container"></div>
@@ -415,11 +426,11 @@
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=4"></script>
-<script src="../assets/js/api.js?v=2"></script>
+<script src="../assets/js/ui.js?v=7"></script>
+<script src="../assets/js/api.js?v=5"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
-<script src="../assets/js/dashboard.js?v=3"></script>
+<script src="../assets/js/dashboard.js?v=9"></script>
 <script>
   const params    = new URLSearchParams(location.search);
   const productId = params.get('id');
@@ -434,7 +445,7 @@
 
   document.addEventListener('DOMContentLoaded', async () => {
     initNav();
-    UI.initDropdowns();
+    Dashboard.initMallChrome();
     await loadProduct();
     UI.hidePageLoader();
   });
@@ -461,7 +472,8 @@
       await Promise.all([
         loadStore(productData.store_id),
         loadProductReviews(),
-        loadRelated()
+        loadRelated(),
+        loadAlsoLike()
       ]);
     } catch (err) {
       UI.toast('Could not load product: ' + err.message, 'error');
@@ -471,6 +483,7 @@
   function renderProduct() {
     const p = productData;
     document.title = `${p.name} — Plexi Digital Mall`;
+    UI.recentlyViewed.push(p);
     updateProductSeo();
 
     // Breadcrumb
@@ -896,6 +909,24 @@
       `).join('');
       UI.staggerReveal(grid);
     } catch (_) {}
+  }
+
+  async function loadAlsoLike() {
+    const section = document.getElementById('also-like-section');
+    const grid = document.getElementById('also-like-grid');
+    if (!section || !grid || !productId) return;
+    try {
+      const data = await api.products.related(productId);
+      const prods = (Array.isArray(data) ? data : (data.products || []))
+        .filter(p => p.id !== productId)
+        .slice(0, 8);
+      if (!prods.length) { section.style.display = 'none'; return; }
+      section.style.display = '';
+      grid.innerHTML = prods.map(p => UI.productCard(p, 'product.html?id=')).join('');
+      UI.staggerReveal(grid);
+    } catch (_) {
+      section.style.display = 'none';
+    }
   }
 
   async function addToCart() {

@@ -192,6 +192,8 @@
                 <button type="button" id="coupon-apply-btn" class="btn btn-primary btn-sm" onclick="applyCoupon()">Apply</button>
               </div>
               <div id="coupon-status" style="display:none;font-size:12px;margin-bottom:var(--space-sm);"></div>
+              <div id="coupon-hint" style="font-size:11px;color:var(--text-muted);margin-bottom:var(--space-sm);"></div>
+              <div id="cart-free-delivery" style="display:none;font-size:12px;font-weight:600;margin-bottom:var(--space-sm);padding:8px 10px;border-radius:var(--radius-md);background:var(--primary-alpha);color:var(--primary);"></div>
               <div class="flex-between"><span>Products subtotal</span><span id="cart-subtotal">R0.00</span></div>
               <div class="flex-between" id="cart-discount-row" style="display:none;margin-top:6px;"><span style="color:var(--success);">Discount</span><span id="cart-discount" style="color:var(--success);">−R0.00</span></div>
               <div class="flex-between" style="margin-top:6px;"><strong>Total before delivery</strong><strong id="cart-total" style="font-size:20px;color:var(--primary);">R0.00</strong></div>
@@ -335,11 +337,11 @@
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=6"></script>
-<script src="../assets/js/api.js?v=4"></script>
+<script src="../assets/js/ui.js?v=7"></script>
+<script src="../assets/js/api.js?v=5"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
-<script src="../assets/js/dashboard.js?v=6"></script>
+<script src="../assets/js/dashboard.js?v=9"></script>
 <script>
   function toggleSound(){
     const on=SoundManager.toggle();
@@ -510,7 +512,9 @@
     if (!code) {
       appliedCoupon = null; couponDiscount = 0;
       status.style.display = 'none';
+      sessionStorage.removeItem('plexi_coupon_code');
       recalcTotals();
+      refreshCartConversion();
       return;
     }
     btn.disabled = true; btn.textContent = '…';
@@ -518,6 +522,7 @@
       const res = await api.coupons.validate(code, cartSubtotal);
       appliedCoupon = { code, ...res };
       couponDiscount = parseFloat(res.discount) || 0;
+      sessionStorage.setItem('plexi_coupon_code', code);
       status.style.display = 'block';
       status.style.color = 'var(--success)';
       status.textContent = res.message || `${code} applied — you save ${UI.formatCurrency(res.discount)}`;
@@ -530,6 +535,44 @@
     } finally {
       btn.disabled = false; btn.textContent = 'Apply';
       recalcTotals();
+      refreshCartConversion();
+    }
+  }
+
+  async function refreshCartConversion() {
+    const hint = document.getElementById('coupon-hint');
+    const bar = document.getElementById('cart-free-delivery');
+    if (hint) {
+      if (appliedCoupon) {
+        hint.textContent = '';
+      } else {
+        try {
+          const avail = await api.coupons.list();
+          const codes = Array.isArray(avail) ? avail : (avail.coupons || []);
+          const first = codes[0];
+          hint.textContent = first?.code
+            ? `Try ${first.code}` + (first.discount_type === 'percent' ? ` (${first.discount_value}% off)` : first.discount_value ? ` (${UI.formatCurrency(first.discount_value)} off)` : '')
+            : '';
+        } catch (_) {
+          hint.textContent = '';
+        }
+      }
+    }
+    if (!bar || !cartItems.length) {
+      if (bar) bar.style.display = 'none';
+      return;
+    }
+    try {
+      const lat = checkoutCtx.lat || -33.9249;
+      const lng = checkoutCtx.lng || 18.4241;
+      const preview = await api.delivery.preview(lat, lng, Math.max(cartSubtotal - discountAmount(), 0));
+      const threshold = Number(preview.free_threshold) || 0;
+      if (threshold <= 0) { bar.style.display = 'none'; return; }
+      bar.style.display = 'block';
+      if (preview.free_delivery) bar.textContent = 'Free delivery unlocked';
+      else bar.textContent = `Add ${UI.formatCurrency(preview.amount_to_free)} more for free delivery`;
+    } catch (_) {
+      bar.style.display = 'none';
     }
   }
 
@@ -573,13 +616,22 @@
         if (cc) cc.value = '';
         const cs = document.getElementById('coupon-status');
         if (cs) cs.style.display = 'none';
+        const fd = document.getElementById('cart-free-delivery');
+        if (fd) fd.style.display = 'none';
+        const ch = document.getElementById('coupon-hint');
+        if (ch) ch.textContent = '';
         recalcTotals();
         return;
       }
       cartSubtotal = cartItems.reduce((s,i)=>s+parseFloat(i.subtotal!=null?i.subtotal:((i.product?.price||i.price||0)*i.quantity)),0);
       document.getElementById('cart-subtotal').textContent = UI.formatCurrency(cartSubtotal);
+      const savedCode = sessionStorage.getItem('plexi_coupon_code') || '';
+      const ccInput = document.getElementById('coupon-code');
+      if (ccInput && !ccInput.value && savedCode) ccInput.value = savedCode;
       renderTipOptions();
       recalcTotals();
+      if (ccInput && ccInput.value.trim()) await applyCoupon();
+      else await refreshCartConversion();
       el.innerHTML = cartItems.map(item=>`
         <div class="card" style="display:flex;align-items:center;gap:var(--space-md);padding:var(--space-md);margin-bottom:var(--space-sm);">
           <div style="width:72px;height:72px;border-radius:var(--radius-md);background:var(--bg);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
@@ -708,7 +760,7 @@
       const lat = Number(coords.latitude ?? coords.lat);
       const lng = Number(coords.longitude ?? coords.lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error('Could not locate that address');
-      const preview = await api.delivery.preview(lat, lng);
+      const preview = await api.delivery.preview(lat, lng, Math.max(cartSubtotal - discountAmount(), 0));
       checkoutCtx = { lat, lng, address, preview };
       deliveryFee = preview.delivery_fee || 0;
 
