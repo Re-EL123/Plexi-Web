@@ -601,7 +601,7 @@
 <script src="../assets/js/config.js?v=2"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=11"></script>
+<script src="../assets/js/ui.js?v=12"></script>
 <script src="../assets/js/api.js?v=7"></script>
 <script src="../assets/js/auth.js?v=2"></script>
 <script src="../assets/js/state.js?v=2"></script>
@@ -859,19 +859,21 @@ function openAdModal(id){
     ?`<div class="form-group"><label class="form-label">Current media URL</label><input type="url" class="form-control" name="media_url" value="${escAd(ad.media_url)}"></div><input type="hidden" name="media_type" value="${escAd(ad.media_type)}">`
     :`<input type="hidden" name="media_url" value=""><input type="hidden" name="media_type" value="">`;
   UI.createModal({
-    id:'ad-modal', title:ad?'Edit Ad':'New Ad',
+    id:'ad-modal', title:ad?'Edit Ad':'New Ad', closeOnBackdrop:false,
     content:`<form id="ad-form" onsubmit="submitAd(event)">
       <input type="hidden" name="id" value="${ad?escAd(ad.id):''}">
       <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-control" name="title" maxlength="80" value="${ad?escAd(ad.title):''}" placeholder="Summer sale"></div>
       <div class="form-group">
         <label class="form-label">${ad?'Replace file (optional)':'Picture or video'}</label>
-        <div class="file-upload-area" data-file-pick onclick="document.getElementById('ad-file').click()"
+        <div class="file-upload-area" id="ad-drop" style="position:relative;min-height:140px;"
           ondragover="event.preventDefault();this.classList.add('is-drag')"
           ondragleave="this.classList.remove('is-drag')"
           ondrop="dropAdFile(event)">
           <input type="file" id="ad-file" name="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mov"
-            ${ad?'':'required'} style="display:none" onchange="previewAdFile(this)">
-          <div id="ad-preview-slot">${ad?'<span style="color:var(--text-muted);font-size:13px;">Keep the current file, or click to replace it.</span>':'<strong>Click to choose</strong><div style="font-size:12px;color:var(--text-muted);margin-top:6px;">or drop an image / video here</div>'}</div>
+            ${ad?'':'required'}
+            style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;"
+            onchange="previewAdFile(this)">
+          <div id="ad-preview-slot" style="pointer-events:none;position:relative;z-index:1;">${ad?'<span style="color:var(--text-muted);font-size:13px;">Keep the current file, or click to replace it.</span>':'<strong>Click to choose</strong><div style="font-size:12px;color:var(--text-muted);margin-top:6px;">or drop an image / video here</div>'}</div>
         </div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Images up to 8MB. Videos up to 40MB (mp4 / webm).</div>
       </div>
@@ -930,9 +932,11 @@ function previewAdFile(input){
   window._adPreviewUrl=URL.createObjectURL(file);
   const kb=file.size>1024*1024?(file.size/1024/1024).toFixed(1)+' MB':Math.round(file.size/1024)+' KB';
   const media=isVideo
-    ?`<video src="${window._adPreviewUrl}" muted controls playsinline style="width:100%;max-height:220px;border-radius:10px;background:#000;"></video>`
+    ?`<video src="${window._adPreviewUrl}" muted controls playsinline style="width:100%;max-height:220px;border-radius:10px;background:#000;pointer-events:auto;"></video>`
     :`<img src="${window._adPreviewUrl}" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;">`;
-  slot.innerHTML=`${media}<div style="margin-top:8px;font-size:13px;font-weight:600;">${escAd(file.name)}</div><div style="font-size:12px;color:var(--text-muted);">${isVideo?'Video':'Image'} · ${kb}</div>`;
+  slot.innerHTML=`${media}<div style="margin-top:8px;font-size:13px;font-weight:600;">${escAd(file.name)}</div><div style="font-size:12px;color:var(--text-muted);">${isVideo?'Video':'Image'} · ${kb} · click to change</div>`;
+  const drop=document.getElementById('ad-drop');
+  if(drop) drop.style.minHeight='auto';
 }
 
 function dropAdFile(e){

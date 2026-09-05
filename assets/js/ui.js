@@ -4,13 +4,16 @@
 
 const UI = (() => {
 
-  // File pickers blur the window; the click that follows would otherwise
-  // hit the modal overlay and close it before the chosen file is kept.
-  let suppressOverlayCloseUntil = 0;
-  window.addEventListener('blur', () => {
-    if (document.querySelector('.modal-overlay.show')) {
-      suppressOverlayCloseUntil = Date.now() + 2000;
+  // Native file dialogs blur the page. Ignore backdrop closes until
+  // focus returns so a long picker does not dismiss the modal.
+  let filePickerOpen = false;
+  document.addEventListener('click', (e) => {
+    if (e.target && (e.target.matches?.('input[type="file"]') || e.target.closest?.('[data-file-pick]'))) {
+      filePickerOpen = true;
     }
+  }, true);
+  window.addEventListener('focus', () => {
+    setTimeout(() => { filePickerOpen = false; }, 400);
   });
 
   // ======== TOAST NOTIFICATIONS ======== //
@@ -122,7 +125,7 @@ const UI = (() => {
     if (!openModals.length) document.body.style.overflow = '';
   }
 
-  function createModal({ id, title, content, footer = '', size = '' }) {
+  function createModal({ id, title, content, footer = '', size = '', closeOnBackdrop = true }) {
     const existing = document.getElementById(id);
     if (existing) existing.remove();
 
@@ -143,16 +146,13 @@ const UI = (() => {
     `;
     document.body.appendChild(el);
     el.style.zIndex = '10050';
-    el.addEventListener('click', (e) => {
-      if (e.target.closest('input[type="file"]') || e.target.closest('[data-file-pick]')) {
-        suppressOverlayCloseUntil = Date.now() + 2500;
-      }
-    }, true);
-    el.addEventListener('click', e => {
-      if (e.target !== el) return;
-      if (Date.now() < suppressOverlayCloseUntil) return;
-      closeModal(id);
-    });
+    if (closeOnBackdrop) {
+      el.addEventListener('click', e => {
+        if (e.target !== el) return;
+        if (filePickerOpen) return;
+        closeModal(id);
+      });
+    }
     setTimeout(() => openModal(id), 10);
     return el;
   }
