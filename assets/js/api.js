@@ -250,6 +250,7 @@ const api = (() => {
     updateAd:         (data)      => put('/admin?action=ads', data),
     deleteAd:         (id)        => del(`/admin?action=ads&id=${id}`),
     signAdUpload:     (data)      => post('/admin?action=ads-upload-url', data),
+    uploadAdDirect:   (data)      => post('/admin?action=ads-upload', data),
     content:          ()          => get('/admin?action=content'),
     saveContent:      (data)      => put('/admin?action=content', data),
   };

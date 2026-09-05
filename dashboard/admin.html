@@ -645,7 +645,7 @@
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
 <script src="../assets/js/ui.js?v=13"></script>
-<script src="../assets/js/api.js?v=8"></script>
+<script src="../assets/js/api.js?v=9"></script>
 <script src="../assets/js/auth.js?v=3"></script>
 <script src="../assets/js/state.js?v=2"></script>
 <script src="../assets/js/map.js?v=9"></script>
@@ -1235,42 +1235,129 @@ async function submitAd(e){
 
   try{
     if(file){
-      UI.toast('Uploading file to storage…','info',4000);
       const contentType=adMimeFromFile(file)||file.type||'video/mp4';
-      const signed=await api.admin.signAdUpload({filename:file.name,contentType,size:file.size});
+      const isVideo=contentType.startsWith('video/')||/\.(mp4|webm|mov|m4v)$/i.test(file.name);
+      const isSmall=file.size<=4.2*1024*1024;
+      let uploadedUrl=null;
+      let uploadedType=null;
+      let lastErr=null;
 
-      // Try upload via standard multipart FormData first, fallback to raw body
-      let uploaded=false;
-      try{
-        const fd=new FormData();
-        fd.append('cacheControl','3600');
-        fd.append('',file);
-        const put=await fetch(signed.signedUrl,{method:'PUT',body:fd});
-        if(put.ok) uploaded=true;
-      }catch(_){}
-
-      if(!uploaded){
+      // Pipeline 1: For files <= 4.2MB, direct server-side upload is fast and 100% immune to browser CORS issues
+      if(isSmall && typeof api.admin.uploadAdDirect === 'function'){
+        if(ind) ind.innerHTML='⏳ Uploading file directly to storage… please wait';
         try{
-          const put=await fetch(signed.signedUrl,{method:'PUT',body:file,headers:{'Content-Type':contentType||'application/octet-stream'}});
-          if(put.ok) uploaded=true;
-        }catch(_){}
+          const base64=await new Promise((resolve,reject)=>{
+            const reader=new FileReader();
+            reader.onload=()=>resolve(reader.result.split(',')[1]);
+            reader.onerror=()=>reject(new Error('Failed to read file from disk'));
+            reader.readAsDataURL(file);
+          });
+          const res=await api.admin.uploadAdDirect({
+            file:base64,
+            filename:file.name,
+            contentType
+          });
+          if(res?.publicUrl){
+            uploadedUrl=res.publicUrl;
+            uploadedType=res.media_type||(isVideo?'video':'image');
+          }
+        }catch(dirErr){
+          console.warn('Direct upload fallback to signed URL:', dirErr);
+          lastErr=dirErr;
+        }
       }
 
-      if(!uploaded) throw new Error('Could not upload file to storage. Please check your internet connection.');
+      // Pipeline 2: Signed storage URL (required for videos > 4.2MB, or if direct upload failed)
+      if(!uploadedUrl){
+        if(ind) ind.innerHTML=`⏳ Requesting storage upload ticket for ${(file.size/(1024*1024)).toFixed(1)} MB ${isVideo?'video':'image'}…`;
+        const signed=await api.admin.signAdUpload({filename:file.name,contentType,size:file.size});
+        if(!signed||!signed.signedUrl){
+          throw new Error('Server did not return a valid signed upload URL');
+        }
 
-      payload.media_url=signed.publicUrl;
-      payload.media_type=signed.media_type;
+        if(ind) ind.innerHTML=`⏳ Transferring media to cloud storage (${(file.size/(1024*1024)).toFixed(1)} MB)… please do not close window`;
+
+        let uploadSucceeded=false;
+        let storageErrMsg='';
+
+        // Attempt A: Standard Supabase multipart FormData
+        try{
+          const fd=new FormData();
+          fd.append('cacheControl','3600');
+          fd.append('',file);
+          const put=await fetch(signed.signedUrl,{
+            method:'PUT',
+            body:fd,
+            headers:{'x-upsert':'true'}
+          });
+          if(put.ok){
+            uploadSucceeded=true;
+          }else{
+            const txt=await put.text().catch(()=>'');
+            storageErrMsg=`Storage HTTP ${put.status}${txt?': '+txt:''}`;
+          }
+        }catch(e1){
+          storageErrMsg=e1.message||'Network or CORS error';
+        }
+
+        // Attempt B: Named 'file' multipart field
+        if(!uploadSucceeded){
+          try{
+            const fd2=new FormData();
+            fd2.append('cacheControl','3600');
+            fd2.append('file',file);
+            const put2=await fetch(signed.signedUrl,{
+              method:'PUT',
+              body:fd2,
+              headers:{'x-upsert':'true'}
+            });
+            if(put2.ok) uploadSucceeded=true;
+          }catch(_){}
+        }
+
+        // Attempt C: Raw binary PUT with content-type
+        if(!uploadSucceeded){
+          try{
+            const put3=await fetch(signed.signedUrl,{
+              method:'PUT',
+              body:file,
+              headers:{
+                'Content-Type':contentType||'application/octet-stream',
+                'x-upsert':'true'
+              }
+            });
+            if(put3.ok) uploadSucceeded=true;
+          }catch(_){}
+        }
+
+        if(!uploadSucceeded){
+          throw new Error('Upload failed ('+(storageErrMsg||'Network or CORS error')+'). You can also paste an external URL using the "Paste URL instead" button.');
+        }
+
+        uploadedUrl=signed.publicUrl;
+        uploadedType=signed.media_type||(isVideo?'video':'image');
+      }
+
+      payload.media_url=uploadedUrl;
+      payload.media_type=uploadedType||(isVideo?'video':'image');
     }
 
     if(!payload.media_url) throw new Error('Please choose a picture or video, or paste a media URL.');
 
+    if(!payload.media_type && payload.media_url){
+      payload.media_type=/\.(mp4|webm|mov)(\?|$)/i.test(payload.media_url)?'video':'image';
+    }
+
+    if(ind) ind.innerHTML='⏳ Saving ad settings…';
+
     if(payload.id) await api.admin.updateAd(payload);
     else await api.admin.createAd(payload);
 
-    UI.toast('Ad saved successfully!','success');
+    UI.toast('Ad published successfully!','success');
     UI.closeModal('ad-modal');
     loadAds();
   }catch(err){
+    console.error('submitAd error:', err);
     UI.toast(err.message||'Could not save ad','error');
   }finally{
     if(btn){
