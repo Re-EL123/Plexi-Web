@@ -1,5 +1,5 @@
 // ============================================================
-// PLEXI DIGITAL MALL — Map / Mall Directory
+// PLEXI DIGITAL MALL — Map / Mall Directory & Floor Plan
 // ============================================================
 
 const MallMap = (() => {
@@ -14,6 +14,9 @@ const MallMap = (() => {
   let placementStoreId = null;
   let resizeTimer = null;
   let categoryFilter = 'all';
+  let searchQuery = '';
+  let viewMode = 'grid'; // 'grid' | 'directory'
+  let zoomLevel = 1;     // 0.85, 1, 1.25
   let peekToken = 0;
   let peekGesture = 0;
   let panBound = false;
@@ -53,9 +56,29 @@ const MallMap = (() => {
     return Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0;
   }
 
+  function unitCode(x, y) {
+    const rowChar = String.fromCharCode(65 + Math.max(0, Math.min(25, y)));
+    return `Unit ${rowChar}${x + 1}`;
+  }
+
   function matchesCategory(store) {
     if (!categoryFilter || categoryFilter === 'all') return true;
     return (store.category || '').toLowerCase() === categoryFilter.toLowerCase();
+  }
+
+  function matchesSearch(store) {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    const name = String(store.name || '').toLowerCase();
+    const cat = String(store.category || '').toLowerCase();
+    const desc = String(store.description || '').toLowerCase();
+    const tags = Array.isArray(store.tags) ? store.tags.join(' ').toLowerCase() : '';
+    const code = hasFloorCoords(store) ? unitCode(Number(store.coordinates.x), Number(store.coordinates.y)).toLowerCase() : '';
+    return name.includes(q) || cat.includes(q) || desc.includes(q) || tags.includes(q) || code.includes(q);
+  }
+
+  function matchesStore(store) {
+    return matchesCategory(store) && matchesSearch(store);
   }
 
   function init(containerEl, onSelectCb = null, onReadyCb = null) {
@@ -79,7 +102,7 @@ const MallMap = (() => {
         const keep = selectedStore;
         render();
         if (placementMode && placementStoreId) bindPlacementCells();
-        if (keep && !placementMode) {
+        if (keep && !placementMode && viewMode === 'grid') {
           selectedStore = keep;
           markSelected(keep, { pulse: false });
           showPeek(keep, { fresh: true });
@@ -104,6 +127,10 @@ const MallMap = (() => {
     return stores.filter(hasFloorCoords);
   }
 
+  function filteredOccupiedStores() {
+    return occupiedStores().filter(matchesStore);
+  }
+
   function storesAt(x, y) {
     return occupiedStores().filter((s) => Number(s.coordinates.x) === x && Number(s.coordinates.y) === y);
   }
@@ -126,7 +153,7 @@ const MallMap = (() => {
     placed.forEach((s) => {
       if (typeof CONFIG !== 'undefined' && CONFIG.isOpen(s.trading_hours) === true) open += 1;
     });
-    return { shops: placed.length, open, total: stores.length };
+    return { shops: placed.length, open, total: stores.length, capacity: GRID_SIZE * GRID_SIZE };
   }
 
   function hasPlacedStore(id) {
@@ -135,22 +162,53 @@ const MallMap = (() => {
   }
 
   function setCategoryFilter(cat) {
-    categoryFilter = (cat || 'all').toLowerCase();
-    applyCategoryDim();
+    const normalized = (cat || 'all').toLowerCase();
+    if (categoryFilter === normalized && normalized !== 'all') {
+      categoryFilter = 'all';
+    } else {
+      categoryFilter = normalized;
+    }
+    render();
+    if (selectedStore && !matchesStore(selectedStore)) {
+      deselect();
+    }
+    const chip = document.querySelector(`.cat-scroll .chip[data-category="${categoryFilter}"]`);
+    if (chip && !chip.classList.contains('active')) {
+      document.querySelectorAll('.cat-scroll .chip').forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      if (typeof moveChipSlider === 'function') moveChipSlider(chip);
+    }
   }
 
-  function applyCategoryDim() {
-    if (!container) return;
-    container.querySelectorAll('.mall-cell.occupied').forEach((cell) => {
-      const store = stores.find((s) => String(s.id) === String(cell.dataset.storeId));
-      const match = store ? matchesCategory(store) : true;
-      cell.classList.toggle('mall-dim', !match);
-    });
-    container.querySelectorAll('[data-legend-cat]').forEach((el) => {
-      const cat = el.getAttribute('data-legend-cat');
-      const active = categoryFilter === 'all' || categoryFilter === cat;
-      el.style.opacity = active ? '1' : '0.45';
-    });
+  function setSearchQuery(q) {
+    searchQuery = String(q || '').trim();
+    render();
+  }
+
+  function resetFilters() {
+    categoryFilter = 'all';
+    searchQuery = '';
+    render();
+  }
+
+  function setViewMode(mode) {
+    viewMode = mode === 'directory' ? 'directory' : 'grid';
+    hidePeekImmediate();
+    render();
+  }
+
+  function zoom(delta) {
+    const levels = [0.8, 1, 1.25, 1.5];
+    let idx = levels.indexOf(zoomLevel);
+    if (idx === -1) idx = 1;
+    const nextIdx = Math.max(0, Math.min(levels.length - 1, idx + delta));
+    zoomLevel = levels[nextIdx];
+    render();
+  }
+
+  function resetZoom() {
+    zoomLevel = 1;
+    render();
   }
 
   function viewBounds() {
@@ -200,8 +258,8 @@ const MallMap = (() => {
     const byW = Math.floor(availW / cols);
     const byH = Math.floor(availH / rows);
     const fitted = Math.max(52, Math.min(byW, byH, 108));
-    if (!placementMode && window.innerWidth < SHEET_MAX) return Math.max(fitted, 64);
-    return fitted;
+    const base = (!placementMode && window.innerWidth < SHEET_MAX) ? Math.max(fitted, 64) : fitted;
+    return Math.max(48, Math.round(base * zoomLevel));
   }
 
   function renderLoading() {
@@ -257,71 +315,221 @@ const MallMap = (() => {
     const bg = oc ? 'rgba(39,174,96,0.95)' : 'rgba(192,57,43,0.92)';
     const label = oc ? 'Open' : 'Closed';
     if (compact) {
-      return `<span class="mall-open-dot" title="${label}" style="position:absolute;top:4px;left:4px;width:8px;height:8px;border-radius:50%;background:${bg};border:1px solid #fff;box-shadow:0 0 0 1px ${bg};"></span>`;
+      return `<span class="mall-open-dot" title="${label}" style="position:absolute;top:4px;left:4px;width:8px;height:8px;border-radius:50%;background:${bg};border:1px solid #fff;box-shadow:0 0 0 1px ${bg};z-index:2;"></span>`;
     }
     return `<span style="display:inline-flex;align-items:center;gap:4px;background:${bg};color:#fff;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;transition:background 0.2s ease;">● ${label}</span>`;
   }
 
-  function cellInnerHTML(store, cellSize) {
+  function cellInnerHTML(store, cellSize, x, y) {
     const color = getCategoryColor(store.category);
     const banner = safeImgUrl(store.banner);
     const logo = safeImgUrl(store.logo);
     const nameSize = Math.max(8, Math.min(11, Math.floor(cellSize * 0.16)));
     const logoSize = Math.max(22, Math.min(40, Math.floor(cellSize * 0.38)));
-    const stack = storesAt(Number(store.coordinates.x), Number(store.coordinates.y)).length;
+    const stack = storesAt(x, y).length;
+    const isOpen = typeof CONFIG !== 'undefined' && CONFIG.isOpen(store.trading_hours) === true;
+    const code = unitCode(x, y);
+
     return `
       ${openBadge(store, true)}
-      ${store.featured ? '<div style="position:absolute;top:3px;right:3px;font-size:9px;line-height:1;">⭐</div>' : ''}
-      ${stack > 1 ? `<div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.55);color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;">${stack}</div>` : ''}
+      <span class="mall-unit-badge" title="${code}">${code.replace('Unit ', '')}</span>
+      ${store.featured ? '<span class="mall-deal-badge" title="Featured Store">⭐</span>' : ''}
+      ${stack > 1 ? `<div class="mall-stack-badge" title="${stack} shops at this unit">🏬 ${stack}</div>` : ''}
       <div style="
         width:${logoSize}px;height:${logoSize}px;border-radius:8px;
         background:${logo ? '#fff' : color};
         display:flex;align-items:center;justify-content:center;
         color:#fff;font-size:${Math.max(11, Math.floor(logoSize * 0.42))}px;font-weight:700;
         margin-bottom:3px;overflow:hidden;
-        box-shadow:0 2px 8px rgba(0,0,0,0.28);
-        border:2px solid rgba(255,255,255,0.9);
+        box-shadow:0 2px 8px rgba(0,0,0,0.35);
+        border:2px solid rgba(255,255,255,0.92);
+        z-index:1;
       ">${logo ? `<img src="${esc(logo)}" alt="" style="width:100%;height:100%;object-fit:cover;">` : esc((store.name || '?').charAt(0).toUpperCase())}</div>
-      <div style="font-size:${nameSize}px;font-weight:700;color:#fff;text-align:center;line-height:1.15;overflow:hidden;max-width:100%;text-shadow:0 1px 3px rgba(0,0,0,0.65);padding:0 2px 2px;">
-        ${esc(store.name.length > 11 ? store.name.slice(0, 10) + '…' : store.name)}
+      <div style="font-size:${nameSize}px;font-weight:700;color:#fff;text-align:center;line-height:1.15;overflow:hidden;max-width:100%;text-shadow:0 1px 3px rgba(0,0,0,0.85);padding:0 2px 2px;z-index:1;">
+        ${esc(store.name.length > 12 ? store.name.slice(0, 11) + '…' : store.name)}
       </div>`;
   }
 
   function paintCell(cell, store, selected) {
     const color = getCategoryColor(store.category);
     const banner = safeImgUrl(store.banner);
+    const x = parseInt(cell.dataset.x, 10);
+    const y = parseInt(cell.dataset.y, 10);
     cell.dataset.storeId = store.id;
-    cell.title = store.name;
+    cell.title = `${store.name} (${unitCode(x, y)})`;
     cell.style.background = banner
-      ? `url("${banner}") center/cover no-repeat`
-      : `linear-gradient(160deg, ${color}cc, ${color}55)`;
+      ? `linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.76) 100%), url('${banner.replace(/'/g, "\\'")}') center/cover no-repeat`
+      : `linear-gradient(160deg, ${color}dd, ${color}66)`;
     cell.style.border = selected ? `3px solid ${color}` : `1px solid ${color}55`;
     cell.style.zIndex = selected ? '4' : '1';
     cell.style.transform = selected ? 'scale(1.08)' : '';
     cell.style.boxShadow = selected ? `0 6px 18px ${color}55` : `inset 0 0 0 2px ${color}22`;
     cell.classList.toggle('selected', selected);
-    cell.classList.toggle('mall-dim', !matchesCategory(store));
+    cell.classList.toggle('mall-dim', !matchesStore(store));
     const size = parseInt(cell.dataset.size, 10) || 64;
-    cell.innerHTML = cellInnerHTML(store, size);
+    cell.innerHTML = cellInnerHTML(store, size, x, y);
+  }
+
+  function toolbarHTML() {
+    const stats = floorStats();
+    const placed = occupiedStores();
+    const filtered = filteredOccupiedStores();
+    const statusText = placementMode
+      ? 'Click an empty unit to place your store'
+      : (searchQuery || categoryFilter !== 'all')
+        ? `${filtered.length} of ${placed.length} shops match`
+        : `${stats.shops} shops placed · ${stats.open} open now`;
+
+    return `
+      <div class="mall-map-header">
+        <div class="mall-map-title-row">
+          <div style="font-weight:700;font-size:14px;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+            <span>🏬</span>
+            <span>${placementMode ? 'Unit Placement' : 'Mall Floor &amp; Directory'}</span>
+          </div>
+          <span style="font-size:12px;color:var(--text-muted);font-weight:600;">
+            ${statusText}
+          </span>
+        </div>
+        ${!placementMode ? `
+        <div class="mall-map-actions">
+          <div class="mall-search-box">
+            <input type="text" id="mall-dir-search" placeholder="Search shops..." value="${esc(searchQuery)}">
+            ${searchQuery ? `<button type="button" class="clear-btn" id="mall-dir-search-clear">✕</button>` : ''}
+          </div>
+          <div class="mall-view-toggle">
+            <button type="button" class="mall-view-btn ${viewMode === 'grid' ? 'active' : ''}" data-view="grid" title="Floor Plan View">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              <span>Plan</span>
+            </button>
+            <button type="button" class="mall-view-btn ${viewMode === 'directory' ? 'active' : ''}" data-view="directory" title="Directory List View">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              <span>Directory (${filtered.length})</span>
+            </button>
+          </div>
+          ${viewMode === 'grid' ? `
+          <div class="mall-zoom-controls">
+            <button type="button" class="mall-zoom-btn" id="mall-zoom-out" title="Zoom Out">−</button>
+            <button type="button" class="mall-zoom-btn" id="mall-zoom-fit" title="Reset Zoom">Fit</button>
+            <button type="button" class="mall-zoom-btn" id="mall-zoom-in" title="Zoom In">+</button>
+          </div>` : ''}
+        </div>` : ''}
+      </div>
+    `;
+  }
+
+  function legendHTML() {
+    const cats = ['Fashion', 'Electronics', 'Food', 'Beauty', 'Sports', 'Home', 'Books', 'Toys'];
+    const placed = occupiedStores();
+    const totalCount = placed.length;
+    const catCounts = {};
+    cats.forEach((c) => {
+      catCounts[c.toLowerCase()] = placed.filter((s) => (s.category || '').toLowerCase() === c.toLowerCase()).length;
+    });
+
+    return `
+      <div class="mall-legend-bar">
+        <button type="button" class="mall-legend-pill ${categoryFilter === 'all' ? 'active' : ''}" data-legend-cat="all">
+          <span>All</span>
+          <span class="mall-legend-count">${totalCount}</span>
+        </button>
+        ${cats.map((c) => {
+          const color = getCategoryColor(c);
+          const count = catCounts[c.toLowerCase()] || 0;
+          const active = categoryFilter === c.toLowerCase();
+          return `
+            <button type="button" class="mall-legend-pill ${active ? 'active' : ''}" data-legend-cat="${c.toLowerCase()}">
+              <span class="mall-legend-dot" style="background:${color};"></span>
+              <span>${c}</span>
+              <span class="mall-legend-count">${count}</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  function renderDirectory() {
+    const filtered = filteredOccupiedStores();
+    let content = '';
+
+    if (!filtered.length) {
+      content = `
+        <div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">
+          <div style="font-size:36px;margin-bottom:8px;">🔍</div>
+          <div style="font-weight:700;font-size:15px;color:var(--text-primary);margin-bottom:4px;">No stores found</div>
+          <p style="font-size:13px;margin-bottom:var(--space-md);">No stores on this floor match your current filter or search criteria.</p>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="MallMap.resetFilters()">Clear Filters</button>
+        </div>
+      `;
+    } else {
+      content = `
+        <div class="mall-directory-grid">
+          ${filtered.map((s) => {
+            const color = getCategoryColor(s.category);
+            const banner = safeImgUrl(s.banner);
+            const logo = safeImgUrl(s.logo);
+            const code = unitCode(Number(s.coordinates?.x), Number(s.coordinates?.y));
+            return `
+              <div class="mall-directory-card">
+                <div class="mall-dir-banner" style="background:${banner ? `linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.7)), url('${banner.replace(/'/g, "\\'")}') center/cover no-repeat` : `linear-gradient(135deg, ${color}, ${color}88)`};">
+                  <span class="mall-unit-badge" style="top:6px;left:6px;">${code}</span>
+                  <div style="position:absolute;top:6px;right:6px;">${openBadge(s, false)}</div>
+                  ${logo ? `<img src="${esc(logo)}" alt="" class="mall-dir-logo">` : `<div class="mall-dir-logo" style="display:flex;align-items:center;justify-content:center;font-weight:700;color:${color};font-size:18px;">${esc((s.name || '?').charAt(0).toUpperCase())}</div>`}
+                </div>
+                <div class="mall-dir-body">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                    <strong style="font-size:14px;color:var(--text-primary);font-family:var(--font-display);">${esc(s.name)}</strong>
+                    <span class="badge badge-primary" style="font-size:10px;background:${color}22;color:${color};border:1px solid ${color}44;">${esc(s.category || '')}</span>
+                  </div>
+                  <p style="font-size:12px;color:var(--text-secondary);margin:6px 0 10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;">
+                    ${esc(s.description || 'Visit this shopfront to discover featured products and order online.')}
+                  </p>
+                  <div class="mall-dir-actions">
+                    <button type="button" class="btn btn-ghost btn-sm" style="flex:1;" data-peek-dir="${s.id}">
+                      🔍 Peek on Map
+                    </button>
+                    <a href="${storePageHref(s.id)}" class="btn btn-primary btn-sm" style="flex:1;">
+                      Visit Store
+                    </a>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    let html = `
+      <div class="mall-map-wrap" style="position:relative;padding:var(--space-sm);">
+        ${toolbarHTML()}
+        ${legendHTML()}
+        ${content}
+      </div>
+    `;
+    container.innerHTML = html;
+    bindToolbarEvents();
   }
 
   function render() {
     if (!container) return;
     hidePeekImmediate();
+
+    if (viewMode === 'directory' && !placementMode) {
+      renderDirectory();
+      return;
+    }
+
     const b = viewBounds();
     const cellSize = cellSizeFor(b.cols, b.rows);
     const totalW = cellSize * b.cols;
     const totalH = cellSize * b.rows;
-    const shopCount = occupiedStores().length;
 
     let html = `
       <div class="mall-map-wrap" style="position:relative;padding:var(--space-sm);">
-        <div style="display:flex;gap:var(--space-md);margin-bottom:var(--space-sm);flex-wrap:wrap;align-items:center;">
-          ${legendHTML()}
-          <span style="margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:600;">
-            ${placementMode ? 'Click an empty unit to place your store' : shopCount ? `${shopCount} shop${shopCount === 1 ? '' : 's'} on this floor` : 'No shops placed yet'}
-          </span>
-        </div>
+        ${toolbarHTML()}
+        ${legendHTML()}
         <div class="mall-floor-scroller" id="mall-floor-scroller">
         <div class="mall-grid neo-inset-lg" style="
           display:grid;
@@ -342,12 +550,13 @@ const MallMap = (() => {
         const store = getStoreAt(x, y);
         const isSelected = !!(store && selectedStore && sameId(selectedStore.id, store.id));
         const color = store ? getCategoryColor(store.category) : null;
-        const match = store ? matchesCategory(store) : true;
+        const match = store ? matchesStore(store) : true;
         const banner = store ? safeImgUrl(store.banner) : '';
+        const code = unitCode(x, y);
         const bg = store
           ? (banner
-            ? `url("${banner}") center/cover no-repeat`
-            : `linear-gradient(160deg, ${color}cc, ${color}55)`)
+            ? `linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.76) 100%), url('${banner.replace(/'/g, "\\'")}') center/cover no-repeat`
+            : `linear-gradient(160deg, ${color}dd, ${color}66)`)
           : 'var(--bg)';
 
         html += `
@@ -358,7 +567,7 @@ const MallMap = (() => {
               background:${bg};
               border:${isSelected ? `3px solid ${color}` : `1px solid ${store ? color + '55' : 'var(--border-light)'}`};
               display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-              cursor:${store || placementMode ? 'pointer' : 'default'};
+              cursor:${store || placementMode ? 'pointer' : 'pointer'};
               border-radius:4px;
               padding:3px;
               position:relative;
@@ -366,9 +575,13 @@ const MallMap = (() => {
               transform:${isSelected ? 'scale(1.08)' : 'none'};
               ${isSelected ? `box-shadow:0 6px 18px ${color}55;` : store ? `box-shadow: inset 0 0 0 2px ${color}22;` : ''}
             "
-            ${store ? `title="${esc(store.name)}"` : ''}
+            title="${store ? esc(store.name) + ' (' + code + ')' : code + ' · Click to lease unit'}"
           >
-            ${store ? cellInnerHTML(store, cellSize) : `<div style="width:16px;height:1px;background:var(--border);border-radius:1px;margin:auto;"></div>`}
+            ${store ? cellInnerHTML(store, cellSize, x, y) : `
+              <div style="position:absolute;top:4px;left:6px;font-size:10px;font-weight:800;color:var(--text-secondary);opacity:0.75;letter-spacing:0.5px;">${code.replace('Unit ', '')}</div>
+              <div class="mall-empty-hint" style="font-size:16px;color:var(--text-muted);opacity:0.45;transition:all 0.18s ease;margin:auto;">＋</div>
+              <div style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:9px;font-weight:600;color:var(--text-muted);opacity:0.7;">Available</div>
+            `}
           </div>
         `;
       }
@@ -379,10 +592,67 @@ const MallMap = (() => {
     bindFloorPan();
     bindCellHover();
     bindFloorDeselect();
+    bindToolbarEvents();
     if (selectedStore && !placementMode) {
       markSelected(selectedStore, { pulse: false });
       showPeek(selectedStore, { fresh: true });
     }
+  }
+
+  function bindToolbarEvents() {
+    // Category legend chips
+    container.querySelectorAll('.mall-legend-pill').forEach((pill) => {
+      pill.addEventListener('click', () => {
+        const cat = pill.getAttribute('data-legend-cat');
+        setCategoryFilter(cat);
+      });
+    });
+
+    // View switcher buttons
+    container.querySelectorAll('.mall-view-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setViewMode(btn.dataset.view);
+      });
+    });
+
+    // Search input
+    const searchInp = container.querySelector('#mall-dir-search');
+    if (searchInp) {
+      searchInp.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        clearTimeout(searchInp._timer);
+        searchInp._timer = setTimeout(() => {
+          render();
+          const nextInp = container.querySelector('#mall-dir-search');
+          if (nextInp) {
+            nextInp.focus();
+            nextInp.selectionStart = nextInp.selectionEnd = nextInp.value.length;
+          }
+        }, 220);
+      });
+    }
+    const clearBtn = container.querySelector('#mall-dir-search-clear');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        searchQuery = '';
+        render();
+      });
+    }
+
+    // Zoom buttons
+    container.querySelector('#mall-zoom-out')?.addEventListener('click', () => zoom(-1));
+    container.querySelector('#mall-zoom-in')?.addEventListener('click', () => zoom(1));
+    container.querySelector('#mall-zoom-fit')?.addEventListener('click', () => resetZoom());
+
+    // Directory peek buttons
+    container.querySelectorAll('[data-peek-dir]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-peek-dir');
+        viewMode = 'grid';
+        render();
+        setTimeout(() => selectStore(id, { toggle: false }), 60);
+      });
+    });
   }
 
   function bindCellHover() {
@@ -398,6 +668,53 @@ const MallMap = (() => {
         cell.style.zIndex = '1';
       });
     });
+  }
+
+  function openLeaseModal(x, y) {
+    const code = unitCode(x, y);
+    const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    const isSeller = user && (user.role === 'seller' || user.role === 'admin');
+
+    if (typeof UI !== 'undefined' && UI.createModal) {
+      UI.createModal({
+        id: 'mall-lease-modal',
+        title: `🏪 ${code} — Available Storefront`,
+        content: `
+          <div style="text-align:center;padding:var(--space-sm) 0;">
+            <div style="width:58px;height:58px;border-radius:14px;background:var(--primary-alpha);color:var(--primary);font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;box-shadow:var(--neo-shadow-sm);">🏬</div>
+            <h3 style="font-family:var(--font-display);font-size:18px;margin-bottom:6px;color:var(--text-primary);">Prime Spot in South Africa's Virtual Mall</h3>
+            <p style="color:var(--text-secondary);font-size:13px;max-width:380px;margin:0 auto var(--space-md);line-height:1.5;">
+              Position your store directly on the digital floor map where shoppers explore, peek into shopfronts, and buy online.
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;font-size:12px;margin-bottom:var(--space-md);">
+              <div style="padding:10px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border-light);">
+                <div style="color:var(--text-muted);font-size:11px;">Unit Location</div>
+                <strong style="color:var(--primary);font-size:13px;">${code} (Row ${String.fromCharCode(65 + y)}, Lot ${x + 1})</strong>
+              </div>
+              <div style="padding:10px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border-light);">
+                <div style="color:var(--text-muted);font-size:11px;">Foot Traffic</div>
+                <strong style="color:var(--success);font-size:13px;">24/7 Digital Shoppers</strong>
+              </div>
+              <div style="padding:10px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border-light);">
+                <div style="color:var(--text-muted);font-size:11px;">Payments</div>
+                <strong>Integrated Yoco Gateway</strong>
+              </div>
+              <div style="padding:10px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border-light);">
+                <div style="color:var(--text-muted);font-size:11px;">Delivery</div>
+                <strong>Local Driver Fleet</strong>
+              </div>
+            </div>
+          </div>
+        `,
+        footer: `
+          <button class="btn btn-ghost" onclick="UI.closeModal('mall-lease-modal')">Close</button>
+          ${isSeller
+            ? `<a href="dashboard/seller.html#section-map" class="btn btn-primary" onclick="UI.closeModal('mall-lease-modal')">Manage Unit in Seller Dashboard</a>`
+            : `<a href="signup.html?role=seller" class="btn btn-primary" onclick="UI.closeModal('mall-lease-modal')">Open Your Store in ${code} — Free</a>`
+          }
+        `
+      });
+    }
   }
 
   function bindFloorPan() {
@@ -456,17 +773,23 @@ const MallMap = (() => {
         selectStore(cell.dataset.storeId);
       });
     });
-  }
 
-  function legendHTML() {
-    const cats = ['Fashion', 'Electronics', 'Food', 'Beauty', 'Sports', 'Home', 'Books', 'Toys'];
-    return cats.map((c) => {
-      const color = getCategoryColor(c);
-      const active = categoryFilter === 'all' || categoryFilter === c.toLowerCase();
-      return `<div data-legend-cat="${c.toLowerCase()}" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--text-secondary);opacity:${active ? '1' : '0.45'};">
-        <div style="width:10px;height:10px;border-radius:3px;background:${color};"></div>${c}
-      </div>`;
-    }).join('');
+    // Empty cell click
+    if (!placementMode) {
+      container.querySelectorAll('.mall-cell.empty').forEach((cell) => {
+        cell.addEventListener('click', (e) => {
+          if (scroller.dataset.skipClick === '1') {
+            scroller.dataset.skipClick = '';
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          const x = parseInt(cell.dataset.x, 10);
+          const y = parseInt(cell.dataset.y, 10);
+          openLeaseModal(x, y);
+        });
+      });
+    }
   }
 
   function positionPeek(pop, cell, wrap) {
@@ -498,21 +821,49 @@ const MallMap = (() => {
     const list = occupiedInOrder();
     const idx = list.findIndex((s) => sameId(s.id, store.id));
     const many = list.length > 1;
-    const stack = storesAt(Number(store.coordinates?.x), Number(store.coordinates?.y)).length;
+    const sx = Number(store.coordinates?.x);
+    const sy = Number(store.coordinates?.y);
+    const here = storesAt(sx, sy);
+    const stack = here.length;
+    const code = unitCode(sx, sy);
     const place = idx >= 0 ? `${idx + 1} of ${list.length}` : '';
+
     return `
       ${isSheetPeek() ? '<div class="mall-peek-handle" aria-hidden="true"></div>' : ''}
-      <div style="height:56px;background:linear-gradient(135deg,${color},${color}88);position:relative;overflow:hidden;">
+      <div style="height:62px;background:linear-gradient(135deg,${color},${color}88);position:relative;overflow:hidden;">
         ${banner ? `<img src="${esc(banner)}" alt="" style="width:100%;height:100%;object-fit:cover;opacity:0.75">` : ''}
-        ${logo ? `<img src="${esc(logo)}" alt="" style="position:absolute;bottom:-14px;left:12px;width:36px;height:36px;border-radius:8px;object-fit:cover;border:2px solid #fff;background:#fff;">` : ''}
+        ${logo ? `<img src="${esc(logo)}" alt="" style="position:absolute;bottom:-14px;left:12px;width:38px;height:38px;border-radius:8px;object-fit:cover;border:2px solid #fff;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.2);">` : ''}
+        <span class="mall-unit-badge" style="top:6px;right:6px;">${code}</span>
       </div>
       <div style="padding:var(--space-md);padding-top:18px;">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
           <div style="font-family:var(--font-display);font-weight:700;font-size:16px;">${esc(store.name)}</div>
           ${openBadge(store, false)}
         </div>
-        <div style="font-size:12px;color:var(--text-muted);margin:4px 0 var(--space-sm);">${esc(store.category || '')}${many ? ` · shop ${esc(place)}${stack > 1 ? ' at this unit' : ''}` : ''}</div>
-        <p style="color:var(--text-secondary);font-size:13px;margin-bottom:var(--space-sm);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(store.description || 'Pop in and browse this shop.')}</p>
+        <div style="font-size:12px;color:var(--text-muted);margin:4px 0 var(--space-sm);">
+          ${esc(store.category || '')} · ${code}${many ? ` · ${esc(place)} on floor` : ''}
+        </div>
+
+        ${stack > 1 ? `
+          <div class="mall-unit-shops-bar">
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">
+              <span>🏬 ${stack} shops located at ${code}</span>
+              <span style="font-size:10px;color:var(--primary);font-weight:600;">Switch shop ⤵</span>
+            </div>
+            <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;">
+              ${here.map((s) => `
+                <button type="button" class="btn btn-sm ${sameId(s.id, store.id) ? 'btn-primary' : 'btn-ghost'}"
+                  style="padding:3px 8px;font-size:11px;white-space:nowrap;display:flex;align-items:center;gap:4px;"
+                  data-switch-store="${s.id}">
+                  <span style="width:6px;height:6px;border-radius:50%;background:${getCategoryColor(s.category)};"></span>
+                  <span>${esc(s.name)}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <p style="color:var(--text-secondary);font-size:13px;margin-bottom:var(--space-sm);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;">${esc(store.description || 'Pop in and browse this shopfront for products, deals, and quick delivery.')}</p>
         <div id="mall-peek-products" style="display:flex;flex-direction:column;gap:8px;margin-bottom:var(--space-md);font-size:12px;color:var(--text-muted);">Loading products…</div>
         <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center;">
           ${many ? '<button type="button" class="btn btn-ghost btn-sm" data-peek-nav="-1" aria-label="Previous shop">←</button>' : ''}
@@ -598,6 +949,12 @@ const MallMap = (() => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
           selectNeighbor(parseInt(btn.getAttribute('data-peek-nav'), 10));
+        });
+      });
+      pop.querySelectorAll('[data-switch-store]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectStore(btn.getAttribute('data-switch-store'), { toggle: false });
         });
       });
       if (!sheet) positionPeek(pop, cell, wrap);
@@ -688,11 +1045,9 @@ const MallMap = (() => {
     try {
       const data = await api.products.list(store.id, { limit: 6 });
       if (token !== peekToken) return;
-      const products = (Array.isArray(data) ? data : (data.products || []))
-        .filter((p) => !p.sold_out && Number(p.inventory) !== 0)
-        .slice(0, 3);
+      const products = Array.isArray(data) ? data : (data.products || []);
       if (!products.length) {
-        slot.innerHTML = '<span style="font-size:12px;color:var(--text-muted);">No products listed yet.</span>';
+        slot.innerHTML = '<div style="font-size:12px;color:var(--text-muted);font-style:italic;">No products listed yet.</div>';
         positionPeek(pop, cell, wrap);
         return;
       }
@@ -750,7 +1105,7 @@ const MallMap = (() => {
     if (!scroller) return;
     scroller.addEventListener('click', (e) => {
       if (placementMode || !selectedStore) return;
-      if (e.target.closest('.mall-cell.occupied, #mall-store-pop')) return;
+      if (e.target.closest('.mall-cell.occupied, #mall-store-pop, .mall-map-header, .mall-legend-bar')) return;
       deselect();
     });
   }
@@ -797,6 +1152,10 @@ const MallMap = (() => {
     if (!placementMode && !hasFloorCoords(store)) {
       window.location.href = storePageHref(id);
       return;
+    }
+    if (viewMode === 'directory') {
+      viewMode = 'grid';
+      render();
     }
     const switching = !!(selectedStore && !sameId(selectedStore.id, store.id));
     selectedStore = store;
@@ -864,6 +1223,11 @@ const MallMap = (() => {
     initPlacement,
     render,
     setCategoryFilter,
+    setSearchQuery,
+    resetFilters,
+    setViewMode,
+    zoom,
+    resetZoom,
     hasPlacedStore,
     floorStats
   };

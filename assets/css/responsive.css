@@ -769,12 +769,11 @@
     justify-content: center !important;
   }
 
-  /* Mall map grid: smaller cells */
-  .mall-grid {
-    grid-template-columns: repeat(10, 36px) !important;
-    grid-template-rows: repeat(10, 36px) !important;
-    width: 360px !important;
-    height: 360px !important;
+  /* Mall floor scroller */
+  .mall-floor-scroller {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Section header child div with inline display:flex: full width, wrap */

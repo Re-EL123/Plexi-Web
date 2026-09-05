@@ -1662,3 +1662,292 @@ html.tour-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .tour-spot { transition: none; }
 }
+
+/* ============================================================
+   MALL DIRECTORY & FLOOR PLAN ENHANCEMENTS
+   ============================================================ */
+.mall-map-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+.mall-map-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.mall-map-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+.mall-view-toggle {
+  display: inline-flex;
+  background: var(--bg);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--neo-shadow-inset);
+  gap: 2px;
+}
+.mall-view-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+.mall-view-btn.active {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  font-weight: 700;
+}
+.mall-zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg);
+  padding: 2px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--neo-shadow-sm);
+  gap: 2px;
+}
+.mall-zoom-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.mall-zoom-btn:hover {
+  background: var(--surface);
+  color: var(--primary);
+}
+.mall-search-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.mall-search-box input {
+  padding: 5px 28px 5px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: var(--bg);
+  color: var(--text-primary);
+  box-shadow: var(--neo-shadow-inset);
+  width: 170px;
+  transition: width 0.2s ease, border-color 0.2s ease;
+}
+.mall-search-box input:focus {
+  width: 220px;
+  border-color: var(--primary);
+  outline: none;
+}
+.mall-search-box .clear-btn {
+  position: absolute;
+  right: 6px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px;
+}
+
+/* Legend Filter Bar */
+.mall-legend-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: var(--space-sm);
+  flex-wrap: wrap;
+  align-items: center;
+}
+.mall-legend-pill {
+  border: 1px solid var(--border-light);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+.mall-legend-pill:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+.mall-legend-pill.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(67, 97, 238, 0.35);
+}
+.mall-legend-pill.active .mall-legend-dot {
+  box-shadow: 0 0 0 1.5px #fff;
+}
+.mall-legend-pill.active .mall-legend-count {
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+}
+.mall-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.mall-legend-count {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-muted);
+}
+
+/* Cell unit & badges */
+.mall-unit-badge {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  padding: 1px 4px;
+  border-radius: 3px;
+  backdrop-filter: blur(4px);
+  z-index: 2;
+}
+.mall-stack-badge {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 1px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid rgba(255,255,255,0.3);
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+}
+.mall-deal-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background: #E74C3C;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 1px 5px;
+  box-shadow: 0 2px 6px rgba(231,76,60,0.4);
+  z-index: 2;
+}
+.mall-open-ring {
+  box-shadow: 0 0 0 2px #27AE60, 0 4px 12px rgba(39, 174, 96, 0.35) !important;
+}
+.mall-cell.empty {
+  transition: all 0.18s ease;
+  user-select: none;
+}
+.mall-cell.empty:hover {
+  background: var(--surface) !important;
+  border-color: var(--primary) !important;
+  border-style: dashed !important;
+  transform: scale(1.03);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(67, 97, 238, 0.18);
+  z-index: 3;
+}
+.mall-cell.empty:hover .mall-empty-hint {
+  opacity: 1 !important;
+  color: var(--primary) !important;
+  transform: scale(1.25);
+}
+
+/* Multi-store unit switcher bar in peek */
+.mall-unit-shops-bar {
+  margin: 8px 0 12px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+}
+
+/* Directory view grid */
+.mall-directory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+}
+.mall-directory-card {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--neo-shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+.mall-directory-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--neo-shadow);
+}
+.mall-dir-banner {
+  height: 64px;
+  position: relative;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+.mall-dir-logo {
+  position: absolute;
+  bottom: -16px;
+  left: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 2px solid #fff;
+  background: #fff;
+  object-fit: cover;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+.mall-dir-body {
+  padding: 22px 12px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.mall-dir-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
