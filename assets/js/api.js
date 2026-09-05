@@ -180,6 +180,7 @@ const api = (() => {
     list:    (params = {})  => get(`/notifications?action=list&${new URLSearchParams(params)}`),
     markRead:(id)           => post(`/notifications?action=read&id=${id}`),
     markAll: ()             => post('/notifications?action=read-all'),
+    syncNeeded: (body = {}) => post('/notifications?action=sync-needed', body),
   };
 
   // ======== SUPPORT ======== //

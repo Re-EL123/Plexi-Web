@@ -26,8 +26,24 @@ const Dashboard = (() => {
 
       const panel = document.getElementById('notif-panel');
       if (panel) renderNotifPanel(panel, notifs);
+      const full = document.getElementById('notif-full-panel');
+      if (full) renderNotifFullPanel(full, notifs);
       State.set('notifications', notifs);
     } catch (_) {}
+  }
+
+  function neededKeyFromType(type) {
+    const map = {
+      needed_payment: 'payment',
+      needed_banking: 'banking',
+      needed_store: 'store',
+      needed_kyc: 'verification',
+      needed_admin_store: 'admin-review',
+      needed_admin_kyc: 'admin-review',
+      needed_admin_driver: 'admin-review',
+      needed_admin_banking: 'admin-review'
+    };
+    return map[type] || null;
   }
 
   function renderNotifPanel(panel, notifs) {
@@ -35,24 +51,60 @@ const Dashboard = (() => {
       panel.innerHTML = UI.empty('No Notifications', 'You\'re all caught up!');
       return;
     }
-    panel.innerHTML = notifs.slice(0, 8).map(n => `
+    panel.innerHTML = notifs.slice(0, 8).map(n => {
+      const type = String(n.type || '').replace(/[^a-z0-9_-]/gi, '');
+      return `
       <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}" role="button" tabindex="0"
-        onclick="Dashboard.markRead('${n.id}')">
+        onclick="Dashboard.markRead('${n.id}', '${type}')">
         ${UI.notifHeader(
           `<span style="width:8px;height:8px;border-radius:50%;background:${n.read ? 'var(--gray-300)' : 'var(--primary)'};"></span>`,
           n.title,
           UI.timeAgo(n.created_at)
         )}
         <div class="notif-msg">${n.message}</div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   }
 
-  async function markRead(id) {
+  function renderNotifFullPanel(panel, notifs) {
+    if (!notifs.length) {
+      panel.innerHTML = UI.empty('No Notifications', 'You\'re all caught up!');
+      return;
+    }
+    panel.innerHTML = notifs.map(n => {
+      const type = String(n.type || '').replace(/[^a-z0-9_-]/gi, '');
+      return `
+        <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}" role="button" tabindex="0"
+          onclick="Dashboard.markRead('${n.id}', '${type}')"
+          style="display:flex;gap:var(--space-sm);padding:var(--space-md);border-bottom:1px solid var(--border-light);background:${n.read ? '' : 'var(--primary-alpha)'};cursor:pointer;">
+          <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:6px;background:${n.read ? 'var(--gray-300)' : 'var(--primary)'}"></div>
+          <div>
+            <div style="font-weight:600;font-size:14px;">${n.title}</div>
+            <div style="font-size:13px;color:var(--text-secondary);">${n.message}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${UI.timeAgo(n.created_at)}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function markRead(id, type) {
     try {
       await api.notifications.markRead(id);
       const el = document.querySelector(`.notif-item[data-id="${id}"]`);
       if (el) el.classList.remove('unread');
+      await loadNotifications();
+      const key = neededKeyFromType(type);
+      if (key && neededActions) {
+        neededActions.snooze(key, 0);
+        neededActions.tick();
+      }
+    } catch (_) {}
+  }
+
+  async function syncNeededNotifications() {
+    try {
+      if (window.Auth && typeof Auth.isLoggedIn === 'function' && !Auth.isLoggedIn()) return;
+      await api.notifications.syncNeeded();
       await loadNotifications();
     } catch (_) {}
   }
@@ -526,6 +578,8 @@ const Dashboard = (() => {
     });
     loadNotifications();
     setInterval(loadNotifications, 60000);
+    syncNeededNotifications();
+    setInterval(syncNeededNotifications, 30000);
     loadCartCount();
 
     window.addEventListener('storage', e => {
