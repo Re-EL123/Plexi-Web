@@ -327,7 +327,8 @@ const Dashboard = (() => {
       panel.innerHTML = `
         <div id="cart-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9998;opacity:0;transition:opacity 0.3s;" onclick="Dashboard.closeCartPanel()"></div>
         <div id="cart-drawer" style="position:fixed;top:0;right:-420px;width:400px;max-width:90vw;height:100vh;background:var(--surface);z-index:9999;box-shadow:-4px 0 24px rgba(0,0,0,0.15);display:flex;flex-direction:column;transition:right 0.3s ease;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border-light);">
+          <div class="cart-drawer-handle" aria-hidden="true"></div>
+          <div class="cart-drawer-head" style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border-light);">
             <h3 style="margin:0;font-size:18px;">Your Cart</h3>
             <button onclick="Dashboard.closeCartPanel()" style="background:none;border:none;cursor:pointer;padding:4px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
@@ -348,9 +349,21 @@ const Dashboard = (() => {
     }
     const overlay = document.getElementById('cart-overlay');
     const drawer = document.getElementById('cart-drawer');
+    const sheet = window.innerWidth < 700;
     overlay.style.display = 'block';
-    drawer.style.right = '0';
+    drawer.classList.toggle('cart-drawer-sheet', sheet);
+    if (sheet) {
+      drawer.style.right = '0';
+      drawer.style.transform = '';
+      drawer.classList.remove('is-open', 'is-swiping');
+      requestAnimationFrame(() => drawer.classList.add('is-open'));
+    } else {
+      drawer.classList.remove('cart-drawer-sheet', 'is-open', 'is-swiping');
+      drawer.style.transform = '';
+      drawer.style.right = '0';
+    }
     requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+    bindCartDismiss(drawer);
     initCartPanelKeys();
     loadCartPanelItems();
   }
@@ -364,8 +377,63 @@ const Dashboard = (() => {
     const overlay = document.getElementById('cart-overlay');
     const drawer = document.getElementById('cart-drawer');
     if (overlay) overlay.style.opacity = '0';
-    if (drawer) drawer.style.right = '-420px';
+    if (drawer) {
+      drawer.classList.remove('is-swiping');
+      drawer.style.transform = '';
+      if (drawer.classList.contains('cart-drawer-sheet')) drawer.classList.remove('is-open');
+      else drawer.style.right = '-420px';
+    }
     setTimeout(() => { if (overlay) overlay.style.display = 'none'; }, 300);
+  }
+
+  function bindCartDismiss(drawer) {
+    if (!drawer || drawer.dataset.swipeBound === '1') return;
+    drawer.dataset.swipeBound = '1';
+    let sx = 0;
+    let sy = 0;
+    let tracking = false;
+    const reduced = () => window.UI && UI.prefersReducedMotion && UI.prefersReducedMotion();
+    drawer.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('input, textarea, select, button, a')) return;
+      const sheet = drawer.classList.contains('cart-drawer-sheet');
+      const items = document.getElementById('cart-panel-items');
+      const fromHandle = e.target.closest('.cart-drawer-handle, .cart-drawer-head');
+      if (sheet && !fromHandle && items && items.scrollTop > 4) return;
+      tracking = true;
+      sx = e.clientX;
+      sy = e.clientY;
+      try { drawer.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    drawer.addEventListener('pointermove', (e) => {
+      if (!tracking) return;
+      const sheet = drawer.classList.contains('cart-drawer-sheet');
+      const dx = e.clientX - sx;
+      const dy = e.clientY - sy;
+      if (reduced()) return;
+      if (sheet && dy > 0 && Math.abs(dy) > Math.abs(dx)) {
+        drawer.classList.add('is-swiping');
+        drawer.style.transform = `translateY(${dy}px)`;
+      } else if (!sheet && dx > 0 && Math.abs(dx) > Math.abs(dy)) {
+        drawer.classList.add('is-swiping');
+        drawer.style.transform = `translateX(${dx}px)`;
+      }
+    });
+    const end = (e) => {
+      if (!tracking) return;
+      tracking = false;
+      const sheet = drawer.classList.contains('cart-drawer-sheet');
+      const dx = e.clientX - sx;
+      const dy = e.clientY - sy;
+      drawer.classList.remove('is-swiping');
+      drawer.style.transform = '';
+      if (sheet && dy > 80 && Math.abs(dy) > Math.abs(dx)) {
+        closeCartPanel();
+        return;
+      }
+      if (!sheet && dx > 80 && Math.abs(dx) > Math.abs(dy)) closeCartPanel();
+    };
+    drawer.addEventListener('pointerup', end);
+    drawer.addEventListener('pointercancel', end);
   }
 
   function initCartPanelKeys() {

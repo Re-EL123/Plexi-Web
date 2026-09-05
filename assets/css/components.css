@@ -808,18 +808,62 @@ select.form-control {
 /* ============================================================
    HOMEPAGE: deal aisle + slim rails
    ============================================================ */
+.h-rail {
+  position: relative;
+}
+.h-rail-btn {
+  display: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--neo-shadow);
+  color: var(--text-primary);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+.h-rail-prev { left: -6px; }
+.h-rail-next { right: -6px; }
+.h-rail-fade {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 48px;
+  height: calc(100% - 10px);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  background: linear-gradient(90deg, transparent, var(--bg));
+  opacity: 1;
+  transition: opacity 0.2s ease;
+  z-index: 2;
+}
+.h-rail.at-end .h-rail-fade { opacity: 0; }
+.h-rail.at-start .h-rail-prev { opacity: 0.35; }
+.h-rail.at-end .h-rail-next { opacity: 0.35; }
+@media (min-width: 900px) {
+  .h-rail-btn { display: flex; }
+}
 .deal-aisle {
   display: flex;
   gap: var(--space-md);
   overflow-x: auto;
   scroll-snap-type: x mandatory;
+  scroll-padding-inline: 16px;
   padding-bottom: 10px;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 .deal-aisle::-webkit-scrollbar { height: 6px; }
 .deal-aisle-card {
   flex: 0 0 210px;
   scroll-snap-align: start;
+  scroll-snap-stop: normal;
   background: var(--surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--neo-shadow-sm);
@@ -852,12 +896,15 @@ select.form-control {
   gap: 12px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
+  scroll-padding-inline: 16px;
   padding-bottom: 8px;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 .rail-row > * {
   flex: 0 0 200px;
   scroll-snap-align: start;
+  scroll-snap-stop: normal;
   min-width: 0;
 }
 .rail-row .store-card-banner { height: 88px; }

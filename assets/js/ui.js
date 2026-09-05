@@ -159,7 +159,95 @@ const UI = (() => {
   // ======== ADD TO CART — VARIANT/OPTION PICKER MODAL ======== //
   // Shared quick-add used by index, store, product and dashboards.
   // Opens a chooser whenever the product has variants or options.
-  async function addToCartModal(productRef, { loginPath } = {}) {
+  function prefersReducedMotion() {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function bumpCartBadge() {
+    const host = document.getElementById('mall-chrome-cart')
+      || document.getElementById('cart-badge')?.parentElement
+      || document.querySelector('[aria-label="Cart"]');
+    if (!host) return;
+    host.classList.remove('cart-bump');
+    void host.offsetWidth;
+    host.classList.add('cart-bump');
+  }
+
+  function flyToCart(fromEl) {
+    bumpCartBadge();
+    const dest = document.getElementById('cart-badge')
+      || document.querySelector('[aria-label="Cart"]')
+      || document.getElementById('mall-chrome-cart');
+    if (prefersReducedMotion() || !fromEl || !dest) return;
+    const src = (fromEl.nodeType ? fromEl : null) || document.body;
+    const img = src.querySelector?.('img') || src.closest?.('.mall-peek-row, .deal-aisle-card, .product-card')?.querySelector('img');
+    const from = (img || src).getBoundingClientRect();
+    const to = dest.getBoundingClientRect();
+    const ghost = document.createElement('div');
+    ghost.className = 'cart-fly';
+    ghost.style.left = `${from.left}px`;
+    ghost.style.top = `${from.top}px`;
+    ghost.style.width = `${Math.max(28, Math.min(from.width, 48))}px`;
+    ghost.style.height = `${Math.max(28, Math.min(from.height, 48))}px`;
+    if (img) {
+      ghost.innerHTML = `<img src="${img.src}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
+    } else {
+      ghost.style.background = 'var(--primary)';
+    }
+    document.body.appendChild(ghost);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        ghost.style.transform = `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(0.2)`;
+        ghost.style.opacity = '0.15';
+      });
+    });
+    setTimeout(() => ghost.remove(), 280);
+  }
+
+  function bindHRail(scroller) {
+    if (!scroller || scroller.dataset.railBound === '1') return;
+    scroller.dataset.railBound = '1';
+    let wrap = scroller.closest('.h-rail');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.className = 'h-rail';
+      scroller.parentNode.insertBefore(wrap, scroller);
+      wrap.appendChild(scroller);
+    }
+    if (!wrap.querySelector('.h-rail-prev')) {
+      const prev = document.createElement('button');
+      prev.type = 'button';
+      prev.className = 'h-rail-btn h-rail-prev';
+      prev.setAttribute('aria-label', 'Previous');
+      prev.innerHTML = '‹';
+      const next = document.createElement('button');
+      next.type = 'button';
+      next.className = 'h-rail-btn h-rail-next';
+      next.setAttribute('aria-label', 'Next');
+      next.innerHTML = '›';
+      wrap.insertBefore(prev, scroller);
+      wrap.appendChild(next);
+      const step = () => Math.min(240, scroller.clientWidth * 0.8);
+      prev.addEventListener('click', () => scroller.scrollBy({ left: -step(), behavior: prefersReducedMotion() ? 'auto' : 'smooth' }));
+      next.addEventListener('click', () => scroller.scrollBy({ left: step(), behavior: prefersReducedMotion() ? 'auto' : 'smooth' }));
+    }
+    if (!wrap.querySelector('.h-rail-fade')) {
+      const fade = document.createElement('div');
+      fade.className = 'h-rail-fade';
+      fade.setAttribute('aria-hidden', 'true');
+      wrap.appendChild(fade);
+    }
+    const update = () => {
+      const max = scroller.scrollWidth - scroller.clientWidth - 4;
+      wrap.classList.toggle('at-start', scroller.scrollLeft < 8);
+      wrap.classList.toggle('at-end', max < 8 || scroller.scrollLeft >= max);
+    };
+    scroller.addEventListener('scroll', update, { passive: true });
+    update();
+    requestAnimationFrame(update);
+  }
+
+  async function addToCartModal(productRef, { loginPath, fromEl } = {}) {
     const loginHref = loginPath || (/\/(store|dashboard)\//.test(location.pathname) ? '../login.html' : 'login.html');
     if (!Auth.isLoggedIn()) {
       toast('Please login to add to cart', 'warning');
@@ -182,6 +270,7 @@ const UI = (() => {
       .filter(o => o.name && Array.isArray(o.values) && o.values.length);
 
     const finish = async (qty = 1) => {
+      flyToCart(fromEl);
       await showCartAddOns(p, qty);
     };
 
@@ -499,7 +588,7 @@ const UI = (() => {
             </div>
           </div>
           <div class="product-card-footer">
-            <button class="btn btn-primary btn-sm" onclick="event.preventDefault();event.stopPropagation();UI.addToCartModal('${esc(p.id)}')" ${p.inventory === 0 || p.sold_out ? 'disabled' : ''}>Add to Cart</button>
+            <button class="btn btn-primary btn-sm" onclick="event.preventDefault();event.stopPropagation();UI.addToCartModal('${esc(p.id)}',{fromEl:this})" ${p.inventory === 0 || p.sold_out ? 'disabled' : ''}>Add to Cart</button>
           </div>
         </div>
       </a>`;
@@ -530,7 +619,7 @@ const UI = (() => {
             ${storeName ? `<div class="deal-store">${esc(storeName)}</div>` : ''}
           </div>
         </a>
-        <button class="btn btn-primary btn-sm" onclick="event.preventDefault();event.stopPropagation();UI.addToCartModal('${esc(p.id)}')" ${p.inventory === 0 || p.sold_out ? 'disabled' : ''}>Add</button>
+        <button class="btn btn-primary btn-sm" onclick="event.preventDefault();event.stopPropagation();UI.addToCartModal('${esc(p.id)}',{fromEl:this})" ${p.inventory === 0 || p.sold_out ? 'disabled' : ''}>Add</button>
       </article>`;
   }
 
@@ -795,13 +884,16 @@ const UI = (() => {
 
   // ======== STAGGER ANIMATIONS ======== //
   function staggerReveal(container) {
-    const items = container.querySelectorAll('.stagger-child');
+    if (!container) return;
+    const items = Array.from(container.querySelectorAll('.stagger-child')).slice(0, 8);
+    if (!items.length) return;
+    const delay = prefersReducedMotion() ? 0 : 80;
     const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry, i) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => entry.target.classList.add('visible'), i * 60);
-          observer.unobserve(entry.target);
-        }
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const i = items.indexOf(entry.target);
+        setTimeout(() => entry.target.classList.add('visible'), Math.max(0, i) * delay);
+        observer.unobserve(entry.target);
       });
     }, { threshold: 0.1 });
     items.forEach(item => observer.observe(item));
@@ -937,6 +1029,7 @@ const UI = (() => {
 
   return {
     toast, openModal, closeModal, createModal, confirmDialog, addToCartModal,
+    flyToCart, bindHRail, prefersReducedMotion,
     productCard, dealAisleCard, recentlyViewed: { get: recentlyViewedGet, push: recentlyViewedPush },
     setLoading, showPageLoader, hidePageLoader,
     formatCurrency, formatDate, formatDateTime, timeAgo,

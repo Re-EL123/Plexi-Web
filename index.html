@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="mall-home">
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/jpeg" href="assets/icons/logo.jpg">
@@ -20,12 +20,13 @@
   <link rel="stylesheet" href="assets/css/variables.css?v=2">
   <link rel="stylesheet" href="assets/css/base.css?v=2">
   <link rel="stylesheet" href="assets/css/neomorphism.css?v=2">
-  <link rel="stylesheet" href="assets/css/components.css?v=4">
-  <link rel="stylesheet" href="assets/css/animations.css?v=2">
+  <link rel="stylesheet" href="assets/css/components.css?v=5">
+  <link rel="stylesheet" href="assets/css/animations.css?v=4">
   <link rel="stylesheet" href="assets/css/responsive.css?v=2">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
+    html.mall-home, html.mall-home body { overflow-x: clip; overscroll-behavior-y: contain; }
     .nav-sticky {
       position:sticky;top:0;z-index:var(--z-dropdown);
       background:rgba(240,240,243,0.88);backdrop-filter:blur(16px);
@@ -61,19 +62,37 @@
     }
     .logo img{width:36px;height:36px;border-radius:9px;object-fit:cover;}
 
-    .hero-section{padding:var(--space-md) 0 var(--space-sm);position:relative;overflow:hidden;}
+    .hero-section{padding:var(--space-3xl) 0 var(--space-2xl);position:relative;overflow:hidden;}
+    .hero-blob{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0;}
+    .hero-blob-1{width:600px;height:600px;background:radial-gradient(circle,rgba(192,57,43,0.10),transparent);top:-200px;right:-150px;}
+    .hero-blob-2{width:400px;height:400px;background:radial-gradient(circle,rgba(243,156,18,0.08),transparent);bottom:-100px;left:-100px;}
     .hero-inner{
       max-width:1280px;margin:0 auto;padding:0 var(--space-lg);
       display:block;position:relative;z-index:1;
     }
+    .hero-content{max-width:720px;}
     #mall-map-grid{overflow:visible;}
-    .hero-kicker{font-family:var(--font-display);font-size:clamp(20px,3vw,28px);font-weight:800;line-height:1.2;margin:0 0 4px;}
-    .hero-greeting{font-size:15px;color:var(--text-secondary);line-height:1.5;margin:0;max-width:720px;}
-    .hero-greeting a{color:var(--primary);font-weight:700;}
+    .hero-eyebrow{
+      display:inline-flex;align-items:center;gap:8px;
+      background:var(--primary-alpha);color:var(--primary);
+      border-radius:var(--radius-pill);padding:6px 16px;
+      font-size:13px;font-weight:700;margin-bottom:var(--space-md);
+    }
+    .hero-title{font-family:var(--font-display);font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.12;margin:0 0 var(--space-md);}
+    .hero-subtitle{font-size:16px;color:var(--text-secondary);line-height:1.6;max-width:540px;margin:0 0 var(--space-lg);}
+    .hero-subtitle a{color:var(--primary);font-weight:700;}
+    .hero-actions{display:flex;gap:var(--space-sm);flex-wrap:wrap;}
+    .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-md);margin-top:var(--space-xl);max-width:540px;}
+    .hero-stat{background:var(--bg);box-shadow:var(--neo-shadow-sm);border-radius:var(--radius-lg);padding:var(--space-md);text-align:center;}
+    .hero-stat-val{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--primary);line-height:1;}
+    .hero-stat-label{font-size:12px;color:var(--text-muted);font-weight:600;margin-top:4px;}
     .section{padding:var(--space-2xl) 0;}
     .section-inner{max-width:1280px;margin:0 auto;padding:0 var(--space-lg);}
-    .cat-scroll{display:flex;gap:var(--space-sm);overflow-x:auto;padding-bottom:4px;}
+    .cat-scroll{display:flex;gap:var(--space-sm);overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity;scroll-padding-inline:16px;-webkit-overflow-scrolling:touch;}
     .cat-scroll::-webkit-scrollbar{display:none;}
+    #mall-map,#specials-section,#stores-section,#arrivals-section,#products-grid,#near-you-section,#followed-section,#recent-section{
+      scroll-margin-top:calc(var(--header-h) + 56px);
+    }
     .map-section{background:var(--surface);border-top:1px solid var(--border-light);border-bottom:1px solid var(--border-light);padding:var(--space-2xl) 0;}
 
     footer{background:var(--gray-900);color:rgba(255,255,255,0.6);padding:var(--space-2xl) 0;}
@@ -130,19 +149,37 @@
   </div>
 </nav>
 
-<!-- Greeting + floor -->
+<!-- Hero -->
 <section class="hero-section">
+  <div class="hero-blob hero-blob-1"></div>
+  <div class="hero-blob hero-blob-2"></div>
   <div class="hero-inner">
-    <h1 class="hero-kicker">Plexi Digital Mall</h1>
-    <p id="mall-greeting" class="hero-greeting">Walk the floor — tap a shopfront to peek inside. Guests can browse; sign in when you add to cart.</p>
+    <div class="hero-content">
+      <div class="hero-eyebrow animate-fadeInDown" id="hero-eyebrow">Plexi Digital Mall</div>
+      <h1 class="hero-title animate-fadeInUp" id="hero-hello">Good day</h1>
+      <p class="hero-subtitle animate-fadeInUp delay-2" id="mall-greeting">Walk the floor — tap a shopfront to peek inside. Guests can browse; sign in when you add to cart.</p>
+      <div class="hero-actions animate-fadeInUp delay-3">
+        <a href="#mall-map" class="btn btn-primary btn-xl ripple-container" id="hero-cta-walk" onclick="event.preventDefault();document.getElementById('mall-map')?.scrollIntoView({behavior:(UI.prefersReducedMotion&&UI.prefersReducedMotion())?'auto':'smooth'})">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Walk the mall
+        </a>
+        <a href="signup.html" class="btn btn-outline btn-xl" id="hero-cta-auth">Join free</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat stagger-child"><div class="hero-stat-val" id="stat-stores">—</div><div class="hero-stat-label">Shops on the floor</div></div>
+        <div class="hero-stat stagger-child"><div class="hero-stat-val" id="stat-open">—</div><div class="hero-stat-label">Open now</div></div>
+        <div class="hero-stat stagger-child"><div class="hero-stat-val" id="stat-products">—</div><div class="hero-stat-label">Products</div></div>
+      </div>
+    </div>
   </div>
 </section>
 
 <!-- Categories -->
-<section class="section" style="padding:0 0 var(--space-sm);">
-  <div class="section-inner">
-    <div class="cat-scroll" id="categories-bar"></div>
-  </div>
+<section class="cat-sticky" id="categories-section">
+    <div class="section-inner cat-scroll-host">
+      <div class="chip-slider" id="chip-slider" aria-hidden="true"></div>
+      <div class="cat-scroll" id="categories-bar"></div>
+    </div>
 </section>
 
 <!-- Walk the mall -->
@@ -158,7 +195,7 @@
     <div class="section-header">
       <h2 class="section-title">Recently <span>viewed</span></h2>
     </div>
-    <div class="rail-row" id="recent-grid"></div>
+    <div class="h-rail"><div class="rail-row" id="recent-grid"></div></div>
   </div>
 </section>
 
@@ -169,7 +206,7 @@
       <h2 class="section-title">Stores you <span>follow</span></h2>
       <a href="dashboard/shopper.html#section-following" class="btn btn-ghost btn-sm">Manage</a>
     </div>
-    <div class="rail-row" id="followed-grid"></div>
+    <div class="h-rail"><div class="rail-row" id="followed-grid"></div></div>
   </div>
 </section>
 
@@ -179,7 +216,7 @@
     <div class="section-header">
       <h2 class="section-title">Deal <span>aisle</span></h2>
     </div>
-    <div class="deal-aisle" id="specials-grid"></div>
+    <div class="h-rail"><div class="deal-aisle" id="specials-grid"></div></div>
   </div>
 </section>
 
@@ -270,12 +307,12 @@
 <script src="assets/js/config.js?v=2"></script>
 <script src="assets/js/sounds.js?v=2"></script>
 <script src="assets/js/push.js?v=2"></script>
-<script src="assets/js/ui.js?v=8"></script>
+<script src="assets/js/ui.js?v=10"></script>
 <script src="assets/js/api.js?v=5"></script>
 <script src="assets/js/auth.js?v=2"></script>
 <script src="assets/js/state.js?v=2"></script>
-<script src="assets/js/map.js?v=5"></script>
-<script src="assets/js/dashboard.js?v=9"></script>
+<script src="assets/js/map.js?v=7"></script>
+<script src="assets/js/dashboard.js?v=11"></script>
 <script>
   // Nav — role-aware
   const navAuth = document.getElementById('nav-auth');
@@ -357,14 +394,38 @@
     } catch (_) {}
     cats = [...new Set(cats)];
     document.getElementById('categories-bar').innerHTML = cats.map((c,i) => `
-      <button class="chip ${i===0?'active':''} stagger-child" onclick="filterCategory('${c.toLowerCase()}',this)">${c}</button>`).join('');
-    setTimeout(()=>document.querySelectorAll('.cat-scroll .stagger-child').forEach((el,i)=>setTimeout(()=>el.classList.add('visible'),i*40)),200);
+      <button class="chip ${i===0?'active':''}" onclick="filterCategory('${c.toLowerCase()}',this)">${c}</button>`).join('');
+    const bar = document.getElementById('categories-bar');
+    if (bar && !bar.dataset.sliderScroll) {
+      bar.dataset.sliderScroll = '1';
+      bar.addEventListener('scroll', () => moveChipSlider(bar.querySelector('.chip.active')), { passive: true });
+    }
+    requestAnimationFrame(() => moveChipSlider(document.querySelector('#categories-bar .chip.active')));
+  }
+
+  function moveChipSlider(btn) {
+    const bar = document.getElementById('categories-bar');
+    const host = bar?.closest('.cat-scroll-host') || bar;
+    const slider = document.getElementById('chip-slider');
+    if (!bar || !host || !slider || !btn) return;
+    const reduced = UI.prefersReducedMotion && UI.prefersReducedMotion();
+    const hr = host.getBoundingClientRect();
+    const r = btn.getBoundingClientRect();
+    slider.style.width = r.width + 'px';
+    slider.style.height = r.height + 'px';
+    slider.style.transform = `translate(${r.left - hr.left}px, ${r.top - hr.top}px)`;
+    btn.scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
   }
 
   function filterCategory(cat,btn) {
     document.querySelectorAll('.cat-scroll .chip').forEach(c=>c.classList.remove('active'));
     btn.classList.add('active'); activeCat=cat;
+    moveChipSlider(btn);
     if (window.MallMap) MallMap.setCategoryFilter(cat);
+    const reduced = UI.prefersReducedMotion && UI.prefersReducedMotion();
+    document.getElementById('mall-map')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+    const aisle = document.getElementById('specials-grid');
+    if (aisle) aisle.scrollTo({ left: 0, behavior: reduced ? 'auto' : 'smooth' });
     loadSpecials();
     loadProducts(1,cat);
     if (cat === 'all') loadFeaturedStores();
@@ -390,7 +451,7 @@
           '<div class=\"store-card-body\"><div class=\"store-card-name\">' + s.name + verifiedBadge(s) + '</div><div class=\"store-card-category\">' + s.category + '</div><div class=\"store-card-desc\">' + (s.description || '') + '</div></div>' +
         '</a>';
       }).join('');
-      setTimeout(() => grid.querySelectorAll('.stagger-child').forEach(el => el.classList.add('visible')), 100);
+      UI.staggerReveal(grid);
     } catch (e) {
       grid.innerHTML = UI.empty('Error', 'Could not load stores.');
     }
@@ -410,7 +471,7 @@
           <div class="store-card-banner">${s.banner?`<img src="${s.banner}" alt="">`:''}${ocBadge}<div class="store-card-logo">${s.logo?`<img src="${s.logo}" alt="">`:s.name.charAt(0)}</div>${s.featured?`<span class="badge badge-secondary" style="position:absolute;top:8px;right:8px;">⭐ Featured</span>`:''}</div>
           <div class="store-card-body"><div class="store-card-name">${s.name}${verifiedBadge(s)}</div><div class="store-card-category">${s.category}</div><div class="store-card-desc">${s.description||'Explore our store.'}</div></div>
         </a>`;}).join('');
-      setTimeout(()=>grid.querySelectorAll('.stagger-child').forEach(el=>el.classList.add('visible')),100);
+      UI.staggerReveal(grid);
     } catch(e){grid.innerHTML=UI.empty('Could not load stores','Check back soon.');}
   }
 
@@ -454,7 +515,7 @@ grid.innerHTML=products.map(p=>`
          </a>`).join('');
       const pages=Math.ceil(total/12);
       Dashboard.renderPagination('product-pagination',page,pages,`(p)=>loadProducts(p,'${cat}')`);
-      setTimeout(()=>grid.querySelectorAll('.stagger-child').forEach(el=>el.classList.add('visible')),80);
+      UI.staggerReveal(grid);
     } catch(e){grid.innerHTML=UI.empty('Error loading products',e.message);}
   }
 
@@ -473,7 +534,7 @@ grid.innerHTML=products.map(p=>`
     e.preventDefault();e.stopPropagation();
     if(!Auth.isLoggedIn()){UI.toast('Sign in to add to cart','info');setTimeout(()=>location.href='login.html',800);return;}
     UI.setLoading(btn,true);
-    try{await UI.addToCartModal(pid,{loginPath:'login.html'});}
+    try{await UI.addToCartModal(pid,{loginPath:'login.html',fromEl:btn});}
     catch(err){UI.toast(err.message||'Error','error');}
     finally{UI.setLoading(btn,false,'Add to Cart');}
   }
@@ -543,8 +604,9 @@ grid.innerHTML=products.map(p=>`
     hideSearchSuggestions();
     document.getElementById('search-wrap')?.classList.remove('open');
     if (window.MallMap && MallMap.hasPlacedStore(id)) {
-      document.getElementById('mall-map')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setTimeout(() => MallMap.selectStore(id), 280);
+      const reduced = UI.prefersReducedMotion && UI.prefersReducedMotion();
+      document.getElementById('mall-map')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+      setTimeout(() => MallMap.selectStore(id, { toggle: false }), reduced ? 0 : 280);
       return;
     }
     location.href = 'store/store.html?id=' + encodeURIComponent(id);
@@ -599,14 +661,14 @@ grid.innerHTML=products.map(p=>`
           const ocBadge = oc === null ? '' : oc ? '<span style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:3px;background:rgba(39,174,96,0.9);color:white;padding:2px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;">● Open</span>' : '<span style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:3px;background:rgba(192,57,43,0.9);color:white;padding:2px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;">● Closed</span>';
           return `<a href="store/store.html?id=${s.id}" class="store-card stagger-child" style="display:block;text-decoration:none;"><div class="store-card-banner">${s.banner ? `<img src="${s.banner}" alt="">` : ''}${ocBadge}<div class="store-card-logo">${s.logo ? `<img src="${s.logo}" alt="">` : s.name.charAt(0)}</div></div><div class="store-card-body"><div class="store-card-name">${s.name}${verifiedBadge(s)}</div><div class="store-card-category">${s.category}</div></div></a>`;
         }).join('');
-        setTimeout(() => storeGrid.querySelectorAll('.stagger-child').forEach(el => el.classList.add('visible')), 80);
+        UI.staggerReveal(storeGrid);
       } else {
         loadFeaturedStores();
       }
 
       if (products.length) {
         grid.innerHTML = products.map(p => `<a href="store/product.html?id=${p.id}" style="text-decoration:none;" class="stagger-child"><div class="product-card"><div class="product-card-img">${p.images?.[0] ? `<img src="${p.images[0]}" loading="lazy">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--bg);">📦</div>`}<span class="product-card-badge"><span class="badge badge-primary">${p.category}</span></span></div><div class="product-card-body"><div class="product-card-name">${p.name}${p.product_type?` <span class="badge badge-gray" style="font-size:10px;">${p.product_type}</span>`:''}</div><div class="product-card-price">${p.original_price && p.original_price > p.price ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;">${UI.formatCurrency(p.original_price)}</span> ` : ''}${UI.formatCurrency(p.price)}${p.sold_out?'<span style="font-size:10px;color:var(--error);font-weight:600;margin-left:4px;">Sold Out</span>':''}</div>${p.tags && p.tags.length ? `<div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:2px;">${p.tags.slice(0,2).map(t => `<span class="badge badge-secondary" style="font-size:9px;">${t}</span>`).join('')}</div>` : ''}</div></div></a>`).join('');
-        setTimeout(() => grid.querySelectorAll('.stagger-child').forEach(el => el.classList.add('visible')), 80);
+        UI.staggerReveal(grid);
       } else if (!stores.length) {
         grid.innerHTML = UI.empty('No Results', `Nothing found for "${q}"`, '🔍');
       } else {
@@ -624,19 +686,95 @@ grid.innerHTML=products.map(p=>`
       const ocBadge=oc===null?'':oc?'<span style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:3px;background:rgba(39,174,96,0.9);color:white;padding:2px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;">● Open</span>':'<span style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:3px;background:rgba(192,57,43,0.9);color:white;padding:2px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;">● Closed</span>';
       const onlineBadge=s.online===true?'<span style="position:absolute;top:8px;right:8px;display:inline-flex;align-items:center;gap:3px;background:rgba(39,174,96,0.9);color:white;padding:2px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;">● Online</span>':'';
       return `<a href="store/store.html?id=${s.id}" class="store-card stagger-child" style="display:block;text-decoration:none;"><div class="store-card-banner">${s.banner?`<img src="${s.banner}" alt="">`:''}${ocBadge}${onlineBadge}<div class="store-card-logo">${s.logo?`<img src="${s.logo}" alt="">`:s.name.charAt(0)}</div></div><div class="store-card-body"><div class="store-card-name">${s.name}${verifiedBadge(s)}</div><div class="store-card-category">${s.category}</div><div class="store-card-desc">${s.description||''}</div></div></a>`;}).join('');
-    setTimeout(()=>grid.querySelectorAll('.stagger-child').forEach(el=>el.classList.add('visible')),100);
+      UI.staggerReveal(grid);
+  }
+
+  function dayPart() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) {
+      return { hello: 'Good morning', line: 'Start with a walk around the floor — tap a shopfront to peek inside.' };
+    }
+    if (h >= 12 && h < 17) {
+      return { hello: 'Good afternoon', line: 'Peek into a shopfront and see what’s on. Guests can browse without an account.' };
+    }
+    if (h >= 17 && h < 21) {
+      return { hello: 'Good evening', line: 'The mall’s still open — tap a shopfront to peek inside.' };
+    }
+    return { hello: 'Good evening', line: 'Browse the floor at your pace. Sign in when you add to cart.' };
+  }
+
+  function greetingName() {
+    if (!Auth.isLoggedIn()) return '';
+    const u = Auth.getUser();
+    const raw = String(u?.metadata?.name || u?.email?.split('@')[0] || '').trim();
+    if (!raw || raw.includes('@')) return '';
+    return raw.split(/\s+/)[0];
+  }
+
+  function paintHeroGreeting() {
+    const { hello, line } = dayPart();
+    const name = greetingName();
+    const title = document.getElementById('hero-hello');
+    const eyebrow = document.getElementById('hero-eyebrow');
+    const sub = document.getElementById('mall-greeting');
+    if (title) title.textContent = name ? `${hello}, ${name}` : hello;
+    if (eyebrow) eyebrow.textContent = name ? 'Welcome back' : 'Plexi Digital Mall';
+    if (sub && !sub.dataset.locked) sub.textContent = line;
+    const authBtn = document.getElementById('hero-cta-auth');
+    if (authBtn && Auth.isLoggedIn()) {
+      const role = Auth.getRole();
+      authBtn.href = CONFIG.ROLE_DASHBOARDS[role] || 'dashboard/shopper.html';
+      authBtn.textContent = role === 'seller' ? 'Seller hub' : role === 'admin' ? 'Admin panel' : 'My account';
+    }
+  }
+
+  function animateCount(id, val) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const end = parseInt(val, 10);
+    if (!Number.isFinite(end)) { el.textContent = val; return; }
+    if (UI.prefersReducedMotion && UI.prefersReducedMotion()) {
+      el.textContent = end.toLocaleString();
+      return;
+    }
+    const start = performance.now();
+    const from = parseInt(String(el.textContent).replace(/\D/g, ''), 10) || 0;
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / 700);
+      el.textContent = Math.round(from + (end - from) * t).toLocaleString();
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }
 
   function updateMallGreeting(stats) {
     const el = document.getElementById('mall-greeting');
     if (!el || !stats) return;
+    el.dataset.locked = '1';
+    const { line } = dayPart();
     if (!stats.shops) {
-      el.innerHTML = 'The floor is still filling. <a href="signup.html?role=seller">Open the first shop</a> — guests can walk the mall without an account.';
+      el.innerHTML = `${line} The floor is still filling. <a href="signup.html?role=seller">Open the first shop</a>.`;
+      animateCount('stat-stores', 0);
+      animateCount('stat-open', 0);
       return;
     }
     const openBit = stats.open ? ` · ${stats.open} open now` : '';
-    el.textContent = `${stats.shops} shop${stats.shops === 1 ? '' : 's'} on this floor${openBit}. Tap a shopfront to peek inside.`;
+    el.textContent = `${line} ${stats.shops} shop${stats.shops === 1 ? '' : 's'} on this floor${openBit}.`;
+    animateCount('stat-stores', stats.shops);
+    animateCount('stat-open', stats.open || 0);
   }
+
+  async function loadHeroProductCount() {
+    try {
+      const data = await api.products.all({ limit: 1 });
+      animateCount('stat-products', data?.total || (Array.isArray(data) ? data.length : 0) || 0);
+    } catch (_) {
+      const el = document.getElementById('stat-products');
+      if (el) el.textContent = '—';
+    }
+  }
+
+  paintHeroGreeting();
 
   async function loadSpecials() {
     const grid = document.getElementById('specials-grid');
@@ -656,6 +794,7 @@ grid.innerHTML=products.map(p=>`
       }
       if (section) section.style.display = '';
       grid.innerHTML = products.map(p => UI.dealAisleCard(p)).join('');
+      UI.bindHRail(grid);
     } catch (_) {
       if (section) section.style.display = 'none';
     }
@@ -669,7 +808,8 @@ grid.innerHTML=products.map(p=>`
     if (!items.length) { section.style.display = 'none'; return; }
     section.style.display = '';
     grid.innerHTML = items.map(p => UI.productCard(p)).join('');
-    setTimeout(() => grid.querySelectorAll('.stagger-child').forEach(el => el.classList.add('visible')), 80);
+    UI.staggerReveal(grid);
+    UI.bindHRail(grid);
   }
 
   async function loadFollowedStores() {
@@ -690,7 +830,8 @@ grid.innerHTML=products.map(p=>`
           <div class="store-card-body"><div class="store-card-name">${s.name}${verifiedBadge(s)}</div><div class="store-card-category">${s.category||''}</div></div>
         </a>`;
       }).join('');
-      setTimeout(() => grid.querySelectorAll('.stagger-child').forEach(el => el.classList.add('visible')), 80);
+      UI.staggerReveal(grid);
+      UI.bindHRail(grid);
     } catch (_) {
       section.style.display = 'none';
     }
@@ -698,6 +839,8 @@ grid.innerHTML=products.map(p=>`
 
   document.addEventListener('DOMContentLoaded',()=>{
     Dashboard.initMallChrome();
+    paintHeroGreeting();
+    loadHeroProductCount();
     UI.hidePageLoader();
     if (window.SoundManager) SoundManager.init();
     initSearchBar();
@@ -715,11 +858,28 @@ grid.innerHTML=products.map(p=>`
     });
     initLeafletMap();
     document.querySelectorAll('.ripple-container').forEach(UI.addRipple);
-    setTimeout(()=>UI.staggerReveal(document.body),600);
+    UI.staggerReveal(document.querySelector('.hero-stats'));
+    bindGreetingScroll();
     if (location.hash) {
-      setTimeout(() => document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth' }), 400);
+      const reduced = UI.prefersReducedMotion && UI.prefersReducedMotion();
+      setTimeout(() => document.querySelector(location.hash)?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' }), 400);
     }
   });
+
+  function bindGreetingScroll() {
+    const el = document.getElementById('mall-greeting');
+    const title = document.getElementById('hero-hello');
+    if (!el) return;
+    if (UI.prefersReducedMotion && UI.prefersReducedMotion()) return;
+    const onScroll = () => {
+      const y = Math.min(window.scrollY, 80);
+      const t = y / 80;
+      el.style.opacity = String(1 - t * 0.55);
+      el.style.transform = `translateY(${t * -6}px)`;
+      if (title) title.style.transform = `translateY(${t * -4}px)`;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
 
   const CATEGORY_COLORS = {
     fashion:'#E74C3C', electronics:'#3498DB', food:'#F39C12', beauty:'#9B59B6',
@@ -767,7 +927,6 @@ grid.innerHTML=products.map(p=>`
       <defs><filter id="ds" x="-20%" y="-10%" width="140%" height="130%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="${color}" flood-opacity="0.45"/></filter></defs>
       <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="${color}" filter="url(#ds)" stroke="#fff" stroke-width="1.5"/>
       <circle cx="12" cy="11" r="4.5" fill="#fff" opacity="0.9"/>
-      ${pulse ? `<circle cx="12" cy="11" r="4.5" fill="none" stroke="${color}" stroke-width="1" opacity="0.6"><animate attributeName="r" from="4.5" to="9" dur="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" from="0.6" to="0" dur="1.5s" repeatCount="indefinite"/></circle>` : ''}
     </svg>`;
     return L.divIcon({
       html: svg,
