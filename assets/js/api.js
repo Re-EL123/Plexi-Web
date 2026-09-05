@@ -124,6 +124,7 @@ const api = (() => {
     followed:    (params = {})       => get(`/stores?action=followed&${new URLSearchParams(params)}`),
     categories: (params = {})        => get(`/stores?action=categories&${new URLSearchParams(params)}`),
     ads:        (params = {})        => get(`/stores?action=ads&${new URLSearchParams(params)}`),
+    content:    (slug)               => get(slug ? `/stores?action=content&slug=${encodeURIComponent(slug)}` : '/stores?action=content'),
   };
 
   // ======== PRODUCTS ======== //
@@ -247,6 +248,8 @@ const api = (() => {
     updateAd:         (data)      => put('/admin?action=ads', data),
     deleteAd:         (id)        => del(`/admin?action=ads&id=${id}`),
     signAdUpload:     (data)      => post('/admin?action=ads-upload-url', data),
+    content:          ()          => get('/admin?action=content'),
+    saveContent:      (data)      => put('/admin?action=content', data),
   };
 
   // ======== DRIVER COMPLIANCE (KYC) ======== //

@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="assets/css/variables.css?v=2">
   <link rel="stylesheet" href="assets/css/base.css?v=2">
   <link rel="stylesheet" href="assets/css/neomorphism.css?v=2">
-  <link rel="stylesheet" href="assets/css/components.css?v=5">
+  <link rel="stylesheet" href="assets/css/components.css?v=6">
   <link rel="stylesheet" href="assets/css/animations.css?v=4">
   <link rel="stylesheet" href="assets/css/responsive.css?v=2">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -116,7 +116,7 @@
     .map-section{background:var(--surface);border-top:1px solid var(--border-light);border-bottom:1px solid var(--border-light);padding:var(--space-2xl) 0;}
 
     footer{background:var(--gray-900);color:rgba(255,255,255,0.6);padding:var(--space-2xl) 0;}
-    .footer-inner{max-width:1280px;margin:0 auto;padding:0 var(--space-lg);display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:var(--space-xl);}
+    .footer-inner{max-width:1280px;margin:0 auto;padding:0 var(--space-lg);display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:var(--space-xl);}
     .footer-brand h3{color:white;font-family:var(--font-display);font-size:20px;margin-bottom:var(--space-sm);}
     .footer-brand p{font-size:14px;line-height:1.7;}
     .footer-col h5{color:white;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:var(--space-md);}
@@ -156,7 +156,7 @@
       <img src="assets/icons/logo.jpg" alt="Plexi">
       Plexi<span style="color:var(--primary)">Mall</span>
     </a>
-    <div style="flex:1;max-width:400px;position:relative;" id="search-wrap" class="nav-search-wrap">
+    <div style="flex:1;max-width:400px;position:relative;" id="search-wrap" class="nav-search-wrap" data-tour="search">
       <div class="search-bar">
         <span class="search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
         <input type="text" id="global-search" placeholder="Search stores, products…" autocomplete="off" oninput="handleSearchInput(this.value)" onfocus="showSearchSuggestions()" onblur="setTimeout(()=>hideSearchSuggestions(),200)">
@@ -165,6 +165,19 @@
         </button>
       </div>
       <div id="search-suggestions" class="search-suggestions" style="display:none;"></div>
+    </div>
+    <div class="dropdown" id="nav-help" data-tour="help">
+      <button type="button" class="btn btn-ghost btn-icon" data-dropdown="nav-help-dd" aria-label="Help" title="Help">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </button>
+      <div class="dropdown-menu" id="nav-help-dd" style="right:0;min-width:200px;">
+        <a href="legal.html?page=faq" class="dropdown-item">FAQs</a>
+        <a href="legal.html?page=guide" class="dropdown-item">How it works</a>
+        <button type="button" class="dropdown-item" id="nav-tour-start">Take the tour</button>
+        <div class="dropdown-divider"></div>
+        <a href="legal.html?page=terms" class="dropdown-item">Terms</a>
+        <a href="legal.html?page=privacy" class="dropdown-item">Privacy</a>
+      </div>
     </div>
     <div id="nav-auth" class="nav-auth-area" style="display:flex;align-items:center;gap:var(--space-sm);"></div>
   </div>
@@ -175,7 +188,7 @@
   <div class="hero-blob hero-blob-1"></div>
   <div class="hero-blob hero-blob-2"></div>
   <div class="hero-inner">
-    <div class="hero-content">
+    <div class="hero-content" data-tour="hero">
       <div class="hero-eyebrow animate-fadeInDown" id="hero-eyebrow">Plexi Digital Mall</div>
       <h1 class="hero-title animate-fadeInUp" id="hero-hello"><span class="gradient-text">Good day</span></h1>
       <p class="hero-subtitle animate-fadeInUp delay-2" id="mall-greeting">Walk the floor — tap a shopfront to peek inside. Guests can browse; sign in when you add to cart.</p>
@@ -201,7 +214,7 @@
 </section>
 
 <!-- Categories -->
-<section class="cat-sticky" id="categories-section">
+<section class="cat-sticky" id="categories-section" data-tour="chips">
     <div class="section-inner cat-scroll-host">
       <div class="chip-slider" id="chip-slider" aria-hidden="true"></div>
       <div class="cat-scroll" id="categories-bar"></div>
@@ -209,7 +222,7 @@
 </section>
 
 <!-- Walk the mall -->
-<section class="section" id="mall-map" style="padding-top:0;padding-bottom:var(--space-md);">
+<section class="section" id="mall-map" data-tour="floor" style="padding-top:0;padding-bottom:var(--space-md);">
   <div class="section-inner">
     <div id="mall-map-grid" class="neo-card" style="padding:var(--space-md);"></div>
   </div>
@@ -325,6 +338,7 @@
     <div class="footer-col"><h5>Shop</h5><a href="#stores-section">Stores</a><a href="#products-grid">Products</a><a href="#specials-section">Deals</a></div>
     <div class="footer-col"><h5>Sell</h5><a href="signup.html?role=seller">Open a Store</a></div>
     <div class="footer-col"><h5>Account</h5><a href="login.html">Sign in</a><a href="signup.html">Join free</a></div>
+    <div class="footer-col"><h5>Help</h5><a href="legal.html?page=faq">FAQs</a><a href="legal.html?page=guide">How it works</a><a href="legal.html?page=terms">Terms</a><a href="legal.html?page=privacy">Privacy</a></div>
   </div>
   <div class="footer-bottom"><p>© 2026 Plexi Digital Mall. All rights reserved.</p></div>
 </footer>
@@ -334,11 +348,14 @@
 <script src="assets/js/sounds.js?v=2"></script>
 <script src="assets/js/push.js?v=2"></script>
 <script src="assets/js/ui.js?v=10"></script>
-<script src="assets/js/api.js?v=6"></script>
+<script src="assets/js/api.js?v=7"></script>
 <script src="assets/js/auth.js?v=2"></script>
 <script src="assets/js/state.js?v=2"></script>
 <script src="assets/js/map.js?v=7"></script>
-<script src="assets/js/dashboard.js?v=11"></script>
+<script src="assets/js/dashboard.js?v=12"></script>
+<script src="assets/js/site-content-defaults.js?v=1"></script>
+<script src="assets/js/site-content.js?v=1"></script>
+<script src="assets/js/tour.js?v=1"></script>
 <script>
   // Nav — role-aware
   const navAuth = document.getElementById('nav-auth');
@@ -952,6 +969,8 @@ grid.innerHTML=products.map(p=>`
 
   document.addEventListener('DOMContentLoaded',()=>{
     Dashboard.initMallChrome();
+    document.getElementById('nav-tour-start')?.addEventListener('click', () => PlexiTour.start({ force: true }));
+    PlexiTour.autoStart({ page: 'home' });
     paintHeroGreeting();
     loadHeroProductCount();
     initHeroAds();

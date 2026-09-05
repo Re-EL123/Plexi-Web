@@ -769,6 +769,7 @@ const Dashboard = (() => {
       if (host) {
         const wrap = document.createElement('div');
         wrap.id = 'mall-chrome-cart';
+        wrap.setAttribute('data-tour', 'cart');
         wrap.style.cssText = 'position:relative;display:flex;align-items:center;';
         wrap.innerHTML = `<button type="button" class="btn btn-ghost btn-icon" onclick="Dashboard.openCartPanel()" aria-label="Cart">${cartSvg}<span id="cart-badge" class="badge badge-error" style="position:absolute;top:-6px;right:-6px;display:none;width:18px;height:18px;padding:0;align-items:center;justify-content:center;font-size:10px;">0</span></button>`;
         host.insertBefore(wrap, host.firstChild);
