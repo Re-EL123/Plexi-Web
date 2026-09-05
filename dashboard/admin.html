@@ -935,30 +935,56 @@ async function loadAds(){
 
 function openAdModal(id){
   const ad=id?adData.find(x=>String(x.id)===String(id)):null;
-  const existing=ad
-    ?`<div class="form-group"><label class="form-label">Current media URL</label><input type="url" class="form-control" name="media_url" value="${escAd(ad.media_url)}"></div><input type="hidden" name="media_type" value="${escAd(ad.media_type)}">`
-    :`<input type="hidden" name="media_url" value=""><input type="hidden" name="media_type" value="">`;
+  const isExistingVideo=ad && (ad.media_type==='video'||/\.(mp4|webm|mov)(\?|$)/i.test(ad.media_url||''));
+  const existingPreview=ad && ad.media_url
+    ?(isExistingVideo
+        ?`<div class="no-repick" style="width:100%;text-align:left;">
+            <video src="${escAd(ad.media_url)}" controls playsinline preload="metadata" style="width:100%;max-height:220px;border-radius:10px;background:#000;display:block;"></video>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">Current video ad · Click "Replace file" below or paste a new URL</div>
+          </div>`
+        :`<div class="no-repick" style="width:100%;text-align:left;">
+            <img src="${escAd(ad.media_url)}" alt="" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;display:block;">
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">Current image ad · Click "Replace file" below or paste a new URL</div>
+          </div>`)
+    :`<div style="font-size:36px;margin-bottom:8px;">🎬</div>
+      <strong style="font-size:14px;color:var(--text-primary);">Drop a picture or video here</strong>
+      <div style="font-size:12px;color:var(--text-muted);margin:6px 0 12px;">MP4, WebM, MOV up to 40MB · JPG, PNG, WebP up to 8MB</div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();document.getElementById('ad-file').click()">Choose file</button>`;
+
   window._adPickedFile=null;
   UI.createModal({
     id:'ad-modal', title:ad?'Edit Ad':'New Ad', closeOnBackdrop:false, closeOnEscape:false,
     content:`<form id="ad-form" onsubmit="submitAd(event)">
       <input type="hidden" name="id" value="${ad?escAd(ad.id):''}">
-      <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-control" name="title" maxlength="80" value="${ad?escAd(ad.title):''}" placeholder="Summer sale"></div>
+      <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-control" name="title" maxlength="80" value="${ad?escAd(ad.title):''}" placeholder="e.g. Summer Mega Sale"></div>
+      
       <div class="form-group">
-        <label class="form-label" for="ad-file">${ad?'Replace file (optional)':'Picture or video'}</label>
-        <div class="file-upload-area" id="ad-drop" data-file-pick
-          style="position:relative;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;"
+        <label class="form-label">${ad?'Replace media file (optional)':'Picture or video file'}</label>
+        <input type="file" id="ad-file" name="file"
+          accept="video/mp4,video/webm,video/quicktime,video/x-m4v,video/*,image/jpeg,image/png,image/webp,image/gif,image/*,.mp4,.webm,.mov,.m4v,.jpg,.jpeg,.png,.webp,.gif"
+          style="display:none;" onclick="this.value=null">
+        
+        <div class="file-upload-area" id="ad-drop"
+          style="position:relative;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;border:2px dashed var(--border);border-radius:12px;background:var(--surface);cursor:pointer;transition:border-color 0.2s, background 0.2s;"
           ondragover="event.preventDefault();this.classList.add('is-drag')"
           ondragleave="this.classList.remove('is-drag')"
           ondrop="dropAdFile(event)">
-          <input type="file" id="ad-file" name="file" accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mov,image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
-            style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">
-          <div id="ad-preview-slot">${ad?'<span style="color:var(--text-muted);font-size:13px;">Keep the current file, or choose a new one.</span>':'<strong>Drop an image or video here</strong><div style="font-size:12px;color:var(--text-muted);margin-top:6px;">or use the button below</div>'}</div>
-          <label for="ad-file" class="btn btn-ghost btn-sm" data-file-pick style="cursor:pointer;z-index:2;">Choose file</label>
+          <div id="ad-preview-slot" style="width:100%;text-align:center;">
+            ${existingPreview}
+          </div>
         </div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Images up to 8MB. Videos up to 40MB (mp4 / webm).</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;flex-wrap:wrap;gap:6px;">
+          <span style="font-size:11px;color:var(--text-muted);">Videos up to 40MB (MP4/WebM/MOV). Images up to 8MB.</span>
+          <button type="button" class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 8px;" onclick="toggleAdUrlInput()">🔗 ${ad?'Edit media URL':'Paste URL instead'}</button>
+        </div>
       </div>
-      ${existing}
+
+      <div class="form-group" id="ad-url-group" style="${ad?'':'display:none;'}">
+        <label class="form-label">Public media URL (https://…)</label>
+        <input type="url" class="form-control" id="ad-media-url-input" name="media_url" value="${ad?escAd(ad.media_url):''}" placeholder="https://example.com/banner.mp4">
+        <input type="hidden" name="media_type" id="ad-media-type-input" value="${ad?escAd(ad.media_type):''}">
+      </div>
+
       <div class="form-group"><label class="form-label">Click-through link / Action</label><input type="text" class="form-control" id="ad-href-input" name="href" value="${ad?escAd(ad.href||''):''}" placeholder="store/store.html?id=… or #specials"></div>
       <div style="display:flex;gap:var(--space-xs);margin-bottom:var(--space-md);flex-wrap:wrap;">
         <button type="button" class="btn btn-ghost btn-sm" onclick="setAdCta('#specials')">🏷️ Link to Deals</button>
@@ -967,38 +993,70 @@ function openAdModal(id){
         <button type="button" class="btn btn-ghost btn-sm" onclick="setAdCta('store/store.html?id=')">🏬 Link to Store</button>
       </div>
       <div class="field-row">
-        <div class="form-group"><label class="form-label">Order</label><input type="number" class="form-control" name="sort_order" value="${ad?ad.sort_order||0:0}"></div>
-        <div class="form-group"><label class="form-label">Image duration (seconds)</label><input type="number" class="form-control" name="duration_seconds" min="3" max="30" value="${ad?ad.duration_seconds||6:6}"></div>
+        <div class="form-group"><label class="form-label">Display order</label><input type="number" class="form-control" name="sort_order" value="${ad?ad.sort_order||0:0}"></div>
+        <div class="form-group"><label class="form-label">Duration on homepage (seconds)</label><input type="number" class="form-control" name="duration_seconds" min="3" max="30" value="${ad?ad.duration_seconds||6:6}"></div>
       </div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" name="active" ${!ad||ad.active?'checked':''}> Live on the homepage</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" name="active" ${!ad||ad.active?'checked':''}> Live on homepage banner</label>
+      <div id="ad-upload-indicator" style="display:none;margin-top:12px;padding:10px 14px;background:var(--primary-alpha, rgba(108,99,255,0.08));border:1px solid var(--primary);border-radius:8px;font-size:12px;color:var(--primary);text-align:center;"></div>
     </form>`,
     footer:`<button class="btn btn-ghost" type="button" onclick="UI.closeModal('ad-modal')">Cancel</button>
-            <button class="btn btn-primary" type="button" id="ad-save-btn" onclick="document.getElementById('ad-form').requestSubmit()">Save</button>`
+            <button class="btn btn-primary" type="button" id="ad-save-btn" onclick="document.getElementById('ad-form').requestSubmit()">${ad?'Save Changes':'Save & Publish'}</button>`
   });
+
   const input=document.getElementById('ad-file');
   if(input){
     input.addEventListener('change',()=>previewAdFile(input));
-    input.addEventListener('cancel',()=>{});
   }
   document.getElementById('ad-drop')?.addEventListener('click',(e)=>{
-    if(e.target.closest('label[for="ad-file"]')) return;
-    if(e.target.closest('input[type="file"]')) return;
+    if(e.target.closest('video, audio, button, a, label, input, select, textarea, .no-repick')) return;
     input?.click();
   });
 }
 
+function toggleAdUrlInput(){
+  const grp=document.getElementById('ad-url-group');
+  if(grp){
+    const isHidden=grp.style.display==='none';
+    grp.style.display=isHidden?'block':'none';
+    if(isHidden) document.getElementById('ad-media-url-input')?.focus();
+  }
+}
+
+function clearAdPickedFile(){
+  window._adPickedFile=null;
+  const input=document.getElementById('ad-file');
+  if(input) input.value='';
+  if(window._adPreviewUrl){
+    try{ URL.revokeObjectURL(window._adPreviewUrl); }catch(_){}
+    window._adPreviewUrl=null;
+  }
+  const slot=document.getElementById('ad-preview-slot');
+  if(slot){
+    slot.innerHTML=`
+      <div style="font-size:36px;margin-bottom:8px;">🎬</div>
+      <strong style="font-size:14px;color:var(--text-primary);">Drop a picture or video here</strong>
+      <div style="font-size:12px;color:var(--text-muted);margin:6px 0 12px;">MP4, WebM, MOV up to 40MB · JPG, PNG, WebP up to 8MB</div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();document.getElementById('ad-file').click()">Choose file</button>
+    `;
+  }
+  const saveBtn=document.getElementById('ad-save-btn');
+  if(saveBtn) saveBtn.textContent='Save';
+}
+
 function adMimeFromFile(file){
-  const t=(file.type||'').toLowerCase();
-  if(/^image\/(jpeg|png|webp|gif)$/.test(t)||/^video\/(mp4|webm|quicktime)$/.test(t)) return t;
-  const n=(file.name||'').toLowerCase();
-  if(/\.(jpe?g)$/.test(n)) return 'image/jpeg';
-  if(n.endsWith('.png')) return 'image/png';
-  if(n.endsWith('.webp')) return 'image/webp';
-  if(n.endsWith('.gif')) return 'image/gif';
-  if(n.endsWith('.mp4')) return 'video/mp4';
-  if(n.endsWith('.webm')) return 'video/webm';
-  if(n.endsWith('.mov')) return 'video/quicktime';
-  return t;
+  if(!file) return '';
+  const raw=(file.type||'').split(';')[0].trim().toLowerCase();
+  const n=(file.name||'').toLowerCase().split('?')[0].split('#')[0];
+  if(n.endsWith('.mp4') || n.endsWith('.m4v') || raw==='video/mp4' || raw==='video/x-m4v') return 'video/mp4';
+  if(n.endsWith('.webm') || raw==='video/webm') return 'video/webm';
+  if(n.endsWith('.mov') || raw==='video/quicktime') return 'video/quicktime';
+  if(/\.(jpe?g)$/.test(n) || raw==='image/jpeg') return 'image/jpeg';
+  if(n.endsWith('.png') || raw==='image/png') return 'image/png';
+  if(n.endsWith('.webp') || raw==='image/webp') return 'image/webp';
+  if(n.endsWith('.gif') || raw==='image/gif') return 'image/gif';
+  if(raw.startsWith('video/')) return raw;
+  if(raw.startsWith('image/')) return raw;
+  return raw;
 }
 
 function setAdCta(url){
@@ -1007,42 +1065,134 @@ function setAdCta(url){
 }
 
 function previewAdFile(input){
-  const file=input?.files?.[0]||null;
+  const file=input?.files?.[0]||window._adPickedFile||null;
   window._adPickedFile=file;
   const slot=document.getElementById('ad-preview-slot');
-  const choose=document.querySelector('#ad-drop label[for="ad-file"]');
-  if(!slot)return;
+  if(!slot) return;
+
   if(!file){
-    slot.innerHTML='<strong>Drop an image or video here</strong><div style="font-size:12px;color:var(--text-muted);margin-top:6px;">or use the button below</div>';
-    if(choose) choose.textContent='Choose file';
+    clearAdPickedFile();
     return;
   }
+
   const mime=adMimeFromFile(file);
-  const isVideo=mime.startsWith('video/');
-  const isImage=mime.startsWith('image/');
+  const n=(file.name||'').toLowerCase();
+  const isVideo=mime.startsWith('video/')||/\.(mp4|webm|mov|m4v)$/i.test(n);
+  const isImage=mime.startsWith('image/')||/\.(jpe?g|png|webp|gif)$/i.test(n);
   const max=isVideo?40*1024*1024:8*1024*1024;
+  const sizeMb=(file.size/(1024*1024)).toFixed(1);
+
   if(!isVideo&&!isImage){
-    UI.toast('Use a jpeg, png, webp, gif, mp4 or webm file.','error');
-    input.value='';
-    previewAdFile(input);
+    slot.innerHTML=`
+      <div class="no-repick" style="padding:16px;background:rgba(239,68,68,0.08);border:1px solid var(--error);border-radius:10px;text-align:center;">
+        <div style="font-size:26px;margin-bottom:6px;">⚠️</div>
+        <strong style="color:var(--error);font-size:14px;">Unsupported format: ${escAd(file.name)}</strong>
+        <p style="font-size:12px;color:var(--text-muted);margin:6px 0 12px;">Please select an MP4, WebM, or MOV video, or a JPG/PNG image.</p>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();document.getElementById('ad-file').click()">Choose another file</button>
+      </div>
+    `;
+    UI.toast('Please choose an MP4, WebM, MOV video or JPG/PNG image.','error');
+    window._adPickedFile=null;
     return;
   }
+
   if(file.size>max){
-    UI.toast(isVideo?'Videos can be up to 40MB.':'Images can be up to 8MB.','error');
-    input.value='';
-    previewAdFile(input);
+    const limit=isVideo?'40MB':'8MB';
+    slot.innerHTML=`
+      <div class="no-repick" style="padding:16px;background:rgba(239,68,68,0.08);border:1px solid var(--error);border-radius:10px;text-align:center;">
+        <div style="font-size:26px;margin-bottom:6px;">⚠️</div>
+        <strong style="color:var(--error);font-size:14px;">File too large (${sizeMb} MB)</strong>
+        <p style="font-size:12px;color:var(--text-muted);margin:6px 0 12px;">${isVideo?'Videos':'Images'} must be under ${limit}. Please compress or trim the file.</p>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();document.getElementById('ad-file').click()">Choose another file</button>
+      </div>
+    `;
+    UI.toast(`File is ${sizeMb}MB. Maximum allowed is ${limit}.`,'error');
+    window._adPickedFile=null;
     return;
   }
-  if(window._adPreviewUrl) URL.revokeObjectURL(window._adPreviewUrl);
+
+  if(window._adPreviewUrl){
+    try{ URL.revokeObjectURL(window._adPreviewUrl); }catch(_){}
+  }
   window._adPreviewUrl=URL.createObjectURL(file);
-  const kb=file.size>1024*1024?(file.size/1024/1024).toFixed(1)+' MB':Math.round(file.size/1024)+' KB';
-  const media=isVideo
-    ?`<video src="${window._adPreviewUrl}" muted playsinline autoplay loop style="width:100%;max-height:220px;border-radius:10px;background:#000;"></video>`
-    :`<img src="${window._adPreviewUrl}" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;">`;
-  slot.innerHTML=`${media}<div style="margin-top:8px;font-size:13px;font-weight:600;">${escAd(file.name)}</div><div style="font-size:12px;color:var(--text-muted);">${isVideo?'Video':'Image'} · ${kb}</div>`;
-  if(choose) choose.textContent='Change file';
-  const drop=document.getElementById('ad-drop');
-  if(drop) drop.style.minHeight='auto';
+  const kb=file.size>1024*1024?sizeMb+' MB':Math.round(file.size/1024)+' KB';
+
+  if(isVideo){
+    slot.innerHTML=`
+      <div class="no-repick" style="width:100%;text-align:left;">
+        <div style="position:relative;background:#000;border-radius:10px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.25);">
+          <video id="ad-video-preview" src="${window._adPreviewUrl}" controls playsinline preload="metadata" style="width:100%;max-height:240px;display:block;background:#000;"></video>
+          <div id="ad-video-fallback" style="display:none;padding:24px;text-align:center;color:#fff;background:#1e293b;">
+            <div style="font-size:32px;margin-bottom:8px;">🎬</div>
+            <div style="font-weight:600;font-size:14px;">${escAd(file.name)}</div>
+            <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Video ready for upload · ${kb}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:8px;">
+          <div>
+            <div style="font-weight:700;font-size:13px;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+              <span>🎬 ${escAd(file.name)}</span>
+              <span class="badge badge-success" style="font-size:10px;">Ready</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+              Video · ${kb} <span id="ad-video-dur-tag"></span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();document.getElementById('ad-file').click()">Change video</button>
+            <button type="button" class="btn btn-ghost btn-sm" style="color:var(--error);" onclick="event.stopPropagation();clearAdPickedFile()">Remove</button>
+          </div>
+        </div>
+        <div style="margin-top:8px;padding:8px 12px;background:var(--primary-alpha, rgba(108,99,255,0.08));border-radius:6px;font-size:12px;color:var(--primary);font-weight:600;display:flex;align-items:center;gap:6px;">
+          <span>✓</span> Video loaded! Click "Save & Upload" below to publish.
+        </div>
+      </div>
+    `;
+
+    const vid=document.getElementById('ad-video-preview');
+    if(vid){
+      vid.addEventListener('loadedmetadata',()=>{
+        const dur=Math.round(vid.duration);
+        if(dur&&Number.isFinite(dur)){
+          const durEl=document.getElementById('ad-video-dur-tag');
+          if(durEl) durEl.textContent=`· ${dur}s duration`;
+          const durInput=document.querySelector('input[name="duration_seconds"]');
+          if(durInput&&(durInput.value==='6'||!durInput.value)){
+            durInput.value=Math.min(30,Math.max(3,dur));
+          }
+        }
+      });
+      vid.addEventListener('error',()=>{
+        const fb=document.getElementById('ad-video-fallback');
+        if(fb){
+          vid.style.display='none';
+          fb.style.display='block';
+        }
+      });
+    }
+  } else {
+    slot.innerHTML=`
+      <div class="no-repick" style="width:100%;text-align:left;">
+        <img src="${window._adPreviewUrl}" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.1);display:block;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:8px;">
+          <div>
+            <div style="font-weight:700;font-size:13px;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+              <span>🖼️ ${escAd(file.name)}</span>
+              <span class="badge badge-success" style="font-size:10px;">Ready</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Image · ${kb}</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();document.getElementById('ad-file').click()">Change image</button>
+            <button type="button" class="btn btn-ghost btn-sm" style="color:var(--error);" onclick="event.stopPropagation();clearAdPickedFile()">Remove</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const saveBtn=document.getElementById('ad-save-btn');
+  if(saveBtn) saveBtn.textContent='Save & Upload';
 }
 
 function dropAdFile(e){
@@ -1060,6 +1210,7 @@ function dropAdFile(e){
 async function submitAd(e){
   e.preventDefault();
   const btn=document.getElementById('ad-save-btn');
+  const ind=document.getElementById('ad-upload-indicator');
   const f=new FormData(e.target);
   const file=window._adPickedFile||e.target.file?.files?.[0];
   const payload={
@@ -1072,25 +1223,62 @@ async function submitAd(e){
     media_url:f.get('media_url')||'',
     media_type:f.get('media_type')||''
   };
-  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+
+  if(btn){
+    btn.disabled=true;
+    btn.textContent=file?'Uploading…':'Saving…';
+  }
+  if(ind){
+    ind.style.display='block';
+    ind.innerHTML=file?'⏳ Uploading media to storage… please wait':'⏳ Saving ad…';
+  }
+
   try{
     if(file){
-      UI.toast('Uploading…','info');
-      const contentType=adMimeFromFile(file);
+      UI.toast('Uploading file to storage…','info',4000);
+      const contentType=adMimeFromFile(file)||file.type||'video/mp4';
       const signed=await api.admin.signAdUpload({filename:file.name,contentType,size:file.size});
-      const put=await fetch(signed.signedUrl,{method:'PUT',body:file,headers:{'Content-Type':contentType||file.type||'application/octet-stream'}});
-      if(!put.ok) throw new Error('Could not upload the file');
+
+      // Try upload via standard multipart FormData first, fallback to raw body
+      let uploaded=false;
+      try{
+        const fd=new FormData();
+        fd.append('cacheControl','3600');
+        fd.append('',file);
+        const put=await fetch(signed.signedUrl,{method:'PUT',body:fd});
+        if(put.ok) uploaded=true;
+      }catch(_){}
+
+      if(!uploaded){
+        try{
+          const put=await fetch(signed.signedUrl,{method:'PUT',body:file,headers:{'Content-Type':contentType||'application/octet-stream'}});
+          if(put.ok) uploaded=true;
+        }catch(_){}
+      }
+
+      if(!uploaded) throw new Error('Could not upload file to storage. Please check your internet connection.');
+
       payload.media_url=signed.publicUrl;
       payload.media_type=signed.media_type;
     }
-    if(!payload.media_url) throw new Error('Choose a picture or video');
+
+    if(!payload.media_url) throw new Error('Please choose a picture or video, or paste a media URL.');
+
     if(payload.id) await api.admin.updateAd(payload);
     else await api.admin.createAd(payload);
-    UI.toast('Ad saved','success');
+
+    UI.toast('Ad saved successfully!','success');
     UI.closeModal('ad-modal');
     loadAds();
-  }catch(err){UI.toast(err.message||'Could not save ad','error');}
-  finally{if(btn){btn.disabled=false;btn.textContent='Save';}}
+  }catch(err){
+    UI.toast(err.message||'Could not save ad','error');
+  }finally{
+    if(btn){
+      btn.disabled=false;
+      btn.textContent='Save';
+    }
+    if(ind) ind.style.display='none';
+  }
 }
 
 async function toggleAd(id){

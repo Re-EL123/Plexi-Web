@@ -3,7 +3,7 @@
 // Handles: caching, offline support, push notifications
 // ============================================================
 
-const CACHE_NAME = 'plexi-mall-v19';
+const CACHE_NAME = 'plexi-mall-v20';
 const STATIC_ASSETS = [
   './',
   './index.html',
