@@ -95,6 +95,11 @@ const CONFIG = {
     volume: 0.5
   },
 
+  // Optional CARTO *basemap* key (https://carto.com/basemaps/apikey).
+  // This is not a Clausa / Developers API Access Token — those do not
+  // clear the "API key required" watermark on basemaps.cartocdn.com.
+  CARTO_BASEMAP_KEY: '',
+
   // VAPID public key for push notifications
   // Generate keys: cd plexi-digital-mall-backend && node scripts/generate-vapid.js
   // Then paste the VAPID_PUBLIC_KEY here

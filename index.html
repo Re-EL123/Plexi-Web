@@ -344,7 +344,7 @@
 </footer>
 
 <div id="toast-container"></div>
-<script src="assets/js/config.js?v=2"></script>
+<script src="assets/js/config.js?v=3"></script>
 <script src="assets/js/sounds.js?v=2"></script>
 <script src="assets/js/push.js?v=2"></script>
 <script src="assets/js/ui.js?v=10"></script>
@@ -1180,10 +1180,20 @@ grid.innerHTML=products.map(p=>`
   async function initLeafletMap(){
     const el = document.getElementById('leaflet-map');
     if (!el || !window.L) return;
-    leafletMap = L.map(el, { zoomControl: true, scrollWheelZoom: true, attributionControl: false }).setView([nearOrigin.lat, nearOrigin.lng], 12);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://openstreetmap.org">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
-    }).addTo(leafletMap);
+    leafletMap = L.map(el, { zoomControl: true, scrollWheelZoom: true }).setView([nearOrigin.lat, nearOrigin.lng], 12);
+    const cartoKey = (window.CONFIG && CONFIG.CARTO_BASEMAP_KEY || '').trim();
+    if (cartoKey) {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=' + encodeURIComponent(cartoKey), {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+      }).addTo(leafletMap);
+    } else {
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+      }).addTo(leafletMap);
+    }
 
     const legend = document.getElementById('map-legend');
     if (legend) legend.innerHTML = Object.entries(CATEGORY_COLORS).map(([k,v])=>

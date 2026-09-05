@@ -3,7 +3,7 @@
 // Handles: caching, offline support, push notifications
 // ============================================================
 
-const CACHE_NAME = 'plexi-mall-v14';
+const CACHE_NAME = 'plexi-mall-v15';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -17,7 +17,7 @@ const STATIC_ASSETS = [
   './assets/css/components.css?v=7',
   './assets/css/animations.css?v=4',
   './assets/css/responsive.css?v=2',
-  './assets/js/config.js?v=2',
+  './assets/js/config.js?v=3',
   './assets/js/ui.js?v=12',
   './assets/js/api.js?v=7',
   './assets/js/auth.js?v=2',
