@@ -1245,6 +1245,15 @@ a.link-underline:hover::after { transform: scaleX(1); }
 .product-card-wish:hover { transform: scale(1.1); }
 .product-card-body { padding: var(--space-md); flex: 1; }
 .product-card-name { font-weight: 700; font-size: 15px; color: var(--text-primary); }
+.product-card-choices {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .product-card-price { font-size: 16px; font-weight: 800; color: var(--primary); font-family: var(--font-display); margin-top: 2px; }
 .product-card-footer {
   padding: var(--space-sm) var(--space-md) var(--space-md);

@@ -707,12 +707,13 @@ const MallMap = (() => {
           </div>
           <div style="flex:1;min-width:0;">
             <div style="font-weight:600;font-size:12px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.name)}</div>
+            ${typeof UI !== 'undefined' && UI.productChoicesHint(p) ? `<div style="font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(UI.productChoicesHint(p))}</div>` : ''}
             <div style="font-size:11px;">
               ${sale ? `<span style="text-decoration:line-through;color:var(--text-muted);margin-right:4px;">${esc(was)}</span>` : ''}
-              <span style="font-weight:700;color:var(--text-primary);">${esc(price)}</span>
+              <span style="font-weight:700;color:var(--text-primary);">${esc(typeof UI !== 'undefined' && UI.productPriceLabel ? UI.productPriceLabel(p) : price)}</span>
             </div>
           </div>
-          <button type="button" class="btn btn-primary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="event.stopPropagation();UI.addToCartModal('${esc(p.id)}',{fromEl:this})" ${p.inventory === 0 || p.sold_out ? 'disabled' : ''}>Add</button>
+          <button type="button" class="btn btn-primary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="event.stopPropagation();UI.addToCartModal('${esc(p.id)}',{fromEl:this})" ${p.inventory === 0 || p.sold_out ? 'disabled' : ''}>${typeof UI !== 'undefined' && UI.hasProductChoices(p) ? 'Choose' : 'Add'}</button>
         </div>`;
       }).join('');
       if (reduced()) {

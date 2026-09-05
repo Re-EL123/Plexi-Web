@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="assets/css/variables.css?v=2">
   <link rel="stylesheet" href="assets/css/base.css?v=2">
   <link rel="stylesheet" href="assets/css/neomorphism.css?v=2">
-  <link rel="stylesheet" href="assets/css/components.css?v=6">
+  <link rel="stylesheet" href="assets/css/components.css?v=8">
   <link rel="stylesheet" href="assets/css/animations.css?v=4">
   <link rel="stylesheet" href="assets/css/responsive.css?v=2">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -347,11 +347,11 @@
 <script src="assets/js/config.js?v=3"></script>
 <script src="assets/js/sounds.js?v=2"></script>
 <script src="assets/js/push.js?v=2"></script>
-<script src="assets/js/ui.js?v=10"></script>
+<script src="assets/js/ui.js?v=13"></script>
 <script src="assets/js/api.js?v=7"></script>
 <script src="assets/js/auth.js?v=2"></script>
 <script src="assets/js/state.js?v=2"></script>
-<script src="assets/js/map.js?v=7"></script>
+<script src="assets/js/map.js?v=8"></script>
 <script src="assets/js/dashboard.js?v=12"></script>
 <script src="assets/js/site-content-defaults.js?v=1"></script>
 <script src="assets/js/site-content.js?v=1"></script>
@@ -518,6 +518,43 @@
     } catch(e){grid.innerHTML=UI.empty('Could not load stores','Check back soon.');}
   }
 
+  function homeProductCard(p){
+    const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    const choices=UI.hasProductChoices(p);
+    const hint=UI.productChoicesHint(p);
+    const price=UI.productPriceLabel(p);
+    const addLabel=choices?'Choose options':'Add to Cart';
+    const sale=p.original_price && Number(p.original_price)>Number(p.price) && !String(price).startsWith('From');
+    return `<a href="store/product.html?id=${esc(p.id)}" style="text-decoration:none;" class="stagger-child">
+           <div class="product-card">
+             <div class="product-card-img">
+                ${p.images?.[0]?`<img src="${esc(p.images[0])}" alt="${esc(p.name)}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--bg);">📦</div>`}
+                ${p.sold_out ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><span class="badge badge-error">Sold Out</span></div>` : ''}
+                <span class="product-card-badge"><span class="badge badge-primary">${esc(p.category||'')}</span></span>
+               <button class="product-card-wish ${_wishlist.includes(p.id)?'active':''}" onclick="toggleWish(event,'${esc(p.id)}',this)">
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+               </button>
+             </div>
+             <div class="product-card-body">
+               <div class="product-card-name">${esc(p.name)}${p.product_type?` <span class="badge badge-gray" style="font-size:10px;">${esc(p.product_type)}</span>`:''}</div>
+               ${hint?`<div class="product-card-choices">${esc(hint)}</div>`:''}
+               <div class="product-card-price">
+                 ${sale ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:14px;">${UI.formatCurrency(p.original_price)}</span> ` : ''}
+                 ${price}
+                 ${p.inventory===0?`<span style="font-size:11px;color:var(--error);font-weight:600;margin-left:8px;">Out of Stock</span>`:''}${p.inventory>0&&p.inventory<5?`<span style="font-size:11px;color:var(--warning);font-weight:600;margin-left:8px;">Only ${p.inventory} left</span>`:''}
+               </div>
+               ${p.tags && p.tags.length ? `<div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:4px;">${p.tags.slice(0,3).map(t => `<span class="badge badge-secondary" style="font-size:10px;">${esc(t)}</span>`).join('')}</div>` : ''}
+             </div>
+             <div class="product-card-footer">
+               <button class="btn btn-primary btn-sm" onclick="addToCart(event,'${esc(p.id)}',this)" ${p.inventory===0||p.sold_out?'disabled':''}>
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                 ${addLabel}
+               </button>
+             </div>
+           </div>
+         </a>`;
+  }
+
   async function loadProducts(page=1,cat='all'){
     const grid = document.getElementById('products-grid');
     grid.innerHTML = `<div class="skeleton" style="height:280px;border-radius:var(--radius-xl);"></div>`.repeat(8);
@@ -528,34 +565,7 @@
       const products=Array.isArray(data)?data:(data.products||[]);
       const total=data.total||products.length;
       if(!products.length){grid.innerHTML=UI.empty('No Products','Try a different category.','📦');return;}
-grid.innerHTML=products.map(p=>`
-         <a href="store/product.html?id=${p.id}" style="text-decoration:none;" class="stagger-child">
-           <div class="product-card">
-             <div class="product-card-img">
-                ${p.images?.[0]?`<img src="${p.images[0]}" alt="${p.name}" loading="lazy">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--bg);">📦</div>`}
-                ${p.sold_out ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><span class="badge badge-error">Sold Out</span></div>` : ''}
-                <span class="product-card-badge"><span class="badge badge-primary">${p.category}</span></span>
-               <button class="product-card-wish ${_wishlist.includes(p.id)?'active':''}" onclick="toggleWish(event,'${p.id}',this)">
-                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-               </button>
-             </div>
-             <div class="product-card-body">
-               <div class="product-card-name">${p.name}${p.product_type?` <span class="badge badge-gray" style="font-size:10px;">${p.product_type}</span>`:''}</div>
-               <div class="product-card-price">
-                 ${p.original_price && p.original_price > p.price ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:14px;">${UI.formatCurrency(p.original_price)}</span> ` : ''}
-                 ${UI.formatCurrency(p.price)}
-                 ${p.inventory===0?`<span style="font-size:11px;color:var(--error);font-weight:600;margin-left:8px;">Out of Stock</span>`:''}${p.inventory>0&&p.inventory<5?`<span style="font-size:11px;color:var(--warning);font-weight:600;margin-left:8px;">Only ${p.inventory} left</span>`:''}
-               </div>
-               ${p.tags && p.tags.length ? `<div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:4px;">${p.tags.slice(0,3).map(t => `<span class="badge badge-secondary" style="font-size:10px;">${t}</span>`).join('')}</div>` : ''}
-             </div>
-             <div class="product-card-footer">
-               <button class="btn btn-primary btn-sm" onclick="addToCart(event,'${p.id}',this)" ${p.inventory===0||p.sold_out?'disabled':''}>
-                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                 Add to Cart
-               </button>
-             </div>
-           </div>
-         </a>`).join('');
+      grid.innerHTML=products.map(homeProductCard).join('');
       const pages=Math.ceil(total/12);
       Dashboard.renderPagination('product-pagination',page,pages,`(p)=>loadProducts(p,'${cat}')`);
       UI.staggerReveal(grid);
@@ -710,7 +720,7 @@ grid.innerHTML=products.map(p=>`
       }
 
       if (products.length) {
-        grid.innerHTML = products.map(p => `<a href="store/product.html?id=${p.id}" style="text-decoration:none;" class="stagger-child"><div class="product-card"><div class="product-card-img">${p.images?.[0] ? `<img src="${p.images[0]}" loading="lazy">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--bg);">📦</div>`}<span class="product-card-badge"><span class="badge badge-primary">${p.category}</span></span></div><div class="product-card-body"><div class="product-card-name">${p.name}${p.product_type?` <span class="badge badge-gray" style="font-size:10px;">${p.product_type}</span>`:''}</div><div class="product-card-price">${p.original_price && p.original_price > p.price ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;">${UI.formatCurrency(p.original_price)}</span> ` : ''}${UI.formatCurrency(p.price)}${p.sold_out?'<span style="font-size:10px;color:var(--error);font-weight:600;margin-left:4px;">Sold Out</span>':''}</div>${p.tags && p.tags.length ? `<div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:2px;">${p.tags.slice(0,2).map(t => `<span class="badge badge-secondary" style="font-size:9px;">${t}</span>`).join('')}</div>` : ''}</div></div></a>`).join('');
+        grid.innerHTML = products.map(homeProductCard).join('');
         UI.staggerReveal(grid);
       } else if (!stores.length) {
         grid.innerHTML = UI.empty('No Results', `Nothing found for "${q}"`, '🔍');

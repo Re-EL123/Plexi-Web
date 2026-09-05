@@ -4,16 +4,33 @@
 
 const UI = (() => {
 
-  // Native file dialogs blur the page. Ignore backdrop closes until
-  // focus returns so a long picker does not dismiss the modal.
+  // Native file dialogs blur the page and often send Escape when they
+  // close. Keep the modal up until change/cancel, not a short timer.
   let filePickerOpen = false;
+  let pickerOpenedAt = 0;
+  function isFileControl(el) {
+    return !!(el && (el.matches?.('input[type="file"]') || el.closest?.('[data-file-pick], label[for="ad-file"]')));
+  }
+  function armFilePicker() {
+    filePickerOpen = true;
+    pickerOpenedAt = Date.now();
+  }
+  function disarmFilePicker() {
+    filePickerOpen = false;
+  }
   document.addEventListener('click', (e) => {
-    if (e.target && (e.target.matches?.('input[type="file"]') || e.target.closest?.('[data-file-pick]'))) {
-      filePickerOpen = true;
-    }
+    if (isFileControl(e.target)) armFilePicker();
+  }, true);
+  document.addEventListener('change', (e) => {
+    if (e.target?.matches?.('input[type="file"]')) disarmFilePicker();
+  }, true);
+  document.addEventListener('cancel', (e) => {
+    if (e.target?.matches?.('input[type="file"]')) disarmFilePicker();
   }, true);
   window.addEventListener('focus', () => {
-    setTimeout(() => { filePickerOpen = false; }, 400);
+    if (!filePickerOpen) return;
+    if (Date.now() - pickerOpenedAt < 400) return;
+    setTimeout(() => { if (document.hasFocus()) disarmFilePicker(); }, 600);
   });
 
   // ======== TOAST NOTIFICATIONS ======== //
@@ -73,6 +90,8 @@ const UI = (() => {
       if (!overlay) return;
       if (e.key === 'Escape') {
         e.preventDefault();
+        if (filePickerOpen || !document.hasFocus()) return;
+        if (overlay.dataset.closeOnEscape === 'false') return;
         closeModal(overlay.id);
         return;
       }
@@ -106,9 +125,9 @@ const UI = (() => {
       const title = overlay.querySelector('.modal-title');
       if (title && title.textContent.trim()) modalEl.setAttribute('aria-label', title.textContent.trim());
     }
-    const focusables = Array.from(focusableIn(modalEl));
+    const focusables = Array.from(focusableIn(modalEl)).filter(el => el.type !== 'hidden' && el.type !== 'file');
     if (focusables.length) {
-      const preferred = focusables.find(el => /INPUT|SELECT|TEXTAREA/.test(el.tagName)) || focusables[0];
+      const preferred = focusables.find(el => /INPUT|SELECT|TEXTAREA/.test(el.tagName) && el.type !== 'checkbox') || focusables[0];
       setTimeout(() => preferred.focus(), 30);
     }
   }
@@ -125,13 +144,14 @@ const UI = (() => {
     if (!openModals.length) document.body.style.overflow = '';
   }
 
-  function createModal({ id, title, content, footer = '', size = '', closeOnBackdrop = true }) {
+  function createModal({ id, title, content, footer = '', size = '', closeOnBackdrop = true, closeOnEscape = true }) {
     const existing = document.getElementById(id);
     if (existing) existing.remove();
 
     const el = document.createElement('div');
     el.className = 'modal-overlay';
     el.id = id;
+    if (!closeOnEscape) el.dataset.closeOnEscape = 'false';
     el.innerHTML = `
       <div class="modal ${size}">
         <div class="modal-header">
@@ -265,6 +285,76 @@ const UI = (() => {
     requestAnimationFrame(update);
   }
 
+  function coerceArray(v) {
+    if (!v) return [];
+    if (typeof v === 'string') {
+      try { v = JSON.parse(v); } catch { return []; }
+    }
+    return Array.isArray(v) ? v : [];
+  }
+
+  function variantValText(v) {
+    if (v && typeof v === 'object') return v.value;
+    return v;
+  }
+
+  function variantValPrice(v) {
+    if (v && typeof v === 'object' && v.price != null && v.price !== '') {
+      const n = Number(v.price);
+      return Number.isFinite(n) ? n : null;
+    }
+    return null;
+  }
+
+  function variantGroupValues(g) {
+    const raw = (Array.isArray(g?.values) && g.values.length)
+      ? g.values
+      : (Array.isArray(g?.options) ? g.options : []);
+    return raw.filter(v => String(variantValText(v) ?? '').trim() !== '');
+  }
+
+  function variantGroups(p) {
+    return coerceArray(p && p.variants).filter(g => g && variantGroupValues(g).length);
+  }
+
+  function productOptionsList(p) {
+    return coerceArray(p && p.options).filter(o => o && o.name && Array.isArray(o.values) && o.values.length);
+  }
+
+  function hasProductChoices(p) {
+    return variantGroups(p).length > 0 || productOptionsList(p).length > 0;
+  }
+
+  function productChoicesHint(p) {
+    const names = [
+      ...variantGroups(p).map((g, i) => (g.name && String(g.name).trim()) || `Option ${i + 1}`),
+      ...productOptionsList(p).map(o => o.name)
+    ];
+    return names.slice(0, 4).join(' · ');
+  }
+
+  function productPriceLabel(p) {
+    const extras = [];
+    variantGroups(p).forEach(g => {
+      variantGroupValues(g).forEach(v => {
+        const n = variantValPrice(v);
+        if (n != null) extras.push(n);
+      });
+    });
+    const base = Number(p?.price);
+    if (!extras.length) return formatCurrency(base);
+    const min = Math.min(base, ...extras);
+    const max = Math.max(base, ...extras);
+    return min < max ? `From ${formatCurrency(min)}` : formatCurrency(min);
+  }
+
+  function unwrapProduct(res) {
+    if (!res || typeof res !== 'object') return res;
+    if (res.id && (res.name != null || res.price != null)) return res;
+    const inner = res.product || (res.body && typeof res.body === 'object' ? (res.body.product || res.body) : null);
+    return inner && inner.id ? inner : res;
+  }
+
   async function addToCartModal(productRef, { loginPath, fromEl } = {}) {
     const loginHref = loginPath || (/\/(store|dashboard)\//.test(location.pathname) ? '../login.html' : 'login.html');
     if (!Auth.isLoggedIn()) {
@@ -276,16 +366,16 @@ const UI = (() => {
     if (typeof productRef === 'string') {
       try {
         const res = await api.products.get(productRef);
-        p = res?.product || res?.body?.product || res;
+        p = unwrapProduct(res);
       } catch (err) { toast(err.message || 'Could not load product', 'error'); return; }
+    } else {
+      p = unwrapProduct(p);
     }
     if (!p || !p.id) { toast('Product not found', 'error'); return; }
     if (p.sold_out || Number(p.inventory) === 0) { toast('This item is sold out', 'warning'); return; }
 
-    const groups = (Array.isArray(p.variants) ? p.variants : [])
-      .filter(g => g && ((g.values || []).length || (g.options || []).length));
-    const options = (Array.isArray(p.options) ? p.options : [])
-      .filter(o => o.name && Array.isArray(o.values) && o.values.length);
+    const groups = variantGroups(p);
+    const options = productOptionsList(p);
 
     const finish = async (qty = 1) => {
       flyToCart(fromEl);
@@ -302,10 +392,10 @@ const UI = (() => {
     }
 
     const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-    const groupVals = g => (g.values && g.values.length ? g.values : g.options) || [];
-    const valText = v => (v && typeof v === 'object') ? v.value : v;
-    const valPrice = v => (v && typeof v === 'object' && v.price != null) ? Number(v.price) : null;
-    const groupName = (g, i) => (g.name && g.name.trim()) || `Option ${i + 1}`;
+    const groupVals = variantGroupValues;
+    const valText = variantValText;
+    const valPrice = variantValPrice;
+    const groupName = (g, i) => (g.name && String(g.name).trim()) || `Option ${i + 1}`;
 
     const state = { qty: 1, variants: {}, opts: {} };
     // Preselect the first value of every variant group
@@ -588,6 +678,10 @@ const UI = (() => {
       : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:40px;background:var(--bg);">📦</div>`;
     const sale = Number(p.original_price) > Number(p.price);
     const low = Number(p.inventory) > 0 && Number(p.inventory) < 5;
+    const choices = hasProductChoices(p);
+    const hint = productChoicesHint(p);
+    const priceText = productPriceLabel(p);
+    const addLabel = choices ? 'Choose options' : 'Add to Cart';
     return `
       <a href="${esc(href)}" style="text-decoration:none;" class="stagger-child">
         <div class="product-card">
@@ -599,14 +693,15 @@ const UI = (() => {
           </div>
           <div class="product-card-body">
             <div class="product-card-name">${esc(p.name)}</div>
+            ${hint ? `<div class="product-card-choices">${esc(hint)}</div>` : ''}
             <div class="product-card-price">
-              ${sale ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:14px;">${formatCurrency(p.original_price)}</span> ` : ''}
-              ${formatCurrency(p.price)}
+              ${sale && !priceText.startsWith('From') ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:14px;">${formatCurrency(p.original_price)}</span> ` : ''}
+              ${priceText}
               ${low ? `<span style="font-size:11px;color:var(--warning);font-weight:600;margin-left:8px;">Only ${p.inventory} left</span>` : ''}
             </div>
           </div>
           <div class="product-card-footer">
-            <button class="btn btn-primary btn-sm" onclick="event.preventDefault();event.stopPropagation();UI.addToCartModal('${esc(p.id)}',{fromEl:this})" ${p.inventory === 0 || p.sold_out ? 'disabled' : ''}>Add to Cart</button>
+            <button class="btn btn-primary btn-sm" onclick="event.preventDefault();event.stopPropagation();UI.addToCartModal('${esc(p.id)}',{fromEl:this})" ${p.inventory === 0 || p.sold_out ? 'disabled' : ''}>${addLabel}</button>
           </div>
         </div>
       </a>`;
@@ -621,6 +716,10 @@ const UI = (() => {
       : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--bg);">📦</div>`;
     const sale = Number(p.original_price) > Number(p.price);
     const storeName = p.store?.name || p.store_name || '';
+    const choices = hasProductChoices(p);
+    const hint = productChoicesHint(p);
+    const priceText = productPriceLabel(p);
+    const addLabel = choices ? 'Choose' : 'Add';
     return `
       <article class="deal-aisle-card">
         <a href="${esc(href)}" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;height:100%;">
@@ -630,14 +729,15 @@ const UI = (() => {
           </div>
           <div class="deal-aisle-body">
             <div class="product-card-name">${esc(p.name)}</div>
+            ${hint ? `<div class="product-card-choices">${esc(hint)}</div>` : ''}
             <div class="product-card-price">
-              ${sale ? `<span class="deal-was">${formatCurrency(p.original_price)}</span> ` : ''}
-              <span class="deal-now">${formatCurrency(p.price)}</span>
+              ${sale && !priceText.startsWith('From') ? `<span class="deal-was">${formatCurrency(p.original_price)}</span> ` : ''}
+              <span class="deal-now">${priceText}</span>
             </div>
             ${storeName ? `<div class="deal-store">${esc(storeName)}</div>` : ''}
           </div>
         </a>
-        <button class="btn btn-primary btn-sm" onclick="event.preventDefault();event.stopPropagation();UI.addToCartModal('${esc(p.id)}',{fromEl:this})" ${p.inventory === 0 || p.sold_out ? 'disabled' : ''}>Add</button>
+        <button class="btn btn-primary btn-sm" onclick="event.preventDefault();event.stopPropagation();UI.addToCartModal('${esc(p.id)}',{fromEl:this})" ${p.inventory === 0 || p.sold_out ? 'disabled' : ''}>${addLabel}</button>
       </article>`;
   }
 
@@ -1048,7 +1148,8 @@ const UI = (() => {
   return {
     toast, openModal, closeModal, createModal, confirmDialog, addToCartModal,
     flyToCart, bindHRail, prefersReducedMotion,
-    productCard, dealAisleCard, recentlyViewed: { get: recentlyViewedGet, push: recentlyViewedPush },
+    productCard, dealAisleCard, hasProductChoices, productChoicesHint, productPriceLabel,
+    recentlyViewed: { get: recentlyViewedGet, push: recentlyViewedPush },
     setLoading, showPageLoader, hidePageLoader,
     formatCurrency, formatDate, formatDateTime, timeAgo,
     badge, statusBadge, stars, avatar, skeleton, skeletonTable, skeletonGrid, skeletonList,
