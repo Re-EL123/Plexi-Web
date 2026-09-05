@@ -411,10 +411,19 @@ const api = (() => {
         reader.onload = async () => {
           try {
             const base64 = reader.result.split(',')[1];
+            let cType = (file.type || '').split(';')[0].trim().toLowerCase();
+            if (!cType && file.name) {
+              const ext = file.name.toLowerCase().split('.').pop();
+              const map = {
+                jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif',
+                mp4: 'video/mp4', m4v: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime'
+              };
+              cType = map[ext] || '';
+            }
             const result = await post('/products?action=upload', {
               file: base64,
               filename: file.name,
-              contentType: file.type,
+              contentType: cType || 'application/octet-stream',
               folder
             }, { timeout: 60000 });
             resolve(result);
