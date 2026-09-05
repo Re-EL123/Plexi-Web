@@ -156,6 +156,9 @@
           <div class="stat-card info stagger-child delay-2" style="cursor:pointer;" onclick="Dashboard.showSection('section-wishlist')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div><div class="stat-label">Wishlist</div><div class="stat-value" id="sh-stat-wishlist">—</div></div>
           <div class="stat-card success stagger-child delay-3" style="cursor:pointer;" onclick="Dashboard.showSection('section-cart')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div><div class="stat-label">In Cart</div><div class="stat-value" id="sh-stat-cart">—</div></div>
         </div>
+        <div id="overview-unpaid-banner" style="display:none;"></div>
+        <div id="overview-review-banner" style="display:none;"></div>
+        <div id="overview-quick-buy" style="display:none;"></div>
         <div class="card">
           <div class="card-header"><h4>Recent Orders</h4><button class="btn btn-ghost btn-sm" onclick="Dashboard.showSection('section-orders');loadOrders()">View All</button></div>
           <div id="recent-orders"><div style="padding:var(--space-lg);text-align:center;color:var(--text-muted);">Loading…</div></div>
@@ -341,12 +344,12 @@
 <div id="toast-container"></div>
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-<script src="../assets/js/config.js?v=2"></script>
+<script src="../assets/js/config.js?v=3"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=10"></script>
-<script src="../assets/js/api.js?v=7"></script>
-<script src="../assets/js/auth.js?v=2"></script>
+<script src="../assets/js/ui.js?v=13"></script>
+<script src="../assets/js/api.js?v=8"></script>
+<script src="../assets/js/auth.js?v=3"></script>
 <script src="../assets/js/state.js?v=2"></script>
 <script src="../assets/js/dashboard.js?v=12"></script>
 <script src="../assets/js/site-content-defaults.js?v=1"></script>
@@ -414,6 +417,70 @@
       const cb = document.getElementById('cart-nav-badge');
       if (cb) { cb.textContent = cartCount; cb.style.display = cartCount > 0 ? 'flex' : 'none'; }
 
+      // Unpaid order reminder on overview
+      const unpaid = orders.find(o => o.payment_status === 'unpaid');
+      const unpaidBanner = document.getElementById('overview-unpaid-banner');
+      if (unpaidBanner) {
+        if (unpaid) {
+          unpaidBanner.style.display = 'block';
+          unpaidBanner.innerHTML = `
+            <div class="alert alert-warning" style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);margin-bottom:var(--space-lg);">
+              <div style="display:flex;align-items:center;gap:var(--space-sm);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>You have an unpaid order <strong>#${unpaid.id.slice(0,8)}</strong> for <strong>${UI.formatCurrency(unpaid.total)}</strong>. Complete checkout before items expire.</span>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="resumePayment('${unpaid.id}')">Pay now →</button>
+            </div>`;
+        } else {
+          unpaidBanner.style.display = 'none';
+        }
+      }
+
+      // Review prompt banner for delivered orders with no reviews
+      const deliveredUnreviewed = orders.find(o => o.status === 'delivered');
+      const reviewBanner = document.getElementById('overview-review-banner');
+      if (reviewBanner) {
+        if (deliveredUnreviewed) {
+          reviewBanner.style.display = 'block';
+          reviewBanner.innerHTML = `
+            <div class="alert alert-info" style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md);margin-bottom:var(--space-lg);">
+              <div style="display:flex;align-items:center;gap:var(--space-sm);">
+                <span>⭐</span>
+                <span>How was order <strong>#${deliveredUnreviewed.id.slice(0,8)}</strong>? Leave a review to help others in the mall!</span>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="openOrderReviewModal('${deliveredUnreviewed.id}')">Write a review</button>
+            </div>`;
+        } else {
+          reviewBanner.style.display = 'none';
+        }
+      }
+
+      // Quick Buy Again section on overview
+      const deliveredOrders = orders.filter(o => o.status === 'delivered');
+      const quickBuyEl = document.getElementById('overview-quick-buy');
+      if (quickBuyEl) {
+        if (deliveredOrders.length) {
+          quickBuyEl.style.display = 'block';
+          quickBuyEl.innerHTML = `
+            <div class="card" style="margin-bottom:var(--space-xl);">
+              <div class="card-header"><h4>⚡ Buy Again Quickly</h4><span style="font-size:12px;color:var(--text-muted);">Re-order past favorites with 1 tap</span></div>
+              <div style="padding:var(--space-md);display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--space-md);">
+                ${deliveredOrders.slice(0, 3).map(o => `
+                  <div style="padding:var(--space-md);border-radius:var(--radius-md);background:var(--bg);display:flex;flex-direction:column;justify-content:space-between;gap:var(--space-sm);">
+                    <div>
+                      <div style="font-size:12px;font-family:monospace;color:var(--text-muted);">Order #${o.id.slice(0,8)}</div>
+                      <div style="font-size:16px;font-weight:700;color:var(--primary);margin-top:2px;">${UI.formatCurrency(o.total)}</div>
+                      <div style="font-size:11px;color:var(--text-muted);">${UI.formatDate(o.created_at)}</div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="buyAgain('${o.id}')">🛒 Buy Again</button>
+                  </div>`).join('')}
+              </div>
+            </div>`;
+        } else {
+          quickBuyEl.style.display = 'none';
+        }
+      }
+
       const el = document.getElementById('recent-orders');
       if (!orders.length) { el.innerHTML = '<div style="padding:var(--space-lg);text-align:center;color:var(--text-muted);">No orders yet. <a href="../index.html">Start shopping →</a></div>'; return; }
       el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Order</th><th>Total</th><th>Status</th><th>Date</th></tr></thead><tbody>
@@ -448,7 +515,8 @@
           <td class="table-actions">
             ${unpaid?`<button class="btn btn-primary btn-sm" onclick="resumePayment('${o.id}')">Pay now</button>`:''}
             <button class="btn btn-ghost btn-sm" onclick="viewOrderDetail('${o.id}')">Track</button>
-            ${o.status==='delivered'?`<button class="btn btn-primary btn-sm" onclick="buyAgain('${o.id}')">Buy Again</button>`:''}
+            ${o.status==='delivered'?`<button class="btn btn-primary btn-sm" onclick="buyAgain('${o.id}')">Buy Again</button>
+            <button class="btn btn-ghost btn-sm" onclick="openOrderReviewModal('${o.id}')">⭐ Review</button>`:''}
             ${o.status==='pending'||unpaid?`<button class="btn btn-danger btn-sm" onclick="cancelOrder('${o.id}')">Cancel</button>`:''}
           </td>
         </tr>`;
@@ -1167,23 +1235,34 @@
       const items = Array.isArray(data) ? data : (data.items || []);
       document.getElementById('sh-stat-wishlist').textContent = items.length;
       if (!items.length) { grid.innerHTML = UI.empty('Wishlist is Empty','Save items you love!','❤️',`<a href="../index.html" class="btn btn-primary">Discover Stores</a>`); return; }
-      grid.innerHTML = items.map(item=>`
+      grid.innerHTML = items.map(item=>{
+        const p = item.product || {};
+        const isSale = p.original_price && p.original_price > (p.price || 0);
+        const priceDropped = item.saved_price && Number(p.price) < Number(item.saved_price);
+        const lowStock = p.inventory != null && Number(p.inventory) <= 5 && Number(p.inventory) > 0;
+        const outOfStock = Number(p.inventory) === 0 || p.sold_out;
+        return `
         <div class="product-card">
           <div class="product-card-img">
-            ${item.product?.images?.[0]?`<img src="${item.product.images[0]}" alt="">`:'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--bg);">🛍️</div>'}
+            ${p.images?.[0]?`<img src="${p.images[0]}" alt="">`:'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--bg);">🛍️</div>'}
+            ${priceDropped ? `<span class="badge badge-success" style="position:absolute;top:8px;left:8px;font-size:10px;">📉 Price dropped from ${UI.formatCurrency(item.saved_price)}</span>` : ''}
+            ${!priceDropped && lowStock ? `<span class="badge badge-warning" style="position:absolute;top:8px;left:8px;font-size:10px;">⚡ Only ${p.inventory} left!</span>` : ''}
+            ${outOfStock ? `<span class="badge badge-error" style="position:absolute;top:8px;left:8px;font-size:10px;">Out of stock</span>` : ''}
             <button class="product-card-wish active" onclick="removeWishlistItem('${item.product_id}')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--primary)" stroke="var(--primary)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </button>
           </div>
           <div class="product-card-body">
-            <div class="product-card-name">${item.product?.name||'Product'}${item.product?.product_type?` <span class="badge badge-gray" style="font-size:10px;">${item.product.product_type}</span>`:''}</div>
-            <div class="product-card-price">${item.product?.original_price && item.product?.original_price > (item.product?.price||0) ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;">${UI.formatCurrency(item.product.original_price)}</span> ` : ''}${UI.formatCurrency(item.product?.price||0)}</div>
+            <div class="product-card-name">${p.name||'Product'}${p.product_type?` <span class="badge badge-gray" style="font-size:10px;">${p.product_type}</span>`:''}</div>
+            <div class="product-card-price">${isSale ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;">${UI.formatCurrency(p.original_price)}</span> ` : ''}${UI.formatCurrency(p.price||0)}</div>
+            ${p.store?.name ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Store: ${p.store.name}</div>` : ''}
           </div>
           <div class="product-card-footer">
-            <button class="btn btn-primary btn-sm" onclick="addWishToCart('${item.product_id}')">Add to Cart</button>
+            <button class="btn btn-primary btn-sm" onclick="addWishToCart('${item.product_id}')" ${outOfStock ? 'disabled' : ''}>Add to Cart</button>
             <a href="../store/product.html?id=${item.product_id}" class="btn btn-ghost btn-sm">View</a>
           </div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
     } catch(e){ grid.innerHTML = UI.empty('Error', e.message); }
   }
 
@@ -1205,7 +1284,17 @@
       el.innerHTML = reviews.map(r=>`
         <div class="card" style="margin-bottom:var(--space-sm);">
           <div class="card-body" style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>${UI.stars(r.rating)}<p style="margin-top:var(--space-sm);color:var(--text-secondary);">${r.comment||'No comment'}</p><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${UI.timeAgo(r.created_at)}</div></div>
+            <div style="flex:1;">
+              ${UI.stars(r.rating)}
+              <p style="margin-top:var(--space-sm);color:var(--text-secondary);">${r.comment||'No comment'}</p>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${UI.timeAgo(r.created_at)}</div>
+              ${r.seller_reply ? `
+                <div style="margin-top:var(--space-sm);padding:var(--space-sm) var(--space-md);background:var(--bg);border-left:3px solid var(--primary);border-radius:var(--radius-sm);font-size:12px;">
+                  <strong style="color:var(--primary);">Store Reply:</strong>
+                  <div style="color:var(--text-secondary);margin-top:2px;">${r.seller_reply}</div>
+                  ${r.seller_reply_at ? `<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${UI.timeAgo(r.seller_reply_at)}</div>` : ''}
+                </div>` : ''}
+            </div>
             <button class="btn btn-danger btn-sm" onclick="deleteReview('${r.id}')">Delete</button>
           </div>
         </div>`).join('');
@@ -1257,10 +1346,11 @@
       <div class="product-card">
         <div class="product-card-img">
           ${p.images?.[0] ? `<img src="${p.images[0]}" alt="">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--bg);">🛍️</div>'}
+          ${p.original_price && p.original_price > p.price ? `<span class="badge badge-error" style="position:absolute;top:8px;left:8px;font-size:10px;">SALE</span>` : ''}
         </div>
         <div class="product-card-body">
           <div class="product-card-name">${p.name}</div>
-          <div class="product-card-price">${UI.formatCurrency(p.price||0)}</div>
+          <div class="product-card-price">${p.original_price && p.original_price > p.price ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;">${UI.formatCurrency(p.original_price)}</span> ` : ''}${UI.formatCurrency(p.price||0)}</div>
         </div>
         <div class="product-card-footer">
           <button class="btn btn-primary btn-sm" onclick="addWishToCart('${p.id}')">Add to Cart</button>
@@ -1332,6 +1422,11 @@
                 <span>${it.quantity}× ${p.name || it.name || 'Item'}</span><strong>${UI.formatCurrency(it.unit_price != null ? it.unit_price * it.quantity : (p.price || it.price || 0) * it.quantity)}</strong>
               </div>`; }).join('')}
           </div></div>` : ''}
+          ${order.status === 'delivered' ? `
+            <div style="display:flex;gap:var(--space-sm);margin-top:var(--space-sm);">
+              <button class="btn btn-primary btn-block" onclick="UI.closeModal('order-detail');buyAgain('${order.id}')">🛒 Buy Again</button>
+              <button class="btn btn-ghost btn-block" onclick="UI.closeModal('order-detail');openOrderReviewModal('${order.id}')">⭐ Review</button>
+            </div>` : ''}
         </div>`;
       if (inFlight) {
         clearInterval(trackPollTimer);
@@ -1356,6 +1451,64 @@
       UI.toast(added ? `${added} item${added !== 1 ? 's' : ''} added to cart!` : 'Could not re-add items — they may be unavailable', added ? 'success' : 'error');
       if (added) Dashboard.showSection('section-cart'), loadCart();
     } catch (e) { UI.toast(e.message, 'error'); }
+  }
+
+  async function openOrderReviewModal(orderId) {
+    try {
+      const res = await api.orders.get(orderId);
+      const o = res?.order || res;
+      const items = Array.isArray(o.items) ? o.items : Array.isArray(o.order_items) ? o.order_items : [];
+      const storeId = items[0]?.product?.store_id || items[0]?.product?.store?.id || o.store_id || null;
+      const storeName = items[0]?.product?.store?.name || 'the store';
+
+      UI.createModal({
+        id: 'order-review-modal',
+        title: `Review Order #${orderId.slice(0,8)}`,
+        content: `
+          <form id="order-review-form" onsubmit="submitOrderReview(event, '${orderId}', '${storeId || ''}')">
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-md);">Reviewing items from <strong>${storeName}</strong></p>
+            <div class="form-group">
+              <label class="form-label">Rating</label>
+              <select class="form-control" name="rating" required style="font-size:15px;">
+                <option value="5">⭐⭐⭐⭐⭐ (5 - Excellent)</option>
+                <option value="4">⭐⭐⭐⭐ (4 - Good)</option>
+                <option value="3">⭐⭐⭐ (3 - Average)</option>
+                <option value="2">⭐⭐ (2 - Below Average)</option>
+                <option value="1">⭐ (1 - Poor)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Your Review</label>
+              <textarea class="form-control" name="comment" rows="3" required placeholder="Tell other shoppers what you liked..."></textarea>
+            </div>
+          </form>`,
+        footer: `
+          <button class="btn btn-ghost" onclick="UI.closeModal('order-review-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="document.getElementById('order-review-form').requestSubmit()">Submit Review</button>`
+      });
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    }
+  }
+
+  async function submitOrderReview(e, orderId, storeId) {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const rating = parseInt(f.get('rating'), 10);
+    const comment = f.get('comment').trim();
+    try {
+      await api.reviews.create({
+        store_id: storeId || undefined,
+        rating,
+        comment
+      });
+      UI.toast('Review posted! Thank you for helping the mall community.', 'success');
+      UI.closeModal('order-review-modal');
+      loadOverview();
+      loadReviews();
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    }
   }
 
   async function loadNotifFull() {

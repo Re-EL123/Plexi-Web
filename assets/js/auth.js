@@ -5,8 +5,10 @@ const Auth = (() => {
   // Base path of the site. On GitHub Pages project sites the app is served
   // from https://<user>.github.io/<RepoName>/... , so all absolute redirects
   // must be prefixed with /<RepoName>/ instead of just "/".
-  const REPO_NAME = CONFIG.REPO_NAME;
-  const BASE_PATH = `/${REPO_NAME}`;
+  // When running locally on http://localhost or http://127.0.0.1 without the RepoName prefix,
+  // adapt BASE_PATH dynamically so local serving works smoothly.
+  const pathHasRepo = window.location.pathname.startsWith(`/${CONFIG.REPO_NAME}`);
+  const BASE_PATH = pathHasRepo ? `/${CONFIG.REPO_NAME}` : '';
 
   function getToken()     { return localStorage.getItem(CONFIG.TOKEN_KEY); }
   function getUser()      { try { return JSON.parse(localStorage.getItem(CONFIG.USER_KEY)); } catch { return null; } }

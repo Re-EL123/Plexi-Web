@@ -127,6 +127,40 @@
           <div class="stat-card success stagger-child" style="cursor:pointer;" onclick="gotoSection('sec-orders')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg></div><div class="stat-label">Total Orders</div><div class="stat-value" id="stat-orders">—</div><div class="stat-sub" id="stat-sub-orders" style="font-size:11px;color:var(--text-muted);margin-top:4px;"></div></div>
           <div class="stat-card info stagger-child" style="cursor:pointer;" onclick="gotoSection('sec-reports')"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-label">Revenue</div><div class="stat-value" id="stat-revenue">—</div><canvas id="stat-spark-revenue" width="120" height="28" style="margin-top:4px;width:100%;height:28px;"></canvas></div>
         </div>
+
+        <!-- CONVERSION & SLA COMMAND BOARD -->
+        <div class="grid-3 mt-lg" id="admin-conversion-board">
+          <div class="card">
+            <div class="card-header"><h4 style="font-size:14px;">Checkout Conversion</h4><span class="badge badge-success" id="board-conv-rate">—%</span></div>
+            <div class="card-body">
+              <div style="font-size:24px;font-weight:800;color:var(--primary);font-family:var(--font-display);" id="board-paid-count">—</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Paid orders successfully checked out</div>
+              <div style="margin-top:var(--space-sm);font-size:12px;padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+                <span>Abandoned / Unpaid:</span><strong id="board-unpaid-total" style="color:var(--warning);">—</strong>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h4 style="font-size:14px;">Store Approval SLA</h4><span class="badge badge-primary" id="board-sla-badge">Target: &lt;24h</span></div>
+            <div class="card-body">
+              <div style="font-size:24px;font-weight:800;color:var(--primary);font-family:var(--font-display);" id="board-sla-hours">— hrs</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Average turnaround from draft to live</div>
+              <div style="margin-top:var(--space-sm);font-size:12px;padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+                <span>Reviewed stores:</span><strong id="board-sla-sample">—</strong>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h4 style="font-size:14px;">Mall Floor Density</h4><span class="badge badge-info" id="board-density-badge">10×10 Grid</span></div>
+            <div class="card-body">
+              <div style="font-size:24px;font-weight:800;color:var(--primary);font-family:var(--font-display);" id="board-density-pct">—%</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Occupied physical mall grid units</div>
+              <div style="margin-top:var(--space-sm);font-size:12px;padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+                <span>Units placed:</span><strong id="board-density-slots">— / 100</strong>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="grid-2 mt-lg">
            <div class="card"><div class="card-header"><h4 style="font-family:var(--font-display);">Pending Approvals</h4><button class="btn btn-ghost btn-sm" onclick="gotoSection('sec-stores')">All Stores</button></div><div class="card-body" style="padding:0;"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Store</th><th>Category</th><th>Banking</th><th>Actions</th></tr></thead><tbody id="pending-stores-tbody"></tbody></table></div></div></div>
           <div class="card"><div class="card-header"><h4 style="font-family:var(--font-display);">Recent Users</h4><button class="btn btn-ghost btn-sm" onclick="gotoSection('sec-users')">All Users</button></div><div class="card-body" style="padding:0;"><div class="table-wrap" style="border:none;border-radius:0;"><table><thead><tr><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody id="recent-users-tbody"></tbody></table></div></div></div>
@@ -301,6 +335,15 @@
           <div class="card">
             <div class="card-header"><h4 style="font-family:var(--font-display);">New Broadcast</h4></div>
             <div class="card-body">
+              <div style="margin-bottom:var(--space-md);">
+                <label class="form-label" style="font-size:12px;color:var(--text-muted);">Quick Sales Templates</label>
+                <div style="display:flex;gap:var(--space-xs);flex-wrap:wrap;">
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="applyAlertTemplate('weekend')">🎉 Weekend Deal</button>
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="applyAlertTemplate('restock')">⚡ Mall Restock</button>
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="applyAlertTemplate('payday')">💳 Payday Special</button>
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="applyAlertTemplate('cart')">🛒 Abandoned Reminder</button>
+                </div>
+              </div>
               <form id="alert-form" onsubmit="sendAlert(event)">
                 <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-control" name="title" required placeholder="e.g. System maintenance scheduled"></div>
                 <div class="form-group"><label class="form-label">Message</label><textarea class="form-control" name="message" rows="4" required placeholder="Write the notification message…"></textarea></div>
@@ -598,12 +641,12 @@
 </div>
 
 <div id="toast-container"></div>
-<script src="../assets/js/config.js?v=2"></script>
+<script src="../assets/js/config.js?v=3"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
 <script src="../assets/js/ui.js?v=13"></script>
-<script src="../assets/js/api.js?v=7"></script>
-<script src="../assets/js/auth.js?v=2"></script>
+<script src="../assets/js/api.js?v=8"></script>
+<script src="../assets/js/auth.js?v=3"></script>
 <script src="../assets/js/state.js?v=2"></script>
 <script src="../assets/js/map.js?v=7"></script>
 <script src="../assets/js/dashboard.js?v=12"></script>
@@ -654,6 +697,7 @@ async function loadAdminStats(){
     const subO=document.getElementById('stat-sub-orders');
     if(subO)subO.innerHTML=ra.newOrders?`<span style="color:var(--success);font-weight:700;">+${ra.newOrders}</span> this week`:'';
     renderRevenueSparkline();
+    loadConversionBoard();
     // Analytics
     const aEl=document.getElementById('analytics-stats');
     if(aEl)aEl.innerHTML=`<div class="stat-card primary" style="cursor:pointer;" onclick="gotoSection('sec-users')"><div class="stat-label">Total Users</div><div class="stat-value">${ov.totalUsers||0}</div></div><div class="stat-card secondary" style="cursor:pointer;" onclick="gotoSection('sec-stores')"><div class="stat-label">Sellers</div><div class="stat-value">${(d.subscriptions?.business||0)+(d.subscriptions?.enterprise||0)}</div></div><div class="stat-card success" style="cursor:pointer;" onclick="gotoSection('sec-stores')"><div class="stat-label">Published Stores</div><div class="stat-value">${ov.totalStores||0}</div></div><div class="stat-card info" style="cursor:pointer;" onclick="gotoSection('sec-tickets')"><div class="stat-label">Open Tickets</div><div class="stat-value">${d.tickets?.open||0}</div></div>`;
@@ -685,6 +729,32 @@ async function renderRevenueSparkline(){
     const grad=ctx.createLinearGradient(0,0,0,h);
     grad.addColorStop(0,'rgba(67,97,238,0.25)');grad.addColorStop(1,'rgba(67,97,238,0)');
     ctx.fillStyle=grad;ctx.fill();
+  }catch(_){}
+}
+
+async function loadConversionBoard(){
+  try{
+    const d=await api.admin.reports({type:'summary'});
+    const conv=d.conversion||{};
+    const sla=d.sla||{};
+    const floor=d.floor||{};
+
+    const rateEl=document.getElementById('board-conv-rate');
+    const paidEl=document.getElementById('board-paid-count');
+    const unpaidEl=document.getElementById('board-unpaid-total');
+    if(rateEl) rateEl.textContent=`${conv.ratePercent||0}%`;
+    if(paidEl) paidEl.textContent=conv.paidCount||0;
+    if(unpaidEl) unpaidEl.textContent=UI.formatCurrency(conv.abandonedTotal||0);
+
+    const slaHoursEl=document.getElementById('board-sla-hours');
+    const slaSampleEl=document.getElementById('board-sla-sample');
+    if(slaHoursEl) slaHoursEl.textContent=`${sla.avgApprovalHours||0} hrs`;
+    if(slaSampleEl) slaSampleEl.textContent=`${sla.approvedSampleCount||0} stores`;
+
+    const densityPctEl=document.getElementById('board-density-pct');
+    const densitySlotsEl=document.getElementById('board-density-slots');
+    if(densityPctEl) densityPctEl.textContent=`${floor.densityPercent||0}%`;
+    if(densitySlotsEl) densitySlotsEl.textContent=`${floor.placedStores||0} / ${floor.capacity||100}`;
   }catch(_){}
 }
 
@@ -787,6 +857,14 @@ function openCouponModal(){
         <select class="form-control" name="discount_type"><option value="percent">Percentage (%)</option><option value="fixed">Fixed Amount (R)</option></select>
       </div>
       <div class="form-group"><label class="form-label">Discount Value</label><input type="number" class="form-control" name="discount_value" min="0" step="0.01" required placeholder="10"></div>
+      <div class="form-group"><label class="form-label">Target Audience / Scope</label>
+        <select class="form-control" name="scope">
+          <option value="all">Entire Mall (All Shoppers)</option>
+          <option value="first_order">New Shoppers (First Order Only)</option>
+          <option value="category">Specific Category Only</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Target Category (if category scope chosen)</label><input type="text" class="form-control" name="target_category" placeholder="e.g. Fashion, Electronics"></div>
       <div class="form-group"><label class="form-label">Minimum Spend (optional)</label><input type="number" class="form-control" name="min_spend" min="0" step="0.01" placeholder="250"></div>
       <div class="field-row">
         <div class="form-group"><label class="form-label">Max Redemptions (optional)</label><input type="number" class="form-control" name="max_redemptions" min="1" placeholder="100"></div>
@@ -805,6 +883,8 @@ async function submitCoupon(e){
     code:f.get('code').trim().toUpperCase(),
     discount_type:f.get('discount_type'),
     discount_value:parseFloat(f.get('discount_value')),
+    scope:f.get('scope') || 'all',
+    target_category:f.get('target_category')?.trim() || null,
     min_spend:f.get('min_spend')?parseFloat(f.get('min_spend')):null,
     max_redemptions:f.get('max_redemptions')?parseInt(f.get('max_redemptions'),10):null,
     expires_at:f.get('expires_at')||null
@@ -879,7 +959,13 @@ function openAdModal(id){
         <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Images up to 8MB. Videos up to 40MB (mp4 / webm).</div>
       </div>
       ${existing}
-      <div class="form-group"><label class="form-label">Click-through link (optional)</label><input type="text" class="form-control" name="href" value="${ad?escAd(ad.href||''):''}" placeholder="store/store.html?id=…"></div>
+      <div class="form-group"><label class="form-label">Click-through link / Action</label><input type="text" class="form-control" id="ad-href-input" name="href" value="${ad?escAd(ad.href||''):''}" placeholder="store/store.html?id=… or #specials"></div>
+      <div style="display:flex;gap:var(--space-xs);margin-bottom:var(--space-md);flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="setAdCta('#specials')">🏷️ Link to Deals</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="setAdCta('index.html#mall-map-section')">🗺️ Link to Mall Map</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="setAdCta('store/product.html?id=')">📦 Link to Product</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="setAdCta('store/store.html?id=')">🏬 Link to Store</button>
+      </div>
       <div class="field-row">
         <div class="form-group"><label class="form-label">Order</label><input type="number" class="form-control" name="sort_order" value="${ad?ad.sort_order||0:0}"></div>
         <div class="form-group"><label class="form-label">Image duration (seconds)</label><input type="number" class="form-control" name="duration_seconds" min="3" max="30" value="${ad?ad.duration_seconds||6:6}"></div>
@@ -913,6 +999,11 @@ function adMimeFromFile(file){
   if(n.endsWith('.webm')) return 'video/webm';
   if(n.endsWith('.mov')) return 'video/quicktime';
   return t;
+}
+
+function setAdCta(url){
+  const el=document.getElementById('ad-href-input');
+  if(el){el.value=url;el.focus();}
 }
 
 function previewAdFile(input){
@@ -1435,15 +1526,40 @@ async function loadAdminStores(page=1){
   Dashboard.renderPagination('stores-pagination',page,Math.ceil(tot/15),`(p)=>loadAdminStores(p)`);}catch(e){UI.toast(e.message,'error');}
 }
 async function approveStore(id){
-  UI.confirmDialog({title:'Approve Store',message:'Are you sure you want to approve this store?',confirmText:'Approve',
-    onConfirm:async()=>{
-      try{
-        await api.admin.approveStore(id);
-        UI.toast('Store approved!','success');
-        loadAdminStores(1);loadPendingStores();loadAdminStats();
-      }catch(e){UI.toast(e.message,'error');}
-    }
+  UI.createModal({
+    id:'approve-store-modal',
+    title:'Approve Store Submission',
+    content:`
+      <form id="approve-store-form" onsubmit="submitApproveStore(event, '${id}')">
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:var(--space-md);">Approving will publish this store to the mall, enabling public orders and visits.</p>
+        <div class="form-group" style="padding:var(--space-sm) var(--space-md);background:var(--bg);border-radius:var(--radius-md);">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;">
+            <input type="checkbox" name="featured" id="approve-featured-check">
+            <span>⭐ Feature this store immediately on the homepage</span>
+          </label>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;padding-left:24px;">Gives the new shop high-visibility placement in the featured mall section right away.</div>
+        </div>
+      </form>`,
+    footer:`
+      <button class="btn btn-ghost" onclick="UI.closeModal('approve-store-modal')">Cancel</button>
+      <button class="btn btn-success" onclick="document.getElementById('approve-store-form').requestSubmit()">Approve &amp; Publish</button>`
   });
+}
+
+async function submitApproveStore(e, id){
+  e.preventDefault();
+  const featured = document.getElementById('approve-featured-check')?.checked || false;
+  try{
+    await api.admin.approveStore(id, featured);
+    UI.toast(featured ? 'Store approved & featured!' : 'Store approved!', 'success');
+    UI.closeModal('approve-store-modal');
+    loadAdminStores(1);
+    loadPendingStores();
+    loadAdminStats();
+    loadConversionBoard();
+  }catch(err){
+    UI.toast(err.message, 'error');
+  }
 }
 async function rejectStore(id){UI.confirmDialog({title:'Reject Store',message:'Reject this store application?',confirmText:'Reject',danger:true,onConfirm:async()=>{try{await api.admin.rejectStore(id,'Does not meet requirements');UI.toast('Store rejected','info');loadAdminStores(1);loadPendingStores();}catch(e){UI.toast(e.message,'error');}}});}
 function suspendStore(id){
@@ -1684,6 +1800,44 @@ async function sendAlert(e){
 function toggleUserSearch(){
   const v=document.getElementById('alert-target').value;
   document.getElementById('alert-user-search-wrap').style.display=v==='user'?'block':'none';
+}
+
+function applyAlertTemplate(key){
+  const form=document.getElementById('alert-form');
+  if(!form)return;
+  const titleInput=form.querySelector('input[name="title"]');
+  const msgInput=form.querySelector('textarea[name="message"]');
+  const targetSelect=document.getElementById('alert-target');
+
+  const templates={
+    weekend:{
+      title:'🎉 Weekend Mall Specials Live!',
+      message:'Discover fresh weekend deals across fashion, electronics, and home. Enjoy prompt delivery right to your door.',
+      target:'role:shopper'
+    },
+    restock:{
+      title:'⚡ Mall Restock: Popular Items Back in Stock',
+      message:'Favorite stores have just replenished their shelves. Browse the latest arrivals before they sell out again.',
+      target:'role:shopper'
+    },
+    payday:{
+      title:'💳 Payday Bonus: Free Delivery Weekend',
+      message:'Treat yourself this payday! Order from multiple stores in one easy delivery fee.',
+      target:'role:shopper'
+    },
+    cart:{
+      title:'🛒 Unfinished Checkout Reminder',
+      message:'You still have items waiting in your cart or pending orders. Complete your order before items expire.',
+      target:'role:shopper'
+    }
+  };
+
+  const t=templates[key];
+  if(!t)return;
+  if(titleInput)titleInput.value=t.title;
+  if(msgInput)msgInput.value=t.message;
+  if(targetSelect){targetSelect.value=t.target;toggleUserSearch();}
+  UI.toast(`Applied "${key}" template`, 'info');
 }
 
 function resetAlertForm(){

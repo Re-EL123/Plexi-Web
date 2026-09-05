@@ -122,6 +122,7 @@ const api = (() => {
     followersCount: (storeId)        => get(`/stores?action=followers-count&id=${storeId}`),
     isFollowing: (storeId)           => get(`/stores?action=is-following&id=${storeId}`),
     followed:    (params = {})       => get(`/stores?action=followed&${new URLSearchParams(params)}`),
+    followerDrop:(storeId, data)     => post(`/stores?action=follower-drop&id=${storeId}`, data),
     categories: (params = {})        => get(`/stores?action=categories&${new URLSearchParams(params)}`),
     ads:        (params = {})        => get(`/stores?action=ads&${new URLSearchParams(params)}`),
     content:    (slug)               => get(slug ? `/stores?action=content&slug=${encodeURIComponent(slug)}` : '/stores?action=content'),
@@ -178,6 +179,7 @@ const api = (() => {
     delete: (id)         => del(`/reviews?id=${id}`),
     like:   (id)         => post(`/reviews?id=${id}&action=like`),
     flag:   (id, reason) => post(`/reviews?id=${id}&action=flag`, { reason }),
+    reply:  (id, reply)  => post(`/reviews?id=${id}&action=reply`, { reply }),
   };
 
   // ======== NOTIFICATIONS ======== //
@@ -212,7 +214,7 @@ const api = (() => {
     stores:        (params={})=> get(`/stores?${new URLSearchParams(params)}`),
     banUser:       (id, r)    => post('/admin?action=ban-user', { user_id: id, banned: true, reason: r }),
     unbanUser:     (id)       => post('/admin?action=ban-user', { user_id: id, banned: false }),
-    approveStore:  (id)       => post('/admin?action=approve-store', { store_id: id, approved: true }),
+    approveStore:  (id, featured) => post('/admin?action=approve-store', { store_id: id, approved: true, ...(typeof featured === 'boolean' ? { featured } : {}) }),
     suspendStore:  (id, reason, duration) => post('/admin?action=suspend-store', { store_id: id, reason, duration_days: duration }),
     unsuspendStore:(id)       => post('/admin?action=unsuspend-store', { store_id: id }),
     rejectStore:   (id, r)    => post('/admin?action=approve-store', { store_id: id, approved: false, reason: r }),
@@ -359,8 +361,11 @@ const api = (() => {
 
   // ======== COUPONS ======== //
   const coupons = {
-    validate: (code, total) => post('/cart?action=coupon-validate', { code, total }),
-    list:     ()            => get('/cart?action=coupon-available'),
+    validate: (code, total, opts = {}) => post('/cart?action=coupon-validate', { code, total, ...opts }),
+    list:     (storeId)                => get(storeId ? `/cart?action=coupon-available&store_id=${storeId}` : '/cart?action=coupon-available'),
+    sellerList:   (storeId)            => get(`/cart?action=seller-coupons&store_id=${storeId}`),
+    sellerCreate: (storeId, data)      => post(`/cart?action=seller-coupons&store_id=${storeId}`, data),
+    sellerDelete: (storeId, id)        => del(`/cart?action=seller-coupons&store_id=${storeId}&id=${id}`),
   };
 
   // ======== DELIVERY ======== //

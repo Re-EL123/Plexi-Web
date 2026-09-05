@@ -457,6 +457,12 @@
         <a href="#" data-section="section-reviews">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Reviews
         </a>
+        <a href="#" data-section="section-coupons">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Coupons
+        </a>
+        <a href="#" data-section="section-pos">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Walk-in Till (POS)
+        </a>
       </div>
       <div class="sidebar-section">
         <div class="sidebar-section-label">Setup</div>
@@ -566,6 +572,27 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <span>No stores yet. <a href="#" onclick="openCreateStoreModal()" style="font-weight:700;">Create your first store →</a></span>
         </div>
+        <div id="seller-action-toolbar" class="card" style="margin-bottom:var(--space-lg);padding:var(--space-md);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-sm);">
+          <div style="display:flex;align-items:center;gap:var(--space-sm);">
+            <button class="btn btn-primary btn-sm" onclick="openShareStoreModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Share Store
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="openFollowerDropModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg>
+              Drop to Followers
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="Dashboard.showSection('section-coupons');document.getElementById('topbar-title').textContent='Coupons';loadSellerCoupons()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              Store Coupons
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="Dashboard.showSection('section-pos');document.getElementById('topbar-title').textContent='Till';initPos()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              Walk-in Till
+            </button>
+          </div>
+          <div id="seller-public-link-chip" style="font-size:12px;color:var(--text-muted);"></div>
+        </div>
         <div class="stats-grid" style="margin-bottom:var(--space-xl);">
           <div class="stat-card primary stagger-child" style="cursor:pointer;" onclick="Dashboard.showSection('section-products');document.getElementById('topbar-title').textContent='Products';loadProducts()"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div><div class="stat-label">Products</div><div class="stat-value" id="s-stat-products">—</div></div>
           <div class="stat-card secondary stagger-child delay-1" style="cursor:pointer;" onclick="Dashboard.showSection('section-orders');document.getElementById('topbar-title').textContent='Orders';loadOrders()"><div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div><div class="stat-label">Orders</div><div class="stat-value" id="s-stat-orders">—</div></div>
@@ -620,6 +647,66 @@
       <section id="section-reviews" class="dash-section" style="display:none;">
         <h2 style="margin-bottom:var(--space-lg);">Customer Reviews</h2>
         <div id="reviews-grid" class="grid-3"><div style="grid-column:1/-1;padding:var(--space-xl);text-align:center;">Loading…</div></div>
+      </section>
+
+      <!-- SELLER COUPONS -->
+      <section id="section-coupons" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);">
+          <div>
+            <h2>Store Coupons</h2>
+            <p style="font-size:13px;color:var(--text-muted);margin-top:2px;">Create exclusive discount codes that apply specifically to your store's items.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openSellerCouponModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Create Coupon
+          </button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Code</th><th>Discount</th><th>Min Spend</th><th>Usage</th><th>Expires</th><th>Actions</th></tr></thead>
+              <tbody id="seller-coupons-tbody"><tr><td colspan="6" style="text-align:center;padding:var(--space-xl);">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- WALK-IN TILL (POS) -->
+      <section id="section-pos" class="dash-section" style="display:none;">
+        <div class="flex-between" style="margin-bottom:var(--space-lg);">
+          <div>
+            <h2>Walk-in Till (POS)</h2>
+            <p style="font-size:13px;color:var(--text-muted);margin-top:2px;">Ring up in-person mall shoppers and instantly sync your inventory.</p>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="clearPosCart()">Clear Till</button>
+        </div>
+        <div class="dash-responsive-grid" style="--grid-min:340px;">
+          <div>
+            <div class="search-bar" style="margin-bottom:var(--space-md);">
+              <span class="search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+              <input type="text" id="pos-search" placeholder="Search catalog by name or SKU…" oninput="filterPosProducts()">
+            </div>
+            <div id="pos-products-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:var(--space-sm);max-height:500px;overflow-y:auto;padding:2px;">
+              <div style="color:var(--text-muted);padding:var(--space-lg);text-align:center;">Loading products…</div>
+            </div>
+          </div>
+          <div class="neo-card" style="position:sticky;top:calc(var(--header-h) + var(--space-md));display:flex;flex-direction:column;gap:var(--space-sm);">
+            <h4>Current Sale</h4>
+            <div id="pos-cart-items" style="min-height:180px;max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;border:1px dashed var(--border);padding:var(--space-sm);border-radius:var(--radius-md);">
+              <div style="text-align:center;color:var(--text-muted);margin:auto;">Till is empty — click products to add</div>
+            </div>
+            <div class="flex-between" style="border-top:1px solid var(--border);padding-top:var(--space-sm);">
+              <span>Items</span><strong id="pos-item-count">0</strong>
+            </div>
+            <div class="flex-between">
+              <span>Total</span><strong id="pos-total" style="font-size:22px;color:var(--primary);">R0.00</strong>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-top:var(--space-sm);">
+              <button class="btn btn-ghost" onclick="recordPosSale('cash')">💵 Cash Sale</button>
+              <button class="btn btn-primary" onclick="recordPosSale('card')">💳 Card / Yoco</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- STORE SETTINGS -->
@@ -965,12 +1052,12 @@
 
 <div id="toast-container"></div>
 
-<script src="../assets/js/config.js?v=2"></script>
+<script src="../assets/js/config.js?v=3"></script>
 <script src="../assets/js/sounds.js?v=2"></script>
 <script src="../assets/js/push.js?v=2"></script>
-<script src="../assets/js/ui.js?v=10"></script>
-<script src="../assets/js/api.js?v=7"></script>
-<script src="../assets/js/auth.js?v=2"></script>
+<script src="../assets/js/ui.js?v=13"></script>
+<script src="../assets/js/api.js?v=8"></script>
+<script src="../assets/js/auth.js?v=3"></script>
 <script src="../assets/js/state.js?v=2"></script>
 <script src="../assets/js/map.js?v=7"></script>
 <script src="../assets/js/dashboard.js?v=12"></script>
@@ -1017,6 +1104,8 @@
       if (sec === 'section-products')      loadProducts();
       if (sec === 'section-orders')        loadOrders();
       if (sec === 'section-reviews')       loadReviews();
+      if (sec === 'section-coupons')       loadSellerCoupons();
+      if (sec === 'section-pos')           initPos();
       if (sec === 'section-store-settings')loadStoreSettingsForm();
       if (sec === 'section-trading-hours') loadTradingHours();
       if (sec === 'section-map-placement') initPlacementMap();
@@ -1225,6 +1314,8 @@
       if (active === 'section-products')       loadProducts();
       if (active === 'section-orders')         loadOrders();
       if (active === 'section-reviews')        loadReviews();
+      if (active === 'section-coupons')        loadSellerCoupons();
+      if (active === 'section-pos')            initPos();
       if (active === 'section-store-settings') loadStoreSettingsForm();
       if (active === 'section-trading-hours')  loadTradingHours();
       if (active === 'section-members')        loadMembers();
@@ -1266,6 +1357,12 @@
           <div style="display:flex;justify-content:space-between;margin-bottom:4px;">${UI.stars(r.rating)}<span style="font-size:11px;color:var(--text-muted);">${UI.timeAgo(r.created_at)}</span></div>
           <div style="font-size:13px;color:var(--text-secondary);">${r.comment||'No comment'}</div>
         </div>`).join('') || '<div style="padding:var(--space-lg);text-align:center;color:var(--text-muted);">No reviews yet</div>';
+
+      const chip = document.getElementById('seller-public-link-chip');
+      if (chip && currentStore) {
+        const storeUrl = `${window.location.origin}/Plexi-Web/store/store.html?id=${currentStore.id}`;
+        chip.innerHTML = `Store link: <a href="${storeUrl}" target="_blank" style="color:var(--primary);font-weight:600;text-decoration:none;">${currentStore.name} ↗</a>`;
+      }
 
       renderSalesOverviewChart(orders);
 
@@ -1363,8 +1460,9 @@
             ${p.tags && p.tags.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">${p.tags.map(t => `<span class="badge badge-secondary">${t}</span>`).join('')}</div>` : ''}
             ${p.product_type ? `<div style="font-size:11px;color:var(--text-muted);">Type: ${p.product_type}</div>` : ''}
           </div>
-          <div class="card-footer" style="display:flex;gap:var(--space-sm);">
+          <div class="card-footer" style="display:flex;gap:var(--space-sm);flex-wrap:wrap;">
             <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="editProduct('${p.id}')">Edit</button>
+            <button class="btn btn-primary btn-sm" onclick="openOneTapDealModal('${p.id}')" title="Put product on discount sale">🔥 Deal</button>
             <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button>
           </div>
         </div>`).join('');
@@ -1452,8 +1550,51 @@
         <div class="card"><div class="card-body">
           <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-sm);">${UI.stars(r.rating)}<span style="font-size:11px;color:var(--text-muted);">${UI.timeAgo(r.created_at)}</span></div>
           <p style="font-size:14px;color:var(--text-secondary);">${r.comment||'No comment'}</p>
+          ${r.seller_reply ? `
+            <div style="margin-top:var(--space-sm);padding:var(--space-sm) var(--space-md);background:var(--bg);border-left:3px solid var(--primary);border-radius:var(--radius-sm);font-size:12px;">
+              <strong style="color:var(--primary);">Your Reply:</strong>
+              <div style="color:var(--text-secondary);margin-top:2px;">${r.seller_reply}</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+                <span style="font-size:10px;color:var(--text-muted);">${r.seller_reply_at ? UI.timeAgo(r.seller_reply_at) : ''}</span>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px;" onclick="openReviewReplyModal('${r.id}', '${escAttr(r.seller_reply)}')">Edit Reply</button>
+              </div>
+            </div>` : `
+            <div style="margin-top:var(--space-sm);">
+              <button class="btn btn-ghost btn-sm" onclick="openReviewReplyModal('${r.id}', '')">💬 Reply as Store</button>
+            </div>`}
         </div></div>`).join('');
     } catch (_) {}
+  }
+
+  function openReviewReplyModal(reviewId, currentReply) {
+    UI.createModal({
+      id: 'review-reply-modal',
+      title: 'Reply to Customer Review',
+      content: `
+        <form id="review-reply-form" onsubmit="submitReviewReply(event, '${reviewId}')">
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-md);">Your reply will be visible to everyone browsing this review on the product and store pages.</p>
+          <div class="form-group">
+            <label class="form-label">Store Reply</label>
+            <textarea class="form-control" name="reply" rows="4" required placeholder="Thank the customer, answer questions, or address their feedback...">${currentReply || ''}</textarea>
+          </div>
+        </form>`,
+      footer: `
+        <button class="btn btn-ghost" onclick="UI.closeModal('review-reply-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="document.getElementById('review-reply-form').requestSubmit()">Save Reply</button>`
+    });
+  }
+
+  async function submitReviewReply(e, reviewId) {
+    e.preventDefault();
+    const reply = new FormData(e.target).get('reply').trim();
+    try {
+      await api.reviews.reply(reviewId, reply);
+      UI.toast('Reply posted!', 'success');
+      UI.closeModal('review-reply-modal');
+      loadReviews();
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    }
   }
 
   function loadStoreSettingsForm() {
@@ -3556,6 +3697,417 @@
         }
       }
     ]);
+  }
+
+  /* ============================================================
+     SALES-PROPELLING ACTIONS: COUPONS, POS TILL, DEALS, DROPS, SHARE
+     ============================================================ */
+
+  // ---- 1. SHARE STORE MODAL ----
+  function openShareStoreModal() {
+    if (!currentStore) { UI.toast('Select a store first', 'warning'); return; }
+    const url = `${window.location.origin}/Plexi-Web/store/store.html?id=${currentStore.id}`;
+    const shareText = `Visit ${currentStore.name} on Plexi Digital Mall: ${url}`;
+    UI.createModal({
+      id: 'share-store-modal',
+      title: `Share ${currentStore.name}`,
+      content: `
+        <div style="display:flex;flex-direction:column;gap:var(--space-md);">
+          <p style="font-size:13px;color:var(--text-secondary);">Share your direct store link on WhatsApp, Instagram, or social media to bring foot traffic directly to your storefront.</p>
+          <div class="form-group">
+            <label class="form-label">Storefront Link</label>
+            <div style="display:flex;gap:var(--space-xs);">
+              <input type="text" class="form-control" id="share-store-url" readonly value="${url}" style="font-size:13px;">
+              <button class="btn btn-primary btn-sm" onclick="copyStoreUrl()">Copy</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;">
+            <a href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" class="btn btn-ghost btn-sm" style="flex:1;text-align:center;text-decoration:none;">
+              💬 WhatsApp
+            </a>
+            <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}" target="_blank" class="btn btn-ghost btn-sm" style="flex:1;text-align:center;text-decoration:none;">
+              🐦 Twitter/X
+            </a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}" target="_blank" class="btn btn-ghost btn-sm" style="flex:1;text-align:center;text-decoration:none;">
+              📘 Facebook
+            </a>
+          </div>
+        </div>`,
+      footer: `<button class="btn btn-primary" onclick="UI.closeModal('share-store-modal')">Done</button>`
+    });
+  }
+
+  function copyStoreUrl() {
+    const el = document.getElementById('share-store-url');
+    if (el) {
+      navigator.clipboard?.writeText(el.value).then(() => UI.toast('Store link copied!', 'success')).catch(() => UI.toast('Link: ' + el.value, 'info'));
+    }
+  }
+
+  // ---- 2. FOLLOWER DROP MODAL ----
+  function openFollowerDropModal() {
+    if (!currentStore) { UI.toast('Select a store first', 'warning'); return; }
+    UI.createModal({
+      id: 'follower-drop-modal',
+      title: 'Send Drop to Store Followers',
+      content: `
+        <form id="follower-drop-form" onsubmit="submitFollowerDrop(event)">
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-md);">Broadcast an instant notification to all shoppers following <strong>${currentStore.name}</strong>. Great for new arrivals, flash discounts, or restocks.</p>
+          <div class="form-group">
+            <label class="form-label">Drop Title</label>
+            <input type="text" class="form-control" name="title" required placeholder="e.g. Flash 20% Off Weekend / Fresh Stock Just Landed!">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Message</label>
+            <textarea class="form-control" name="message" rows="3" required placeholder="Tell your followers what's new and why they should visit now..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Optional Coupon Code</label>
+            <input type="text" class="form-control" name="coupon_code" placeholder="e.g. VIP20" style="text-transform:uppercase;">
+          </div>
+        </form>`,
+      footer: `
+        <button class="btn btn-ghost" onclick="UI.closeModal('follower-drop-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="document.getElementById('follower-drop-form').requestSubmit()">Send Drop</button>`
+    });
+  }
+
+  async function submitFollowerDrop(e) {
+    e.preventDefault();
+    if (!currentStore) return;
+    const f = new FormData(e.target);
+    const payload = {
+      title: f.get('title').trim(),
+      message: f.get('message').trim(),
+      coupon_code: (f.get('coupon_code') || '').trim().toUpperCase() || undefined
+    };
+    try {
+      const res = await api.stores.followerDrop(currentStore.id, payload);
+      UI.toast(res.message || 'Drop broadcasted to followers!', 'success');
+      UI.closeModal('follower-drop-modal');
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    }
+  }
+
+  // ---- 3. ONE-TAP DEAL MODAL ----
+  async function openOneTapDealModal(productId) {
+    try {
+      const res = await api.products.get(productId);
+      const p = res?.product || res;
+      const currentPrice = Number(p.price || 0);
+      const currentWas = Number(p.original_price || 0);
+
+      UI.createModal({
+        id: 'deal-modal',
+        title: `Set Sale Deal: ${p.name}`,
+        content: `
+          <form id="deal-form" onsubmit="submitOneTapDeal(event, '${productId}')">
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-md);">Products with a sale discount are featured in <strong>Today's Specials</strong> and get highlighted deal tags across the mall.</p>
+            <div class="form-group">
+              <label class="form-label">Was / Compare-at Price (R)</label>
+              <input type="number" step="0.01" min="0" class="form-control" name="original_price" id="deal-was-price" value="${currentWas > currentPrice ? currentWas : currentPrice}" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Now / Sale Price (R)</label>
+              <input type="number" step="0.01" min="0" class="form-control" name="price" id="deal-now-price" value="${currentWas > currentPrice ? currentPrice : Math.round(currentPrice * 0.85 * 100) / 100}" required>
+            </div>
+            <div style="display:flex;gap:var(--space-xs);margin-bottom:var(--space-md);">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="applyPresetDiscount(10)">-10%</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="applyPresetDiscount(15)">-15%</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="applyPresetDiscount(20)">-20%</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="applyPresetDiscount(30)">-30%</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="clearDeal()">Remove Deal</button>
+            </div>
+          </form>`,
+        footer: `
+          <button class="btn btn-ghost" onclick="UI.closeModal('deal-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="document.getElementById('deal-form').requestSubmit()">Save Deal</button>`
+      });
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    }
+  }
+
+  function applyPresetDiscount(pct) {
+    const was = parseFloat(document.getElementById('deal-was-price')?.value) || 0;
+    if (was > 0) {
+      const now = Math.round(was * (1 - pct / 100) * 100) / 100;
+      const nowEl = document.getElementById('deal-now-price');
+      if (nowEl) nowEl.value = now;
+    }
+  }
+
+  function clearDeal() {
+    const was = parseFloat(document.getElementById('deal-was-price')?.value) || 0;
+    const nowEl = document.getElementById('deal-now-price');
+    if (nowEl) nowEl.value = was;
+    const wasEl = document.getElementById('deal-was-price');
+    if (wasEl) wasEl.value = 0;
+  }
+
+  async function submitOneTapDeal(e, productId) {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const was = parseFloat(f.get('original_price')) || 0;
+    const now = parseFloat(f.get('price')) || 0;
+    try {
+      await api.products.update(productId, {
+        price: now,
+        original_price: was > now ? was : null
+      });
+      UI.toast(was > now ? `Deal live! Saved ${(100 - (now/was*100)).toFixed(0)}%` : 'Product price updated', 'success');
+      UI.closeModal('deal-modal');
+      loadProducts();
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    }
+  }
+
+  // ---- 4. SELLER COUPONS ----
+  async function loadSellerCoupons() {
+    if (!currentStore) return;
+    const tbody = document.getElementById('seller-coupons-tbody');
+    tbody.innerHTML = UI.skeletonTable(4, 6);
+    try {
+      const data = await api.coupons.sellerList(currentStore.id);
+      const list = Array.isArray(data) ? data : (data.coupons || []);
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">No store coupons yet. Create one to reward your loyal shoppers!</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(c => `
+        <tr>
+          <td><strong style="font-family:monospace;font-size:14px;color:var(--primary);">${c.code}</strong></td>
+          <td>${c.discount_type === 'percent' ? `${c.discount_value}%` : UI.formatCurrency(c.discount_value)}</td>
+          <td>${c.min_spend ? UI.formatCurrency(c.min_spend) : 'None'}</td>
+          <td>${c.times_used || 0}${c.max_redemptions ? ` / ${c.max_redemptions}` : ''}</td>
+          <td>${c.expires_at ? UI.formatDate(c.expires_at) : 'Never'}</td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="deleteSellerCoupon('${c.id}')">Delete</button>
+          </td>
+        </tr>`).join('');
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--error);">${err.message}</td></tr>`;
+    }
+  }
+
+  function openSellerCouponModal() {
+    if (!currentStore) { UI.toast('Select a store first', 'warning'); return; }
+    UI.createModal({
+      id: 'seller-coupon-modal',
+      title: 'Create Store Coupon',
+      content: `
+        <form id="seller-coupon-form" onsubmit="submitSellerCoupon(event)">
+          <div class="form-group">
+            <label class="form-label">Coupon Code</label>
+            <input type="text" class="form-control" name="code" required placeholder="e.g. SHOPPER10" style="text-transform:uppercase;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Discount Type</label>
+            <select class="form-control" name="discount_type">
+              <option value="percent">Percentage (%)</option>
+              <option value="fixed">Fixed Rand (R)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Discount Value</label>
+            <input type="number" step="0.01" min="0.01" class="form-control" name="discount_value" required placeholder="10">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Minimum Spend (optional)</label>
+            <input type="number" step="0.01" min="0" class="form-control" name="min_spend" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Max Uses (optional)</label>
+            <input type="number" min="1" class="form-control" name="max_redemptions" placeholder="Unlimited if blank">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Expiry Date (optional)</label>
+            <input type="date" class="form-control" name="expires_at">
+          </div>
+        </form>`,
+      footer: `
+        <button class="btn btn-ghost" onclick="UI.closeModal('seller-coupon-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="document.getElementById('seller-coupon-form').requestSubmit()">Create Coupon</button>`
+    });
+  }
+
+  async function submitSellerCoupon(e) {
+    e.preventDefault();
+    if (!currentStore) return;
+    const f = new FormData(e.target);
+    const payload = {
+      code: f.get('code').trim().toUpperCase(),
+      discount_type: f.get('discount_type'),
+      discount_value: parseFloat(f.get('discount_value')),
+      min_spend: parseFloat(f.get('min_spend')) || 0,
+      max_redemptions: f.get('max_redemptions') ? parseInt(f.get('max_redemptions'), 10) : undefined,
+      expires_at: f.get('expires_at') || undefined
+    };
+    try {
+      await api.coupons.sellerCreate(currentStore.id, payload);
+      UI.toast(`Coupon ${payload.code} created!`, 'success');
+      UI.closeModal('seller-coupon-modal');
+      loadSellerCoupons();
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    }
+  }
+
+  async function deleteSellerCoupon(id) {
+    UI.confirmDialog({
+      title: 'Delete Coupon',
+      message: 'Delete this coupon code? Shoppers will no longer be able to redeem it.',
+      confirmText: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await api.coupons.sellerDelete(currentStore.id, id);
+          UI.toast('Coupon deleted', 'info');
+          loadSellerCoupons();
+        } catch (err) {
+          UI.toast(err.message, 'error');
+        }
+      }
+    });
+  }
+
+  // ---- 5. WALK-IN TILL (POS) ----
+  let posProducts = [];
+  let posCart = []; // { product, quantity }
+
+  async function initPos() {
+    if (!currentStore) return;
+    const grid = document.getElementById('pos-products-grid');
+    grid.innerHTML = '<div style="color:var(--text-muted);padding:var(--space-lg);text-align:center;">Loading products…</div>';
+    try {
+      const data = await api.products.list(currentStore.id, { limit: 100 });
+      posProducts = Array.isArray(data) ? data : (data.products || []);
+      renderPosProducts(posProducts);
+      renderPosCart();
+    } catch (err) {
+      grid.innerHTML = `<div style="color:var(--error);padding:var(--space-lg);">${err.message}</div>`;
+    }
+  }
+
+  function renderPosProducts(prods) {
+    const grid = document.getElementById('pos-products-grid');
+    if (!prods.length) {
+      grid.innerHTML = '<div style="color:var(--text-muted);padding:var(--space-md);grid-column:1/-1;">No products found</div>';
+      return;
+    }
+    grid.innerHTML = prods.map(p => `
+      <div class="card hover-lift" style="cursor:pointer;padding:var(--space-sm);text-align:center;" onclick="addToPosCart('${p.id}')">
+        <div style="height:60px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:24px;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:4px;">
+          ${p.images?.[0] ? `<img src="${p.images[0]}" style="width:100%;height:100%;object-fit:cover;">` : '🛍️'}
+        </div>
+        <div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+        <div style="color:var(--primary);font-weight:700;font-size:13px;margin-top:2px;">${UI.formatCurrency(p.price)}</div>
+        <div style="font-size:10px;color:${Number(p.inventory) <= 5 ? 'var(--warning)' : 'var(--text-muted)'};">Stock: ${p.inventory}</div>
+      </div>`).join('');
+  }
+
+  function filterPosProducts() {
+    const q = (document.getElementById('pos-search')?.value || '').toLowerCase().trim();
+    if (!q) { renderPosProducts(posProducts); return; }
+    const filtered = posProducts.filter(p => (p.name || '').toLowerCase().includes(q) || (p.sku || '').toLowerCase().includes(q));
+    renderPosProducts(filtered);
+  }
+
+  function addToPosCart(productId) {
+    const prod = posProducts.find(p => p.id === productId);
+    if (!prod) return;
+    const existing = posCart.find(i => i.product.id === productId);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      posCart.push({ product: prod, quantity: 1 });
+    }
+    renderPosCart();
+  }
+
+  function updatePosQty(productId, delta) {
+    const item = posCart.find(i => i.product.id === productId);
+    if (!item) return;
+    item.quantity += delta;
+    if (item.quantity <= 0) {
+      posCart = posCart.filter(i => i.product.id !== productId);
+    }
+    renderPosCart();
+  }
+
+  function clearPosCart() {
+    posCart = [];
+    renderPosCart();
+  }
+
+  function renderPosCart() {
+    const itemsEl = document.getElementById('pos-cart-items');
+    const totalEl = document.getElementById('pos-total');
+    const countEl = document.getElementById('pos-item-count');
+    if (!itemsEl) return;
+
+    if (!posCart.length) {
+      itemsEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);margin:auto;">Till is empty — click products to add</div>';
+      if (totalEl) totalEl.textContent = 'R0.00';
+      if (countEl) countEl.textContent = '0';
+      return;
+    }
+
+    let total = 0;
+    let count = 0;
+    itemsEl.innerHTML = posCart.map(item => {
+      const line = Number(item.product.price || 0) * item.quantity;
+      total += line;
+      count += item.quantity;
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;background:var(--bg);padding:4px 8px;border-radius:var(--radius-sm);">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.product.name}</div>
+            <div style="color:var(--text-muted);font-size:10px;">${UI.formatCurrency(item.product.price)} each</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" onclick="updatePosQty('${item.product.id}', -1)">-</button>
+            <span style="font-weight:700;min-width:18px;text-align:center;">${item.quantity}</span>
+            <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" onclick="updatePosQty('${item.product.id}', 1)">+</button>
+          </div>
+          <strong style="color:var(--primary);min-width:54px;text-align:right;">${UI.formatCurrency(line)}</strong>
+        </div>`;
+    }).join('');
+
+    if (totalEl) totalEl.textContent = UI.formatCurrency(total);
+    if (countEl) countEl.textContent = count;
+  }
+
+  async function recordPosSale(method) {
+    if (!posCart.length) { UI.toast('Till is empty', 'warning'); return; }
+    const total = posCart.reduce((s, i) => s + (Number(i.product.price || 0) * i.quantity), 0);
+    const count = posCart.reduce((s, i) => s + i.quantity, 0);
+
+    UI.confirmDialog({
+      title: `Confirm ${method.toUpperCase()} Sale`,
+      message: `Complete sale for ${count} items totaling ${UI.formatCurrency(total)} via ${method}? This will deduct inventory from your store.`,
+      confirmText: `Complete ${UI.formatCurrency(total)} Sale`,
+      onConfirm: async () => {
+        try {
+          // Decrement stock on each product
+          const updates = posCart.map(item => {
+            const nextInv = Math.max((Number(item.product.inventory) || 0) - item.quantity, 0);
+            return api.products.update(item.product.id, { inventory: nextInv });
+          });
+          await Promise.all(updates);
+
+          UI.toast(`Sale recorded (${method.toUpperCase()})! Receipt total: ${UI.formatCurrency(total)}`, 'success');
+          clearPosCart();
+          initPos();
+          loadProducts();
+          loadOverviewData();
+        } catch (err) {
+          UI.toast(err.message, 'error');
+        }
+      }
+    });
   }
 </script>
 <script>

@@ -1,0 +1,29 @@
+---
+description: Plexi Digital Mall is three sibling repos; never exceed 12 Vercel serverless functions
+alwaysApply: true
+---
+
+# Plexi Digital Mall — one system
+
+Treat these three repos as one product. Changes in one often require the others.
+
+| Role | Path |
+|------|------|
+| Public mall site (this repo) | `/home/akani/Plexi-Web` |
+| API (only place with secrets) | `/home/akani/plexi-digital-mall-backend` |
+| Driver app (Expo/React Native) | `/home/akani/Plexi-Driver` |
+
+Both clients call `https://plexi-digital-mall-backend.vercel.app/api`. Auth uses `?action=` query params (`/auth?action=login`, not `/auth/login`). Responses wrap as `{ body: ... }` — keep that shape or both frontends break.
+
+## Hard cap: 12 serverless functions
+
+Vercel Hobby allows **at most 12** functions. Every file in `api/*.js` is one function.
+
+Current 12: `admin`, `auth`, `cart` (+coupons), `notifications`, `orders`, `payments`, `products`, `reviews`, `stores`, `subscriptions`, `support`, `users`.
+
+- Before adding `api/*.js`, count: `ls api/*.js | wc -l`
+- At 12, fold new endpoints into an existing file as `?action=` cases (see `cart.js` coupon actions)
+- Never add a 13th `api/*.js` file — deploys fail
+- Coupons live in `/api/cart?action=coupon-*`, not `/api/coupons`
+
+Driver tables (`driver_profiles`, `deliveries`, `delivery_offers`, `driver_compliance`) live in the backend DB; `schema.sql` is incomplete — check `database/` migrations.
